@@ -129,7 +129,7 @@ export const DockQuickSwitcher: React.FC<DockQuickSwitcherProps> = ({ variant, o
 
   return (
     <div className="space-y-2" data-dock-switcher={variant}>
-      <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-surface-sunken border border-subtle">
+      <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-surface-sunken border border-subtle focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40">
         <Search className="w-3.5 h-3.5 text-muted flex-shrink-0" aria-hidden="true" />
         <input
           ref={inputRef}
@@ -226,7 +226,7 @@ export const DockQuickSwitcher: React.FC<DockQuickSwitcherProps> = ({ variant, o
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-muted text-center">
+          <p className="hidden sm:block text-[11px] text-muted text-center">
             Press{' '}
             <kbd className="px-1 rounded bg-surface-sunken border border-subtle font-mono">{DOCK_SWITCHER_SHORTCUT_LABEL}</kbd>{' '}
             any time to open anything.

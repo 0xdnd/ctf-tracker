@@ -34,7 +34,7 @@ export interface SubstitutionContext {
   customVars?: Record<string, string>;
 }
 
-export interface VariableRange {
+interface VariableRange {
   /** Character offset of the token's opening brace/bracket in the *original* template. */
   start: number;
   /** Character offset just past the token's closing brace/bracket. */

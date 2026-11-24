@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import React, { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
@@ -166,7 +166,7 @@ const AccordionSection: React.FC<{
     </button>
     <AnimatePresence initial={false}>
       {isOpen && (
-        <motion.div
+        <m.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0, transition: { duration: 0.12, ease: 'easeOut' } }}
@@ -176,7 +176,7 @@ const AccordionSection: React.FC<{
           <div className="pt-3 pb-1 space-y-3.5 font-sans text-xs">
             {children}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   </div>
@@ -587,7 +587,7 @@ export const FilterDrawer: React.FC = () => {
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 pb-20 custom-scrollbar">
 
           {/* Match count */}
           <div className="flex items-baseline justify-between gap-3">

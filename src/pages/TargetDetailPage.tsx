@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ScrollFade } from '../components/common/ScrollFade';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   ArrowLeft,
   Crosshair,
@@ -34,6 +35,8 @@ import { QuickNotesField } from '../components/tracker/QuickNotesField';
 import { TargetReconDropzone } from '../components/tracker/TargetReconDropzone';
 import { PageHeader } from '../components/common/PageHeader';
 import { BadgeOverflow } from '../components/common/BadgeOverflow';
+import { useMediaQuery, PHONE_QUERY } from '../hooks/useMediaQuery';
+import { entersRootStage } from '../utils/pipeline';
 import { TargetTypeBadge } from '../components/common/TargetTypeBadge';
 import { CyberButton } from '../components/common/CyberButton';
 import { EmptyState } from '../components/common/EmptyState';
@@ -61,6 +64,7 @@ export const TargetDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const isFocusMode = location.pathname.endsWith('/focus');
 
   const {
@@ -111,6 +115,17 @@ export const TargetDetailPage: React.FC = () => {
   }, [isCatalogLoaded, loadCatalog]);
 
   const machine = findMachineByRouteId(machines, id);
+
+  // Update document.title when viewing a target (prevents staying stuck on "Page not found | ZeroBox" after 404.html SPA boot).
+  useEffect(() => {
+    if (!isCatalogLoaded) {
+      document.title = 'Loading target… | ZeroBox';
+    } else if (machine) {
+      document.title = `${machine.name} (${machine.platform}) | ZeroBox`;
+    } else {
+      document.title = 'Target not found | ZeroBox';
+    }
+  }, [isCatalogLoaded, machine]);
 
   const machineId = machine?.id;
   const machineLoot = useMemo(
@@ -192,9 +207,10 @@ export const TargetDetailPage: React.FC = () => {
   };
 
   const handleStatusChange = (newStatus: PipelineStatus) => {
+    const prevStatus = machine.status;
     updateMachineStatus(machine.id, newStatus);
     if (newStatus === 'root' || newStatus === 'completed') {
-      triggerRootCelebration();
+      if (entersRootStage(prevStatus, newStatus)) triggerRootCelebration();
       if (soundEnabled) playCyberSound('root');
     } else {
       if (soundEnabled) playCyberSound('toggle');
@@ -259,22 +275,35 @@ export const TargetDetailPage: React.FC = () => {
   const ownHref = ownWriteupHref(machine);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
       className="mx-auto max-w-6xl space-y-5 pb-12 text-sm"
     >
       <div data-tour="machine-header" className="space-y-2">
-        <button
-          aria-label="Back to target list"
-          onClick={() => navigate('/tracker')}
-          title="Back to Target List"
-          className="inline-flex h-8 items-center gap-1.5 rounded-md px-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-11"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          <span>Targets</span>
-        </button>
+        {isFocusMode ? (
+          <button
+            aria-label="Exit focus, back to the full target page"
+            onClick={() => navigate(`/target/${machine.id}`)}
+            title="Exit focus mode"
+            data-tour="machine-exit-focus"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-11"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span>Exit focus</span>
+          </button>
+        ) : (
+          <button
+            aria-label="Targets, back to target list"
+            onClick={() => navigate('/tracker')}
+            title="Back to Target List"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97] [@media(pointer:coarse)]:h-11"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span>Targets</span>
+          </button>
+        )}
 
         <PageHeader
           title={machine.name}
@@ -330,18 +359,7 @@ export const TargetDetailPage: React.FC = () => {
                   >
                     Writeup Studio
                   </CyberButton>
-                  {isFocusMode ? (
-                    <CyberButton
-                      variant="ghost"
-                      size="md"
-                      iconLeft={<Eye className="h-3.5 w-3.5" />}
-                      title="Exit Focus Mode"
-                      data-tour="machine-exit-focus"
-                      onClick={() => navigate(`/target/${machine.id}`)}
-                    >
-                      Exit focus
-                    </CyberButton>
-                  ) : (
+                  {!isFocusMode && (
                     <button
                       aria-label="Enter focus mode"
                       onClick={() => navigate(`/target/${machine.id}/focus`)}
@@ -369,9 +387,9 @@ export const TargetDetailPage: React.FC = () => {
                 ]
           }
         >
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2">
             <TargetTypeBadge machine={machine} size="sm" />
-            <BadgeOverflow badges={badges} max={2} />
+            <BadgeOverflow badges={badges} max={isPhone ? 3 : 2} inline={isPhone} />
             {machine.isActive ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-callout-warn-fg">
                 <Lock className="h-3 w-3" aria-hidden="true" />
@@ -389,7 +407,7 @@ export const TargetDetailPage: React.FC = () => {
                 href={roomUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline max-sm:min-h-6"
               >
                 {isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Official room'} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
@@ -398,7 +416,7 @@ export const TargetDetailPage: React.FC = () => {
               <a
                 href={ownHref}
                 {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline max-sm:min-h-6"
               >
                 Writeup
               </a>
@@ -408,7 +426,7 @@ export const TargetDetailPage: React.FC = () => {
                 href={community.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline max-sm:min-h-6"
               >
                 {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
@@ -452,7 +470,7 @@ export const TargetDetailPage: React.FC = () => {
           </div>
 
           {/* Navigation tabs: single line, horizontally scrollable */}
-          <div data-tour="machine-tabs" className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+          <ScrollFade data-tour="machine-tabs" fadeSize="3.5rem" className="-mx-4 border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:pr-14">
             <div className="flex min-w-max items-center gap-1">
               {tabs.map((tab) => {
                 const selected = activeTab === tab.id;
@@ -477,7 +495,7 @@ export const TargetDetailPage: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          </ScrollFade>
 
       {/* Main tab stage */}
       {activeTab === 'checklist' ? (
@@ -737,6 +755,6 @@ export const TargetDetailPage: React.FC = () => {
       )}
         </>
       )}
-    </motion.div>
+    </m.div>
   );
 };

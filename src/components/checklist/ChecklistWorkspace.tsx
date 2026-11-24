@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, 
   Circle, 
@@ -32,7 +32,7 @@ import { computeChecklistProgress } from '../../utils/checklistProgress';
 import { exportChecklistToMarkdown } from '../../utils/checklistMarkdownExporter';
 import { evaluateRabbitHoleStatus } from '../../utils/rabbitHoleDetector';
 import { interpolateCommand, playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
-import { useEffectiveGlobalVars } from '../../hooks/useActiveTargetIp';
+import { isPlaceholderIp } from '../../utils/ipInput';
 import { phaseSectionId } from '../methodology/PhaseNav';
 import { NextUpCard } from '../methodology/NextUpCard';
 import { splitBranchTitle } from '../../utils/methodologyDisplay';
@@ -71,8 +71,15 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
     }))
   );
 
-  // Engaged target's IP wins over the global RHOST (shared precedence helper).
-  const effectiveVars = useEffectiveGlobalVars(globalVars);
+  // Scope {TARGET_IP} to this machine's own IP when configured (even before clicking Engage),
+  // and never borrow a different engaged machine's IP (falls back to globalVars.targetIp).
+  const effectiveVars = useMemo(() => {
+    const ownIp = machine.ip?.trim();
+    if (ownIp && !isPlaceholderIp(ownIp)) {
+      return ownIp === globalVars.targetIp ? globalVars : { ...globalVars, targetIp: ownIp };
+    }
+    return globalVars;
+  }, [globalVars, machine.ip]);
 
   const [internalExpandedPhaseId, setInternalExpandedPhaseId] = useState<string>('phase-01-surface-mapping');
   const expandedPhaseId = externalExpandedPhaseId !== undefined ? externalExpandedPhaseId : internalExpandedPhaseId;
@@ -347,7 +354,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
           </div>
 
           <div className="w-full bg-surface-elevated h-2 rounded-full border border-subtle overflow-hidden">
-            <motion.div
+            <m.div
               initial={{ width: 0 }}
               animate={{ width: `${stats.percentage}%` }}
               transition={TACTICAL_SPRING}
@@ -386,7 +393,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
 
       {/* SECTION 2: HEURISTIC RABBIT-HOLE WARNING & DEAD-END FALLBACK BANNER */}
       {rabbitHoleEval.isRabbitHole && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="p-3.5 rounded-2xl border border-callout-warn-border bg-callout-warn-bg flex flex-wrap items-center justify-between gap-3"
@@ -419,7 +426,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               </span>
             </button>
           )}
-        </motion.div>
+        </m.div>
       )}
 
       {/* SECTION 3: OPEN PORTS PROFILER & SERVICE BRANCH INJECTOR */}
@@ -601,7 +608,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
               {/* Phase Subcategories & Micro-Tasks */}
               <AnimatePresence>
                 {isExpanded && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -706,7 +713,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                     <div className="flex items-center gap-1 bg-surface-elevated p-0.5 rounded-lg border border-subtle">
                                       <button
                                         onClick={() => handleStatusClick(item.id, 'todo')}
-                                        className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
+                                        className={`px-2 min-h-6 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] [@media(pointer:coarse)]:min-h-11 ${
                                           status === 'todo'
                                             ? 'bg-surface-card text-primary font-semibold border border-subtle'
                                             : 'text-muted hover:text-primary'
@@ -716,7 +723,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                       </button>
                                       <button
                                         onClick={() => handleStatusClick(item.id, 'in_progress')}
-                                        className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
+                                        className={`px-2 min-h-6 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] [@media(pointer:coarse)]:min-h-11 ${
                                           status === 'in_progress'
                                             ? 'bg-surface-sunken text-secondary font-semibold border border-subtle'
                                             : 'text-muted hover:text-primary'
@@ -726,7 +733,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                       </button>
                                       <button
                                         onClick={() => handleStatusClick(item.id, 'done')}
-                                        className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
+                                        className={`px-2 min-h-6 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] [@media(pointer:coarse)]:min-h-11 ${
                                           status === 'done'
                                             ? 'bg-callout-success-bg text-callout-success-fg font-semibold border border-callout-success-border'
                                             : 'text-muted hover:text-primary'
@@ -736,7 +743,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                       </button>
                                       <button
                                         onClick={() => handleStatusClick(item.id, 'na')}
-                                        className={`px-2 py-0.5 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] ${
+                                        className={`px-2 min-h-6 rounded-md transition-[transform,background-color,border-color,color] active:scale-[0.98] [@media(pointer:coarse)]:min-h-11 ${
                                           status === 'na'
                                             ? 'bg-surface-hover text-secondary font-semibold'
                                             : 'text-muted hover:text-primary'
@@ -768,7 +775,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                                 {/* Command Snippet Preview */}
                                 {item.commandSnippet && (
                                   <div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] font-mono">
-                                    <span className="truncate text-primary select-all">
+                                    <span className="truncate text-primary select-text">
                                       {interpolateCommand(item.commandSnippet, effectiveVars)}
                                     </span>
                                     <button
@@ -815,7 +822,7 @@ export const ChecklistWorkspace: React.FC<ChecklistWorkspaceProps> = ({
                       </div>
                       );
                     })}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>

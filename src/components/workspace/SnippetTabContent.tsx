@@ -12,7 +12,7 @@ interface SnippetTabContentProps {
   entry: CheatsheetCommand;
 }
 
-export function cheatCategoryName(categoryId: string): string {
+function cheatCategoryName(categoryId: string): string {
   return CHEATSHEET_CATEGORIES.find((c) => c.id === categoryId)?.name ?? categoryId;
 }
 
@@ -80,7 +80,7 @@ export const SnippetTabContent: React.FC<SnippetTabContentProps> = ({ entry }) =
             </button>
           </div>
         </div>
-        <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-all">
+        <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-text">
           <code>{resolved.text}</code>
         </pre>
       </section>

@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useConfirmStore } from '../../store/useConfirmStore';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { CyberButton } from './CyberButton';
@@ -34,13 +34,13 @@ const ConfirmCard: React.FC = () => {
   const { title, body, confirmLabel = 'Confirm', cancelLabel = 'Cancel' } = shown.options;
 
   return (
-    <motion.div
+    <m.div
       className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
     >
-      <motion.div
+      <m.div
         ref={trapRef}
         role="alertdialog"
         aria-modal="true"
@@ -66,8 +66,8 @@ const ConfirmCard: React.FC = () => {
             {confirmLabel}
           </CyberButton>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 };
 

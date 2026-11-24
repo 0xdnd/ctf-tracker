@@ -81,7 +81,7 @@ describe('notes workspace tools', () => {
     it('edits LHOST in place through setGlobalVars', () => {
       renderWorkspace();
       const bar = within(desktopBar());
-      fireEvent.click(bar.getByRole('button', { name: /LHOST: 10\.10\.14\.7/ }));
+      fireEvent.click(bar.getByRole('button', { name: /LHOST 10\.10\.14\.7/ }));
       const input = bar.getByLabelText('Edit LHOST');
       fireEvent.change(input, { target: { value: '10.10.14.99' } });
       fireEvent.keyDown(input, { key: 'Enter' });
@@ -93,7 +93,7 @@ describe('notes workspace tools', () => {
       renderWorkspace();
       const bar = within(desktopBar());
       expect(bar.getByText('No target engaged')).toBeInTheDocument();
-      fireEvent.click(bar.getByRole('button', { name: /RHOST: 10\.10\.11\.5/ }));
+      fireEvent.click(bar.getByRole('button', { name: /RHOST 10\.10\.11\.5/ }));
       const input = bar.getByLabelText('Edit RHOST');
       fireEvent.change(input, { target: { value: '10.10.11.77' } });
       fireEvent.blur(input);

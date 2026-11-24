@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Link, useLocation } from 'react-router-dom';
 import { confirmAction } from '../store/useConfirmStore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { 
   GraduationCap, 
   Play, 
@@ -24,6 +24,7 @@ import {
   User,
   Layers,
   Flame,
+  Network,
   X
 } from 'lucide-react';
 import { useExamStore } from '../store/examStore';
@@ -52,6 +53,7 @@ import { PageHeader } from '../components/common/PageHeader';
 import { CyberButton } from '../components/common/CyberButton';
 import { ExamBioBreakModal } from '../components/exam/ExamBioBreakModal';
 import { ExamReportModal } from '../components/exam/ExamReportModal';
+import { ExamPivotGraphPanel } from '../components/exam/ExamPivotGraphPanel';
 import { useExamRabbitHole } from '../hooks/useExamRabbitHole';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 
@@ -206,6 +208,9 @@ export const ExamSimulatorPage: React.FC = () => {
   // Expanded box card for evidence dropzones
   const [expandedBoxId, setExpandedBoxId] = useState<string | null>(null);
   const [activeProofTab, setActiveProofTab] = useState<'user' | 'root'>('user');
+  const [workspaceTab, setWorkspaceTab] = useState<'targets' | 'graph'>('targets');
+  const examCustomNodeCount = useExamStore((s) => (s.examCustomNodes || []).length);
+  const examGraphEdgeCount = useExamStore((s) => (s.examGraphEdges || []).length);
 
   const rabbitHole = useExamRabbitHole();
   const setActiveBox = useExamStore((s) => s.setActiveBox);
@@ -359,7 +364,7 @@ export const ExamSimulatorPage: React.FC = () => {
       {/* ================================================================= */}
       <AnimatePresence>
         {showVictoryBanner && scoreData.isPassing && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.96 }}
@@ -409,7 +414,7 @@ export const ExamSimulatorPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -423,7 +428,7 @@ export const ExamSimulatorPage: React.FC = () => {
         >
           <PageHeader
             title="Exam Simulator"
-            description="Timed OSCP, CPTS and CRTO practice with scoring, pacing and an evidence checklist."
+            description={`Timed practice across ${Object.keys(EXAM_TRACK_CONFIGS).length} certification tracks (${Object.keys(EXAM_TRACK_CONFIGS).join(', ')}) with scoring, pacing and an evidence checklist.`}
             icon={<GraduationCap />}
             primaryAction={
               <CyberButton
@@ -444,7 +449,7 @@ export const ExamSimulatorPage: React.FC = () => {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-1">
               <h2 className="text-sm font-semibold text-primary">
-                1. Select certification ruleset
+                Select certification ruleset
               </h2>
               <span className="text-[11px] text-muted">
                 Matches the official syllabus scoring
@@ -464,29 +469,31 @@ export const ExamSimulatorPage: React.FC = () => {
                     onClick={() => setTrack(t, pool, solvedIds)}
                     className={`flex h-full w-full cursor-pointer flex-col p-4 rounded-2xl border text-left transition-interactive active:scale-[0.97] machined-edge focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
  isSelected
- ? 'bg-surface-sunken border-accent ring-1 ring-accent'
- : 'bg-surface-card border-subtle hover:border-strong'
+? 'bg-accent-muted border-accent ring-1 ring-accent'
+: 'bg-surface-card border-strong hover:border-accent'
  }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
-                        {t}
-                      </span>
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle">
+                          {t}
+                        </span>
+                        {conf.scoringNote && (
+                          <span
+                            data-testid={`exam-track-note-${t.toLowerCase()}`}
+                            className="inline-block whitespace-nowrap text-[11px] font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle"
+                          >
+                            {conf.scoringNote}
+                          </span>
+                        )}
+                      </div>
                       <span className="whitespace-nowrap text-[11px] font-medium text-muted font-mono tabular-nums">
                         {conf.scoringModel === 'objective' ? 'Pass: all objectives' : `Pass: ${conf.passThreshold} pts`}
                       </span>
                     </div>
 
-                    <h3 className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-primary">
-                      <span>{conf.name}</span>
-                      {conf.scoringNote && (
-                        <span
-                          data-testid={`exam-track-note-${t.toLowerCase()}`}
-                          className="inline-block whitespace-nowrap text-[11px] font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-secondary border border-subtle"
-                        >
-                          {conf.scoringNote}
-                        </span>
-                      )}
+                    <h3 className="mb-1 text-sm font-semibold text-primary">
+                      {conf.name}
                     </h3>
                     <p className="text-xs text-secondary mb-3 leading-relaxed">
                       {conf.description}
@@ -507,7 +514,7 @@ export const ExamSimulatorPage: React.FC = () => {
             {track === 'OSCP' && (
               <div className="p-3 rounded-xl bg-surface-sunken border border-subtle text-xs text-secondary flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  <strong className="text-primary font-semibold">1 Dec 2026 OSCP+ scoring update:</strong> OffSec moves OSCP+ exams starting on or after 1 Dec 2026 08:00 GMT to Equated Scaled Scoring (<span className="font-mono tabular-nums">100–500</span> scale, <span className="font-mono tabular-nums">400</span> to pass; raw flag weights stay <span className="font-mono tabular-nums">10/10/20</span> AD + <span className="font-mono tabular-nums">3×20</span> standalones). This mock tracks the <span className="font-mono tabular-nums">100</span>-point raw breakdown.
+                  <strong className="text-primary font-semibold">From 1 Dec 2026</strong> OSCP+ uses a scaled score (<span className="font-mono tabular-nums">100–500</span>, <span className="font-mono tabular-nums">400</span> to pass). This mock tracks the raw 100 points.
                 </span>
                 <Link to="/oscp-points-calculator/" className="text-accent font-medium hover:underline whitespace-nowrap">
                   Open OSCP+ points calculator →
@@ -583,7 +590,7 @@ export const ExamSimulatorPage: React.FC = () => {
                       data-testid="exam-weighted-toggle"
                       checked={scoringMode === 'weighted'}
                       onChange={(e) => setScoringMode(e.target.checked ? 'weighted' : 'official', pool, solvedIds)}
-                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0 max-md:h-6 max-md:w-6"
+                      className="rounded border-strong bg-surface-sunken text-accent focus:ring-0 h-6 w-6"
                     />
                     <span className="font-medium text-secondary">Weight points by difficulty</span>
                   </label>
@@ -732,7 +739,7 @@ export const ExamSimulatorPage: React.FC = () => {
               }
               primaryAction={
                 <CyberButton
-                  variant="primary"
+                  variant="secondary"
                   size="md"
                   data-testid="exam-export-report-btn"
                   className="max-sm:h-11 max-sm:flex-1"
@@ -769,7 +776,7 @@ export const ExamSimulatorPage: React.FC = () => {
             {/* Telemetry Numbers Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Card 1: Score Counter */}
-              <div data-tour="exam-room-score" className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
+              <div data-tour="exam-room-score" className="p-3.5 sm:p-4 rounded-lg bg-surface-card border border-strong flex items-center justify-between gap-3 shadow-xs machined-edge sm:col-span-2 lg:col-span-1">
                 <div>
                   <span className="text-xs text-muted font-medium">
                     Total exam score
@@ -797,7 +804,7 @@ export const ExamSimulatorPage: React.FC = () => {
                       Passed
                     </span>
                   ) : (
-                    <span className="text-xs font-medium text-secondary px-2 py-0.5 rounded bg-surface-card border border-subtle font-mono tabular-nums">
+                    <span className="text-xs font-medium text-secondary px-2 py-0.5 rounded bg-surface-sunken border border-subtle font-mono tabular-nums">
                       {scoreData.pointsNeeded} pts needed
                     </span>
                   )}
@@ -805,21 +812,21 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
 
               {/* Card 2: Countdown Timer */}
-              <div data-tour="exam-room-clock" className="p-3.5 rounded-lg bg-surface-sunken border border-subtle flex items-center justify-between shadow-xs machined-edge">
-                <div>
+              <div data-tour="exam-room-clock" className="p-4 sm:p-5 rounded-lg bg-surface-card border border-strong flex items-center justify-between gap-4 shadow-md machined-edge sm:col-span-2 lg:col-span-1 order-first">
+                <div className="min-w-0">
                   <span className="text-xs text-muted font-medium flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     <span>Countdown clock</span>
                   </span>
                   <div
                     data-testid="exam-countdown-timer"
-                    className="text-2xl sm:text-3xl font-semibold font-mono text-primary mt-0.5 tabular-nums flex-shrink-0"
+                    className="text-4xl min-[420px]:text-5xl sm:text-6xl lg:text-5xl xl:text-6xl font-semibold font-mono text-primary mt-1 tabular-nums leading-none flex-shrink-0"
                   >
                     {formatSecondsToHms(currentRemaining)}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex flex-shrink-0 items-center gap-1">
                   <button
                     type="button"
                     data-testid="exam-timer-toggle-btn"
@@ -853,7 +860,7 @@ export const ExamSimulatorPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 lg:col-span-1">
               {/* Card 3: Pacing Velocity */}
-              <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge">
+              <div className="p-3.5 rounded-lg bg-surface-card border border-strong shadow-xs machined-edge">
                 <span className="text-xs text-muted font-medium flex items-center gap-1">
                   <Flame className="w-3 h-3" />
                   <span>Velocity pacing</span>
@@ -872,7 +879,7 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
 
               {/* Card 4: Unrooted Boxes & Time Budget */}
-              <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge">
+              <div className="p-3.5 rounded-lg bg-surface-card border border-strong shadow-xs machined-edge">
                 <span className="text-xs text-muted font-medium flex items-center gap-1">
                   <Layers className="w-3 h-3" />
                   <span>Target budget</span>
@@ -890,7 +897,7 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
 
               {/* Burn-down / velocity chart */}
-              <div className="p-3.5 rounded-lg bg-surface-sunken border border-subtle shadow-xs machined-edge lg:col-span-2">
+              <div className="p-3.5 rounded-lg bg-surface-card border border-strong shadow-xs machined-edge lg:col-span-2">
                 <span className="text-xs text-muted font-medium flex items-center gap-1 mb-2">
                   <Target className="w-3 h-3" />
                   <span>Burn-down to pass</span>
@@ -907,7 +914,7 @@ export const ExamSimulatorPage: React.FC = () => {
             </div>
 
             {/* Pacing Recommendation Strip */}
-            <div className="p-2.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-secondary flex items-center gap-2">
+            <div className="p-2.5 rounded-lg bg-surface-card border border-strong text-xs text-secondary flex items-center gap-2">
               <Zap className="w-4 h-4 text-muted flex-shrink-0" />
               <span className="text-[11px] leading-snug">
                 <strong className="font-medium">Guidance:</strong> {pacing.recommendation}
@@ -930,16 +937,70 @@ export const ExamSimulatorPage: React.FC = () => {
             )}
           </div>
 
-          {/* Target Inventory Sections */}
+          {/* Cockpit Workspace Switcher: Targets vs Isolated Exam Pivot Graph */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div
+              role="tablist"
+              aria-label="Exam workspace view"
+              className="inline-flex items-center gap-1 rounded-xl border border-subtle bg-surface-card p-1"
+            >
+              <button
+                type="button"
+                role="tab"
+                data-testid="exam-tab-targets"
+                aria-selected={workspaceTab === 'targets'}
+                onClick={() => setWorkspaceTab('targets')}
+                className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-10 ${
+                  workspaceTab === 'targets'
+                    ? 'bg-accent text-on-accent shadow-xs'
+                    : 'text-secondary hover:bg-surface-hover hover:text-primary'
+                }`}
+              >
+                <Target className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Targets ({boxes.length})</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                data-testid="exam-tab-pivot-graph"
+                aria-selected={workspaceTab === 'graph'}
+                onClick={() => setWorkspaceTab('graph')}
+                className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-10 ${
+                  workspaceTab === 'graph'
+                    ? 'bg-accent text-on-accent shadow-xs'
+                    : 'text-secondary hover:bg-surface-hover hover:text-primary'
+                }`}
+              >
+                <Network className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Pivot Graph ({boxes.length + examCustomNodeCount})</span>
+                {examGraphEdgeCount > 0 && (
+                  <span
+                    className={`rounded-full px-1.5 text-[10px] font-mono tabular-nums ${
+                      workspaceTab === 'graph'
+                        ? 'bg-surface-base/20 text-on-accent'
+                        : 'bg-surface-sunken text-accent'
+                    }`}
+                  >
+                    {examGraphEdgeCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {workspaceTab === 'graph' ? (
+            <ExamPivotGraphPanel />
+          ) : (
+          /* Target Inventory Sections */
           <div data-tour="exam-room-targets" className="space-y-4">
             {/* Section A: Active Directory Set (for OSCP / AD tracks) */}
             {adBoxes.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
+                    <h2 className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
                       Active Directory set (40 pts)
-                    </span>
+                    </h2>
                     <span className="text-xs text-muted" data-testid="exam-ad-points">
                       {scoreData.adSetCompromised
                         ? '✓ Fully compromised'
@@ -960,9 +1021,9 @@ export const ExamSimulatorPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
+                  <h2 className="px-2 py-0.5 rounded text-xs font-medium bg-surface-sunken text-secondary border border-subtle">
                     Standalone machines ({standaloneBoxes.length})
-                  </span>
+                  </h2>
                   <span className="text-xs text-muted">
                     Independent user and root flags
                   </span>
@@ -974,14 +1035,15 @@ export const ExamSimulatorPage: React.FC = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Exam Scratchpad & Evidence Vault */}
           <div data-tour="exam-room-notes" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-1">
-              <span className="text-sm font-semibold text-primary flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-primary flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-muted" />
                 <span>Evidence and credential scratchpad</span>
-              </span>
+              </h2>
               <span className="text-[11px] text-muted">
                 Included in the exported report
               </span>
@@ -993,7 +1055,7 @@ export const ExamSimulatorPage: React.FC = () => {
               value={scratchNotes}
               onChange={(e) => setScratchNotes(e.target.value)}
               rows={6}
-              className="w-full p-3.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent leading-relaxed resize-none"
+              className="w-full p-3.5 rounded-lg bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 leading-relaxed resize-none"
               placeholder="Record compromised credentials, active SOCKS5 tunnels, pivot routing tables, and Nmap discovery logs here..."
             />
           </div>
@@ -1002,10 +1064,10 @@ export const ExamSimulatorPage: React.FC = () => {
           {milestones.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-primary flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-primary flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-muted" />
                   <span>Milestones ({milestones.length})</span>
-                </span>
+                </h2>
               </div>
               <div className="max-h-48 overflow-y-auto space-y-1.5">
                 {milestones.slice().reverse().map((m, idx) => (
@@ -1221,7 +1283,7 @@ export const ExamSimulatorPage: React.FC = () => {
         {/* Expandable Evidence Dropzone Component */}
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -1264,7 +1326,7 @@ export const ExamSimulatorPage: React.FC = () => {
                 box={box}
                 flagType={effectiveProofTab}
               />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

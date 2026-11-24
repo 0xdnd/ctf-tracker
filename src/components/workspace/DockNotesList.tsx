@@ -402,7 +402,7 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
   return (
     <div className={`flex flex-col min-h-0 bg-surface-card ${className}`} data-dock-notes-list>
       <div className="p-2 border-b border-subtle flex-shrink-0">
-        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-surface-sunken border border-subtle">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-surface-sunken border border-subtle focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40">
           <Search className="w-3.5 h-3.5 text-muted flex-shrink-0" aria-hidden="true" />
           <input
             type="text"
@@ -428,7 +428,7 @@ export const DockNotesList: React.FC<DockNotesListProps> = ({ onOpened, classNam
                 onClick={onClearTag}
                 aria-label="Clear tag filter"
                 data-testid="dock-list-clear-tag"
-                className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>

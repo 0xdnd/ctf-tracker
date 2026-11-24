@@ -204,4 +204,30 @@ describe('EvidenceVaultPage component', () => {
     expect(text).toContain(`'${payload}`);
     expect(text).not.toMatch(/(^|,)=cmd/m);
   });
+
+  it('uses h2 for the empty state heading and offers Load demo data', () => {
+    const restoreDanielSolves = vi.fn();
+    useCtfStore.setState({ machines: [], credentials: [], lootItems: [], restoreDanielSolves });
+    render(
+      <BrowserRouter>
+        <EvidenceVaultPage />
+      </BrowserRouter>
+    );
+    expect(screen.getByRole('heading', { level: 2, name: /Your vault is empty/i })).toBeInTheDocument();
+    const demoBtn = screen.getByRole('button', { name: /Load demo data/i });
+    expect(demoBtn).toBeInTheDocument();
+    fireEvent.click(demoBtn);
+    expect(restoreDanielSolves).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps table row action buttons visible at rest without opacity-0 hiding', () => {
+    render(
+      <BrowserRouter>
+        <EvidenceVaultPage />
+      </BrowserRouter>
+    );
+    const copyBtns = screen.getAllByRole('button', { name: 'Copy secret to clipboard' });
+    expect(copyBtns.length).toBeGreaterThan(0);
+    expect(copyBtns[0].parentElement?.className).not.toContain('opacity-0');
+  });
 });

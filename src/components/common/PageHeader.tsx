@@ -53,7 +53,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold leading-tight tracking-[-0.015em] text-primary">{title}</h1>
+            <h1 className="text-xl font-semibold leading-tight tracking-[-0.015em] text-primary [overflow-wrap:anywhere] max-sm:line-clamp-2">{title}</h1>
             {description && <p className="mt-0.5 text-sm text-secondary">{description}</p>}
           </div>
         </div>
@@ -78,5 +78,3 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     </div>
   );
 };
-
-export default PageHeader;

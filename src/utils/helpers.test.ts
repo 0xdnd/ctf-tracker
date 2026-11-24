@@ -15,9 +15,41 @@ vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 describe('triggerRootCelebration', () => {
   it('draws above the tour overlay and stays still for reduced motion', async () => {
-    triggerRootCelebration();
-    await vi.waitFor(() => expect(confetti).toHaveBeenCalled());
-    expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ zIndex: 9998, disableForReducedMotion: true }));
+    const ctxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as unknown as CanvasRenderingContext2D);
+    try {
+      triggerRootCelebration();
+      await vi.waitFor(() => expect(confetti).toHaveBeenCalled());
+      expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ zIndex: 9998, disableForReducedMotion: true }));
+    } finally {
+      ctxSpy.mockRestore();
+    }
+  });
+
+  it('uses confetti.create with useWorker: false when available so strict CSP never blocks a blob worker', async () => {
+    const ctxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as unknown as CanvasRenderingContext2D);
+    const customFire = vi.fn();
+    const createSpy = vi.fn(() => customFire);
+    (confetti as unknown as { create?: typeof createSpy }).create = createSpy;
+    try {
+      triggerRootCelebration();
+      await vi.waitFor(() => expect(customFire).toHaveBeenCalled());
+      expect(createSpy).toHaveBeenCalledWith(undefined, { useWorker: false, resize: true });
+      expect(customFire).toHaveBeenCalledWith(expect.objectContaining({ zIndex: 9998, disableForReducedMotion: true }));
+    } finally {
+      delete (confetti as unknown as { create?: typeof createSpy }).create;
+      ctxSpy.mockRestore();
+    }
+  });
+
+  it('no-ops cleanly when 2D canvas context is unavailable (e.g. jsdom)', () => {
+    const ctxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    const prevCalls = vi.mocked(confetti).mock.calls.length;
+    try {
+      expect(() => triggerRootCelebration()).not.toThrow();
+      expect(vi.mocked(confetti).mock.calls.length).toBe(prevCalls);
+    } finally {
+      ctxSpy.mockRestore();
+    }
   });
 });
 

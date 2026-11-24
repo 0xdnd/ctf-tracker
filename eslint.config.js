@@ -12,6 +12,7 @@ export default tseslint.config(
       'node_modules/**',
       'promo-*/**',
       'design-preview/**',
+      'ctftracker.com-audit/**',
       'coverage/**',
       'scripts/*.py',
       // Local tool directories that are not part of the repo
@@ -62,5 +63,16 @@ export default tseslint.config(
     files: ['**/*.cjs'],
     languageOptions: { globals: { ...globals.node } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    // Store slices import helpers back from ctfStore.ts; loading a slice first would hit a TDZ error.
+    // Only the store assembly may import them.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/store/ctfStore.ts', 'src/store/ctfStoreTypes.ts', 'src/store/slices/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{ group: ['**/store/slices/*', './slices/*'], message: 'Import the store from src/store/useCtfStore, not a slice.' }],
+      }],
+    },
   },
 );

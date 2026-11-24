@@ -22,7 +22,7 @@ const addTarget = async (type: 'Machine' | 'Pro Lab' | 'Exam', name: string, tag
   await user.click(screen.getByRole('radio', { name: type }));
   await user.type(screen.getByLabelText('Machine or Room Name'), name);
   if (tags) await user.type(screen.getByLabelText('Attack Vectors and Tags'), tags);
-  await user.click(screen.getByRole('button', { name: /Deploy Machine/ }));
+  await user.click(screen.getByRole('button', { name: /Add target/ }));
   return useCtfStore.getState().machines[0];
 };
 
@@ -47,7 +47,7 @@ describe('NewMachineModal target type', () => {
     expect(screen.getByText('Pro Lab name *')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Machine or Room Name'), 'My lab run');
-    await user.click(screen.getByRole('button', { name: /Deploy Machine/ }));
+    await user.click(screen.getByRole('button', { name: /Add target/ }));
     const saved = useCtfStore.getState().machines[0];
     expect(saved).toMatchObject({ name: 'My lab run', platform: 'Custom', isCustom: true });
     expect(saved.id.startsWith('custom-')).toBe(true);
@@ -66,7 +66,7 @@ describe('NewMachineModal target type', () => {
     expect(screen.getByLabelText('Machine or Room Name')).toHaveValue('Dante');
     expect(screen.getByLabelText('Lab Room / Writeup URL')).toHaveValue('https://app.hackthebox.com/pro-labs/Dante');
 
-    await user.click(screen.getByRole('button', { name: /Deploy Machine/ }));
+    await user.click(screen.getByRole('button', { name: /Add target/ }));
     const saved = useCtfStore.getState().machines[0];
     expect(saved.name).toBe('Dante');
     expect(saved.difficulty).toBe('Medium');

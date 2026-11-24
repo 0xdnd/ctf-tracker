@@ -1,7 +1,8 @@
+import { ScrollFade } from '../common/ScrollFade';
 import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { computeWriteupReadiness } from '../../utils/writeupReadiness';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { confirmAction } from '../../store/useConfirmStore';
 import { 
@@ -37,6 +38,7 @@ import {
   Heading3
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
+import { useMediaQuery, PHONE_QUERY } from '../../hooks/useMediaQuery';
 import { useToastStore } from '../../store/useToastStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Machine } from '../../types';
@@ -69,7 +71,7 @@ type ImageUrlMap = ReadonlyMap<string, string | null>;
  * Resolves `zerobox-img://` ids in the Markdown to object URLs. Every URL created for an id set is
  * revoked when the set changes or the component unmounts.
  */
-export const useResolvedImageUrls = (content: string, profileId: string): ImageUrlMap => {
+const useResolvedImageUrls = (content: string, profileId: string): ImageUrlMap => {
   const idsKey = useMemo(() => {
     if (!content.includes(IMAGE_URL_SCHEME)) return '';
     return Array.from(new Set(Array.from(content.matchAll(IMAGE_ID_REGEX), (m) => m[1]))).sort().join(',');
@@ -221,6 +223,12 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
       .slice(0, 6);
   }, [deferredContent]);
 
+  const { frontmatter, bodyContent } = useMemo(() => {
+    const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(deferredContent);
+    if (!match) return { frontmatter: '', bodyContent: deferredContent };
+    return { frontmatter: match[1], bodyContent: deferredContent.slice(match[0].length) };
+  }, [deferredContent]);
+
   return (
     <div
       className={`flex flex-col rounded-xl border border-subtle bg-surface-card machined-edge-subtle overflow-hidden transition-opacity duration-150 ${isStale ? 'opacity-85' : 'opacity-100'}`}
@@ -232,7 +240,7 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
         </span>
         <div className="flex items-center gap-1.5 flex-wrap">
           {headings.length > 0 && (
-            <div className="hidden min-w-0 max-w-[26rem] items-center gap-1 overflow-x-auto no-scrollbar pr-6 [mask-image:linear-gradient(to_right,black_85%,transparent)] xl:flex">
+            <ScrollFade tabIndex={0} role="region" aria-label="Preview outline" className="hidden min-w-0 max-w-[26rem] items-center gap-1 xl:flex">
               {headings.map((h, i) => (
                 <span
                   key={i}
@@ -242,7 +250,7 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
                   {h}
                 </span>
               ))}
-            </div>
+            </ScrollFade>
           )}
           {isStale && (
             <span className="text-[11px] px-1.5 py-0.5 rounded bg-surface-card text-muted border border-subtle">
@@ -254,8 +262,16 @@ const DeferredMarkdownPreviewPane: React.FC<DeferredMarkdownPreviewPaneProps> = 
 
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable */}
       <div tabIndex={0} role="region" aria-label="Rendered markdown preview" className="flex-1 p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-surface-card">
+        {frontmatter && (
+          <details className="mb-4 rounded-lg border border-subtle bg-surface-sunken text-xs">
+            <summary className="flex min-h-8 cursor-pointer select-none items-center gap-1.5 px-3 font-medium text-secondary hover:text-primary">
+              Frontmatter ({frontmatter.split('\n').filter((l) => l.trim()).length} fields)
+            </summary>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all border-t border-subtle px-3 py-2 font-mono text-[11px] text-secondary">{frontmatter}</pre>
+          </details>
+        )}
         <ObsidianMarkdownBody
-          content={deferredContent}
+          content={bodyContent}
           imageUrls={imageUrls}
           globalVars={globalVars}
           soundEnabled={soundEnabled}
@@ -342,6 +358,7 @@ export const WriteupStudio: React.FC = () => {
 
   const retiredMachines = useMemo(() => machines.filter((m) => !m.isActive), [machines]);
   const selectedMachine = pickWriteupMachine(machines, id ?? null, activeTargetId);
+  const isPhone = useMediaQuery(PHONE_QUERY);
 
   const [copied, setCopied] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -349,7 +366,11 @@ export const WriteupStudio: React.FC = () => {
   const [cptsDrawerOpen, setCptsDrawerOpen] = useState(false);
   const [cptsSearch, setCptsSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [studioLayout, setStudioLayout] = useState<'split' | 'editor' | 'preview'>('split');
+  const [studioLayout, setStudioLayout] = useState<'split' | 'editor' | 'preview'>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
+      ? 'editor'
+      : 'split'
+  );
   const [nmapPopoverOpen, setNmapPopoverOpen] = useState(false);
   const [rawNmapText, setRawNmapText] = useState('');
   const [snippetPopoverOpen, setSnippetPopoverOpen] = useState(false);
@@ -842,7 +863,7 @@ cat /root/root.txt
   const iconBtn =
     'flex items-center justify-center w-8 h-8 max-sm:w-11 max-sm:h-11 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary transition-[transform,background-color,border-color,color] cursor-pointer active:scale-[0.97]';
   const miniToolBtn =
-    'inline-flex min-h-6 min-w-6 items-center justify-center gap-1 px-1.5 py-1 rounded hover:bg-surface-hover text-secondary hover:text-primary text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.97]';
+    'inline-flex min-h-6 min-w-6 items-center justify-center gap-1 px-1 py-1 rounded hover:bg-surface-hover text-secondary hover:text-primary text-[11px] font-medium transition-colors cursor-pointer active:scale-[0.97]';
 
   // The studio fell back to a sample machine: nothing picked in the route, not the active target, nothing written yet.
   const isSampleTarget = Boolean(
@@ -879,7 +900,7 @@ cat /root/root.txt
     <div className="space-y-3 w-full font-sans">
       <PageHeader
         title="Writeup Studio"
-        description="Write in Markdown with a live preview. Exports to Obsidian and GitBook."
+        description={isPhone ? undefined : 'Write in Markdown with a live preview. Exports to Obsidian and GitBook.'}
         icon={<FileText />}
         primaryAction={
           selectedMachine?.isActive ? undefined : (
@@ -929,7 +950,7 @@ cat /root/root.txt
                     type="button"
                     onClick={() => handleInsertLabSummary()}
                     disabled={!labSummary}
-                    aria-label="Insert lab summary"
+                    aria-label="Insert summary (lab summary)"
                     className={`${iconBtn} lg:w-auto lg:gap-1.5 lg:px-2.5 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <ListChecks className="w-3.5 h-3.5" aria-hidden="true" />
@@ -943,9 +964,9 @@ cat /root/root.txt
         overflow={selectedMachine?.isActive ? [] : overflowItems}
       >
         {/* Machine selector + Target Intelligence & Writeup Readiness Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
-          <div className="flex flex-wrap items-center gap-2">
-            <div ref={targetSelectorRef} data-tour="writeup-target" className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 max-sm:py-2 rounded-lg border border-subtle max-sm:w-full">
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <div ref={targetSelectorRef} data-tour="writeup-target" className="flex items-center gap-1.5 bg-surface-sunken px-2.5 py-1 max-sm:py-1.5 rounded-lg border border-subtle max-sm:w-full">
               <span className="text-xs font-medium text-muted flex-shrink-0">Target</span>
               <CyberSelect
                 value={selectedMachine?.id || ''}
@@ -970,16 +991,16 @@ cat /root/root.txt
 
             {selectedMachine && !selectedMachine.isActive && (
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken font-mono text-secondary">
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md border border-subtle bg-surface-sunken font-mono text-secondary">
                   {selectedMachine.ip && !isPlaceholderIp(selectedMachine.ip) ? selectedMachine.ip : 'IP unset'}
                 </span>
-                <span className="px-2 py-1 rounded-md border border-subtle bg-surface-sunken text-secondary">
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md border border-subtle bg-surface-sunken text-secondary">
                   {selectedMachine.os} · {selectedMachine.difficulty}
                 </span>
                 <button
                   type="button"
                   onClick={() => toggleUserFlag(selectedMachine.id)}
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
                     userPwned
                       ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
                       : 'border-subtle bg-surface-sunken text-muted hover:text-primary'
@@ -993,7 +1014,7 @@ cat /root/root.txt
                 <button
                   type="button"
                   onClick={() => toggleRootFlag(selectedMachine.id)}
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-md border font-mono text-[10px] font-semibold cursor-pointer transition-colors ${
                     rootPwned
                       ? 'border-callout-danger-border bg-callout-danger-bg text-callout-danger-fg'
                       : 'border-subtle bg-surface-sunken text-muted hover:text-primary'
@@ -1010,20 +1031,21 @@ cat /root/root.txt
 
           {/* Writeup Readiness Meter & Layout Mode Switcher */}
           {selectedMachine && !selectedMachine.isActive && (
-            <div data-testid="writeup-readiness-bar" className="flex flex-wrap items-center gap-2 ml-auto">
+            <div data-testid="writeup-readiness-bar" className="flex flex-wrap items-center gap-1.5 ml-auto">
               <div
                 data-testid="writeup-readiness"
-                className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-lg border border-subtle bg-surface-sunken text-[11px]"
+                className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-subtle bg-surface-sunken text-[11px]"
               >
-                <span className="font-semibold text-secondary">
-                  <span className="tabular-nums">{readiness.checks.filter((c) => c.ok).length}</span> of{' '}
-                  <span className="tabular-nums">{readiness.checks.length}</span> sections written
+                <span className="font-semibold text-secondary whitespace-nowrap">
+                  <span className="tabular-nums">{readiness.checks.filter((c) => c.ok).length}</span>/
+                  <span className="tabular-nums">{readiness.checks.length}</span>
+                  <span className="sr-only"> sections written</span>
                 </span>
-                <ul className="flex items-center gap-2 m-0 p-0 list-none">
+                <ul className="hidden xl:flex items-center gap-1.5 m-0 p-0 list-none">
                   {readiness.checks.map((c) => (
                     <li
                       key={c.id}
-                      className={`inline-flex items-center gap-1 text-[10px] font-medium ${
+                      className={`inline-flex items-center gap-0.5 text-[10px] font-medium whitespace-nowrap ${
                         c.ok ? 'text-callout-success-fg' : 'text-muted'
                       }`}
                     >
@@ -1043,8 +1065,8 @@ cat /root/root.txt
                 <button
                   type="button"
                   onClick={() => setStudioLayout('split')}
-                  className={`px-2 py-0.5 max-md:py-1.5 rounded-md font-medium cursor-pointer transition-colors ${
-                    studioLayout === 'split' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  className={`hidden md:inline-flex items-center min-h-6 px-2 py-0.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'split' ? 'bg-accent-muted text-primary' : 'text-muted hover:text-primary'
                   }`}
                 >
                   Split
@@ -1052,8 +1074,8 @@ cat /root/root.txt
                 <button
                   type="button"
                   onClick={() => setStudioLayout('editor')}
-                  className={`px-2 py-0.5 max-md:py-1.5 rounded-md font-medium cursor-pointer transition-colors ${
-                    studioLayout === 'editor' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  className={`inline-flex items-center min-h-6 px-2 py-0.5 max-md:py-1.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'editor' ? 'bg-accent-muted text-primary' : 'text-muted hover:text-primary'
                   }`}
                 >
                   Editor
@@ -1061,8 +1083,8 @@ cat /root/root.txt
                 <button
                   type="button"
                   onClick={() => setStudioLayout('preview')}
-                  className={`px-2 py-0.5 max-md:py-1.5 rounded-md font-medium cursor-pointer transition-colors ${
-                    studioLayout === 'preview' ? 'bg-accent-muted text-accent' : 'text-muted hover:text-primary'
+                  className={`inline-flex items-center min-h-6 px-2 py-0.5 max-md:py-1.5 rounded-md font-medium cursor-pointer transition-colors ${
+                    studioLayout === 'preview' ? 'bg-accent-muted text-primary' : 'text-muted hover:text-primary'
                   }`}
                 >
                   Preview
@@ -1092,7 +1114,7 @@ cat /root/root.txt
       {/* Field Manual Quick Reference Drawer */}
       <AnimatePresence initial={false}>
       {cptsDrawerOpen && hasUserNotes && (
-        <motion.div
+        <m.div
           key="cpts-drawer"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0, transition: TACTICAL_SPRING }}
@@ -1182,7 +1204,7 @@ cat /root/root.txt
               ))
             )}
           </div>
-        </motion.div>
+        </m.div>
       )}
       </AnimatePresence>
 
@@ -1213,36 +1235,37 @@ cat /root/root.txt
                   </span>
                 </div>
 
-                {/* Tactical Writeup Authoring Toolbar */}
-                <div
+                {/* Tactical Writeup Authoring Toolbar (single compact row on desktop split & scrolling row on phones) */}
+                <div className="relative">
+                <ScrollFade
                   data-testid="writeup-editor-toolbar"
-                  className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 bg-surface-sunken/70 border-b border-subtle text-[11px]"
+                  className="flex flex-nowrap items-center gap-0.5 px-2 py-1 bg-surface-sunken/70 border-b border-subtle text-[11px] md:flex-wrap md:overflow-visible [&>*]:flex-shrink-0 [&>*]:whitespace-nowrap"
                 >
-                  <button type="button" onClick={() => insertAtCursor('\n## Section Heading\n')} className={miniToolBtn} title="Insert H2 Heading">
-                    <Heading2 className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => insertAtCursor('\n## Section Heading\n')} className={miniToolBtn} title="Insert H2 Heading" aria-label="Insert H2 Heading">
+                    <Heading2 className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('\n### Subheading\n')} className={miniToolBtn} title="Insert H3 Heading">
-                    <Heading3 className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => insertAtCursor('\n### Subheading\n')} className={miniToolBtn} title="Insert H3 Heading" aria-label="Insert H3 Heading">
+                    <Heading3 className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('**bold**')} className={miniToolBtn} title="Bold">
-                    <Bold className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => insertAtCursor('**bold**')} className={miniToolBtn} title="Bold" aria-label="Bold">
+                    <Bold className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('\n```bash\n# Command\n```\n')} className={miniToolBtn} title="Insert Bash Code Block">
-                    <Terminal className="w-3.5 h-3.5 text-accent" />
-                    <span>Bash</span>
+                  <button type="button" onClick={() => insertAtCursor('\n```bash\n# Command\n```\n')} className={miniToolBtn} title="Insert Bash Code Block" aria-label="Insert Bash Code Block">
+                    <Terminal className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+                    <span className="hidden 2xl:inline">Bash</span>
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('\n| Port | Service | Version | Notes |\n| :--- | :--- | :--- | :--- |\n| 80/tcp | http | Apache | Enumerate |\n')} className={miniToolBtn} title="Insert Markdown Table">
-                    <Table className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => insertAtCursor('\n| Port | Service | Version | Notes |\n| :--- | :--- | :--- | :--- |\n| 80/tcp | http | Apache | Enumerate |\n')} className={miniToolBtn} title="Insert Markdown Table" aria-label="Insert Markdown Table">
+                    <Table className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('\n- [ ] Task item\n')} className={miniToolBtn} title="Insert Checklist">
-                    <CheckSquare className="w-3.5 h-3.5" />
+                  <button type="button" onClick={() => insertAtCursor('\n- [ ] Task item\n')} className={miniToolBtn} title="Insert Checklist" aria-label="Insert Checklist">
+                    <CheckSquare className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
-                  <button type="button" onClick={() => insertAtCursor('\n> [!NOTE] Tactical Observation\n> Detail critical finding here\n')} className={miniToolBtn} title="Insert Obsidian Callout">
-                    <AlertTriangle className="w-3.5 h-3.5 text-callout-warn-fg" />
-                    <span>Callout</span>
+                  <button type="button" onClick={() => insertAtCursor('\n> [!NOTE] Tactical Observation\n> Detail critical finding here\n')} className={miniToolBtn} title="Insert Obsidian Callout" aria-label="Insert Obsidian Callout">
+                    <AlertTriangle className="w-3.5 h-3.5 text-callout-warn-fg" aria-hidden="true" />
+                    <span className="hidden 2xl:inline">Callout</span>
                   </button>
 
-                  <div className="w-px h-3.5 bg-subtle mx-0.5" />
+                  <div className="w-px h-3.5 bg-subtle mx-1" />
 
                   {/* Upload Screenshot Button */}
                   <input
@@ -1257,11 +1280,11 @@ cat /root/root.txt
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     data-testid="upload-screenshot-btn"
-                    className={miniToolBtn}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 min-h-6 rounded border border-subtle bg-surface-card text-secondary hover:text-primary hover:bg-surface-hover text-[10px] font-semibold cursor-pointer"
                     title="Upload & compress screenshot (or Ctrl+V paste in editor)"
                   >
-                    <ImageIcon className="w-3.5 h-3.5 text-accent" />
-                    <span>Screenshot</span>
+                    <ImageIcon className="w-3 h-3 text-accent" aria-hidden="true" />
+                    <span>Image</span>
                   </button>
 
                   {/* Pull Field Log from Notes Workspace */}
@@ -1269,11 +1292,11 @@ cat /root/root.txt
                     type="button"
                     onClick={handlePullFieldLog}
                     data-testid="pull-field-log-btn"
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/40 bg-accent-muted text-accent text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 min-h-6 rounded border border-subtle bg-surface-card text-secondary hover:text-primary hover:bg-surface-hover text-[10px] font-semibold cursor-pointer"
                     title="Import Field Log note & Quick Notes for this target"
                   >
-                    <BookOpen className="w-3 h-3" />
-                    <span>Pull Field Log</span>
+                    <BookOpen className="w-3 h-3 text-accent" aria-hidden="true" />
+                    <span>Field Log</span>
                   </button>
 
                   {/* Insert Vault Loot Table */}
@@ -1281,24 +1304,24 @@ cat /root/root.txt
                     type="button"
                     onClick={handleInsertVaultLoot}
                     data-testid="insert-vault-loot-btn"
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-callout-warn-border bg-callout-warn-bg text-callout-warn-fg text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 min-h-6 rounded border border-subtle bg-surface-card text-secondary hover:text-primary hover:bg-surface-hover text-[10px] font-semibold cursor-pointer"
                     title="Insert captured credentials from Vault as a Markdown table"
                   >
-                    <KeyRound className="w-3 h-3" />
-                    <span>Vault Loot</span>
+                    <KeyRound className="w-3 h-3 text-callout-warn-fg" aria-hidden="true" />
+                    <span>Loot</span>
                   </button>
 
                   {/* Parse Nmap Popover */}
-                  <div className="relative">
+                  <div className="md:relative">
                     <button
                       type="button"
                       onClick={() => setNmapPopoverOpen((p) => !p)}
                       data-testid="writeup-nmap-btn"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-callout-success-border bg-callout-success-bg text-callout-success-fg text-[10px] font-semibold hover:bg-surface-hover cursor-pointer"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 min-h-6 rounded border border-subtle bg-surface-card text-secondary hover:text-primary hover:bg-surface-hover text-[10px] font-semibold cursor-pointer"
                       title="Paste raw Nmap output and convert to Markdown table"
                     >
-                      <Radar className="w-3 h-3" />
-                      <span>Parse Nmap</span>
+                      <Radar className="w-3 h-3 text-callout-success-fg" aria-hidden="true" />
+                      <span>Nmap</span>
                     </button>
                     {nmapPopoverOpen && (
                       <div className="absolute left-0 top-full mt-1 w-72 p-2.5 rounded-lg bg-surface-card border border-strong shadow-2xl z-50 space-y-2">
@@ -1312,6 +1335,7 @@ cat /root/root.txt
                           value={rawNmapText}
                           onChange={(e) => setRawNmapText(e.target.value)}
                           placeholder={"22/tcp open ssh OpenSSH 8.9\n80/tcp open http Apache 2.4"}
+                          aria-label="Raw Nmap output"
                           rows={4}
                           className="w-full p-2 rounded border border-subtle bg-surface-sunken font-mono text-[10px] text-primary"
                         />
@@ -1342,15 +1366,15 @@ cat /root/root.txt
                   </div>
 
                   {/* Quick Cheatsheet Snippets Popover */}
-                  <div className="relative">
+                  <div className="md:relative">
                     <button
                       type="button"
                       onClick={() => setSnippetPopoverOpen((p) => !p)}
                       data-testid="writeup-snippets-btn"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-subtle bg-surface-card text-secondary hover:text-primary text-[10px] font-semibold cursor-pointer"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 min-h-6 rounded border border-subtle bg-surface-card text-secondary hover:text-primary hover:bg-surface-hover text-[10px] font-semibold cursor-pointer"
                       title={`Drop command from ${cheatsheets.length} Cheatsheets`}
                     >
-                      <Sparkles className="w-3 h-3 text-accent" />
+                      <Sparkles className="w-3 h-3 text-accent" aria-hidden="true" />
                       <span>Snippets</span>
                     </button>
                     {snippetPopoverOpen && (
@@ -1387,6 +1411,7 @@ cat /root/root.txt
                       </div>
                     )}
                   </div>
+                </ScrollFade>
                 </div>
 
                 <textarea
@@ -1399,7 +1424,7 @@ cat /root/root.txt
                   onPaste={handlePaste}
                   onBlur={flushDebouncedSave}
                   placeholder="Write your penetration testing report or paste notes here..."
-                  className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none resize-none leading-relaxed overflow-y-auto"
+                  className="flex-1 w-full min-h-[320px] p-4 bg-transparent text-primary font-mono text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50 resize-none leading-relaxed overflow-y-auto"
                   spellCheck={false}
                 />
               </div>

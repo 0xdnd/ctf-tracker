@@ -24,6 +24,11 @@ pub fn run() {
     builder
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
+                // Only the main window runs the flush-then-exit path; any other window closes normally
+                if window.label() != "main" {
+                    return;
+                }
+
                 // Prevent multiple competing tasks if user spams Alt+F4 or window close button
                 if IS_CLOSING.swap(true, Ordering::SeqCst) {
                     api.prevent_close();

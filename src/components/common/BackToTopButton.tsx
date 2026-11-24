@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
 import { useScrollState, useScrollActions } from '../../context/ScrollContext';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -28,7 +28,7 @@ export const BackToTopButton: React.FC = React.memo(() => {
   return (
     <AnimatePresence>
       {isScrolled && (
-        <motion.button
+        <m.button
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 12, transition: { duration: 0.12 } }}
@@ -43,11 +43,11 @@ export const BackToTopButton: React.FC = React.memo(() => {
                       </div>
           <div className="flex flex-col text-left">
             <span className="font-medium text-[11px] leading-tight">Top</span>
-            <span className="text-[10px] text-muted font-mono tabular-nums font-normal leading-tight">
+            <span className="text-[11px] text-secondary font-mono tabular-nums font-normal leading-tight">
               {percent}%
             </span>
           </div>
-        </motion.button>
+        </m.button>
       )}
     </AnimatePresence>
   );

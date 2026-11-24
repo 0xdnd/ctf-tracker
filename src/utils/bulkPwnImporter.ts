@@ -1,7 +1,7 @@
 import { Machine, PipelineStatus, Platform } from '../types';
 import { LEGACY_CROSS_PLATFORM_NAME_SLUGS } from '../store/machineNormalization';
 
-export interface BulkPwnMatch {
+interface BulkPwnMatch {
   rawInput: string;
   machineId: string;
   machineName: string;

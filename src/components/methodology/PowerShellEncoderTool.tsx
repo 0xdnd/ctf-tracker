@@ -152,7 +152,7 @@ export const PowerShellEncoderTool: React.FC = () => {
         </div>
 
         <div className="relative group">
-          <pre className="p-3.5 rounded-xl bg-surface-sunken border border-subtle font-mono text-xs text-primary overflow-x-auto whitespace-pre-wrap break-all select-all">
+          <pre className="p-3.5 rounded-xl bg-surface-sunken border border-subtle font-mono text-xs text-primary overflow-x-auto whitespace-pre-wrap break-all select-text">
             {fullCommandLine || '# Enter a command above to see encoded output'}
           </pre>
           {fullCommandLine && (

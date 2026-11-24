@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { confirmAction } from '../../store/useConfirmStore';
 import { 
@@ -211,7 +211,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
     <AnimatePresence>
       {isOpen && edge && (
         <div className="fixed inset-0 z-drawer pointer-events-none font-sans">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -220,7 +220,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
             className="fixed inset-0 bg-surface-inverse/35 pointer-events-auto"
             onClick={handleClose}
           />
-          <motion.div 
+          <m.div 
             key={`edge-drawer-${edge.id}`}
             ref={trapRef}
             variants={DRAWER_RIGHT_VARIANTS}
@@ -271,7 +271,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 text-xs">
         {/* Topology Route Visualizer */}
         <div className="p-3 rounded-xl bg-surface-sunken border border-subtle flex items-center justify-between gap-2 machined-edge">
           {/* Source Box */}
@@ -391,7 +391,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   <span>{copiedKey === 'listener' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-xs font-mono text-callout-success-fg overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-xs font-mono text-callout-success-fg overflow-x-auto whitespace-pre-wrap select-text">
                 <span className="sr-only">{commands.listenerCommand}</span>
                 <span aria-hidden="true">
                   <SyntaxHighlightedCommand command={commands.listenerCommand} />
@@ -415,7 +415,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   <span>{copiedKey === 'client' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-xs font-mono text-callout-tip-fg overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-xs font-mono text-callout-tip-fg overflow-x-auto whitespace-pre-wrap select-text">
                 <span className="sr-only">{commands.clientCommand}</span>
                 <span aria-hidden="true">
                   {commands.clientCommand.startsWith('#') ? (
@@ -446,7 +446,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   <span>{copiedKey === 'proxy' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-xs font-mono text-callout-warn-fg overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-xs font-mono text-callout-warn-fg overflow-x-auto whitespace-pre-wrap select-text">
                 <span className="sr-only">{commands.proxychainsSnippet}</span>
                 <span aria-hidden="true">
                   <SyntaxHighlightedCommand command={commands.proxychainsSnippet} />
@@ -471,7 +471,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
                   <span>{copiedKey === 'verify' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="text-xs font-mono text-callout-info-fg overflow-x-auto whitespace-pre-wrap select-all">
+              <div className="text-xs font-mono text-callout-info-fg overflow-x-auto whitespace-pre-wrap select-text">
                 <SyntaxHighlightedCommand command={commands.verificationCommand} />
               </div>
             </div>
@@ -522,7 +522,7 @@ export const GraphEdgeInspectorDrawer: React.FC<GraphEdgeInspectorDrawerProps> =
           Done
         </button>
       </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>,

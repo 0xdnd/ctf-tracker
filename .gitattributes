@@ -1,0 +1,4 @@
+# Generated files are written with LF by the build scripts; keep them LF on every platform.
+public/llms-full.txt text eol=lf
+scripts/site/css/00-tokens.generated.css text eol=lf
+src/data/ownWriteups.ts text eol=lf

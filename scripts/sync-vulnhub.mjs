@@ -17,6 +17,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { recordCatalogChanges } from './lib/record-catalog-changes.mjs';
 
 const { packRows } = createRequire(import.meta.url)('./lib/vulnhub-pack.cjs');
 
@@ -299,6 +300,13 @@ async function main() {
   writeFileSync(RAW_FILE, lines(cacheList));
   writeFileSync(OUT_FILE, lines(packRows(rows)));
   console.log(`Wrote ${RAW_FILE}\nWrote ${OUT_FILE}`);
+  if (added.length > 0) {
+    const addedSet = new Set(added);
+    const addedItems = rows
+      .filter((r) => addedSet.has(r.name))
+      .map((r) => ({ name: r.name, platform: 'VulnHub', os: r.os, difficulty: r.difficulty }));
+    recordCatalogChanges({ date: new Date().toISOString().slice(0, 10), platform: 'VulnHub', added: addedItems });
+  }
   const r = spawnSync(process.execPath, [COUNTS_SCRIPT], { stdio: 'inherit' });
   if (r.status !== 0) throw new Error('update-catalog-counts.mjs failed');
 }

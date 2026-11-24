@@ -1,97 +1,44 @@
-import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
+import { isTargetFocusPath } from '../../utils/fullscreenRoutes';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
 import { useTargetIpField } from '../../hooks/useTargetIpField';
-import { useCtfStore, selectTacticalVarsUnset } from '../../store/useCtfStore';
+import { useCtfStore } from '../../store/useCtfStore';
 import { isPlaceholderIp } from '../../utils/ipInput';
 import { useShallow } from 'zustand/react/shallow';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Crosshair, 
-  Flag, 
-  Terminal, 
-  Radio, 
-  ChevronDown, 
-  Zap, 
-  X, 
-  Plus,
-  ChevronRight,
-  ShieldAlert,
-  Search,
-  Copy,
-  Check,
-  BookOpen,
-  User,
-  Wrench
-} from 'lucide-react';
-import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
+import { Crosshair, ChevronDown, X, Search, Copy, Check, User } from 'lucide-react';
 import { isTauriTarget } from '../../utils/runtimeTarget';
 import { CyberLogo } from '../common/CyberLogo';
 import { PlatformIcon } from '../common/PlatformBadge';
-import { EditableIpBadge } from '../common/EditableIpBadge';
-import { formatSeconds, playCyberSound, triggerRootCelebration, safeCopyToClipboard } from '../../utils/helpers';
+import { playCyberSound } from '../../utils/helpers';
 import { SettingsDropdown } from './SettingsDropdown';
+import { SessionDropdown } from './SessionDropdown';
+import type { SessionField } from './SessionPanel';
+import { useCopyFlash } from './useCopyFlash';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { UpdateReadyButton } from './UpdateReadyButton';
 import { ExamHeaderCapsule } from '../exam/ExamHeaderCapsule';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getAvatarSvgDataUri } from '../../data/avatarPresets';
-import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
-import { useOpenTabCount } from '../../hooks/useOpenTabCount';
 import { useTrackerCounts } from '../../hooks/useTrackerCounts';
 
-const UnifiedHeaderTimerDisplay: React.FC = React.memo(() => {
-  const activeTimerSeconds = useCtfStore((s) => s.activeTimerSeconds);
-  return (
-    <span className="text-[10px] font-semibold text-secondary font-mono tabular-nums">
-      {formatSeconds(activeTimerSeconds)}
-    </span>
-  );
-});
-
+/**
+ * The app top bar. Always on screen: brand, exam clock, the engaged target, a one-click RHOST copy chip, search,
+ * theme, profile and settings. Everything else (LHOST / LPORT, stopwatch, flag shortcuts, quick tools) lives in the
+ * lazily loaded Session popover behind one button. Labels shrink with `min-w-0 truncate`; there are no per-breakpoint
+ * show/hide ladders for the main controls.
+ */
 export const UnifiedHeader: React.FC = () => {
-  const location = useLocation();
   const engage = useEngageTarget();
+  const focusPage = isTargetFocusPath(useLocation().pathname);
 
-  const {
-    activeTargetId,
-    setActiveTarget,
-    machines,
-    updateMachine,
-    globalVars,
-    setGlobalVars,
-    isTimerRunning,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    soundEnabled,
-    setRevShellModalOpen,
-    setSnippetsDrawerOpen,
-    setNewMachineModalOpen,
-    setReconAutomationModalOpen,
-    setReportMachineId,
-    setCommandPaletteOpen,
-  } = useCtfStore(
+  const { activeTargetId, setActiveTarget, machines, soundEnabled, setCommandPaletteOpen } = useCtfStore(
     useShallow((s) => ({
       activeTargetId: s.activeTargetId,
       setActiveTarget: s.setActiveTarget,
       machines: s.machines,
-      updateMachine: s.updateMachine,
-      globalVars: s.globalVars,
-      setGlobalVars: s.setGlobalVars,
-      isTimerRunning: s.isTimerRunning,
-      startTimer: s.startTimer,
-      pauseTimer: s.pauseTimer,
-      resetTimer: s.resetTimer,
       soundEnabled: s.soundEnabled,
-      setRevShellModalOpen: s.setRevShellModalOpen,
-      setSnippetsDrawerOpen: s.setSnippetsDrawerOpen,
-      setNewMachineModalOpen: s.setNewMachineModalOpen,
-      setReconAutomationModalOpen: s.setReconAutomationModalOpen,
-      setReportMachineId: s.setReportMachineId,
       setCommandPaletteOpen: s.setCommandPaletteOpen,
     }))
   );
@@ -99,104 +46,29 @@ export const UnifiedHeader: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const setOperatorProfileModalOpen = useAuthStore((s) => s.setOperatorProfileModalOpen);
 
-  const isNotesOpen = useNotesWorkspaceStore((s) => s.isOpen);
-  const openNotesCount = useOpenTabCount();
-  const toggleNotesWorkspace = useNotesWorkspaceStore((s) => s.toggleOpen);
-
   const { totalMachines, rootedMachines: operatorRootedCount } = useTrackerCounts(machines);
 
   const [targetDropdownOpen, setTargetDropdownOpen] = useState(false);
   const [targetSearch, setTargetSearch] = useState('');
-  const [copiedVar, setCopiedVar] = useState<'lhost' | 'lport' | 'target' | null>(null);
-  const { displayIp: displayTargetIp, commit: commitTargetIp } = useTargetIpField();
-  // Placeholder values read as empty fields with a "set" prompt, not as fake addresses.
-  const tacticalUnset = useCtfStore(selectTacticalVarsUnset);
-  const lhostShown = isPlaceholderIp(globalVars.lhost) ? '' : globalVars.lhost;
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [sessionField, setSessionField] = useState<SessionField | undefined>(undefined);
+  const { displayIp: displayTargetIp } = useTargetIpField();
+  // Placeholder values read as an empty field with a "set" prompt, not as a fake address.
   const targetShown = isPlaceholderIp(displayTargetIp) ? '' : displayTargetIp;
-  // Draft while typing in R; committed on blur or Enter (updateMachine bumps the unexported-change counter).
-  const [targetIpDraft, setTargetIpDraft] = useState<string | null>(null);
+  const { copied, copy } = useCopyFlash();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const targetPopoverRef = useRef<HTMLDivElement>(null);
   const [popoverCoords, setPopoverCoords] = useState<{ top: number; left: number }>({ top: 54, left: 0 });
-  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleCopyVar = (val: string | undefined, type: 'lhost' | 'lport' | 'target') => {
-    if (!val || !val.trim()) return;
-    const cleanVal = val.trim();
-    safeCopyToClipboard(cleanVal);
-    setCopiedVar(type);
-    if (soundEnabled) playCyberSound('copy');
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-    }
-    copyTimeoutRef.current = setTimeout(() => {
-      setCopiedVar((prev) => (prev === type ? null : prev));
-    }, 1500);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-    };
+  const handleSessionOpenChange = useCallback((next: boolean) => {
+    setSessionOpen(next);
+    if (!next) setSessionField(undefined);
   }, []);
 
   const activeMachine = useMemo(() => {
     if (!activeTargetId) return null;
     return machines.find((m) => m.id === activeTargetId) || null;
   }, [activeTargetId, machines]);
-
-  const routeName = useMemo(() => {
-    const p = location.pathname;
-    if (p.startsWith('/tracker')) return 'Tracker';
-    if (p.startsWith('/vault') || p.startsWith('/evidence') || p.startsWith('/loot')) return 'Evidence Vault';
-    if (p.startsWith('/cheatsheets') || p.startsWith('/notes') || p.startsWith('/cpts') || p.startsWith('/field-manual')) return p.startsWith('/cheatsheets') ? 'Snippets' : 'Notes';
-    if (p.startsWith('/reverse-shell')) return 'Reverse Shells';
-    if (p.startsWith('/writeup')) return 'Writeup Studio';
-    if (p.startsWith('/analytics')) return 'Analytics';
-    if (p.startsWith('/methodology')) return 'Attack Methodology';
-    if (p.startsWith('/exam')) return 'Exam Simulator';
-    if (p.startsWith('/target')) return activeMachine ? activeMachine.name : 'Target Cockpit';
-    return 'Tracker';
-  }, [location.pathname, activeMachine]);
-
-  // Quick User Pwn Handler
-  const handleQuickUserPwn = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!activeMachine) return;
-    const now = new Date().toISOString();
-    const isCurrentlyUser = Boolean(activeMachine.userPwnedAt || activeMachine.userFlag || activeMachine.status === 'foothold' || activeMachine.status === 'root' || activeMachine.status === 'completed');
-    
-    updateMachine(activeMachine.id, {
-      userPwnedAt: isCurrentlyUser ? undefined : now,
-      status: activeMachine.status === 'root' || activeMachine.status === 'completed'
-        ? activeMachine.status
-        : isCurrentlyUser ? 'recon' : 'foothold'
-    });
-    if (soundEnabled) playCyberSound('flag');
-  };
-
-  // Quick Root Pwn Handler
-  const handleQuickRootPwn = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!activeMachine) return;
-    const now = new Date().toISOString();
-    const isRooted = Boolean(activeMachine.rootPwnedAt || activeMachine.rootFlag || activeMachine.status === 'root' || activeMachine.status === 'completed');
-    
-    updateMachine(activeMachine.id, {
-      rootPwnedAt: isRooted ? undefined : now,
-      userPwnedAt: activeMachine.userPwnedAt || now,
-      status: isRooted ? (activeMachine.userPwnedAt ? 'foothold' : 'recon') : 'root'
-    });
-    
-    if (!isRooted) {
-      triggerRootCelebration();
-      if (soundEnabled) playCyberSound('root');
-    } else if (soundEnabled) {
-      playCyberSound('click');
-    }
-  };
 
   // Filter machines for target selector dropdown
   const filteredTargets = useMemo(() => {
@@ -255,84 +127,11 @@ export const UnifiedHeader: React.FC = () => {
     };
   }, [targetDropdownOpen]);
 
-  const tabletToolItems = useMemo<OverflowItem[]>(
-    () => [
-      {
-        id: 'deploy',
-        label: 'Deploy Target',
-        icon: <Plus className="w-3.5 h-3.5" />,
-        onSelect: () => {
-          setNewMachineModalOpen(true);
-          if (soundEnabled) playCyberSound('click');
-        },
-      },
-      {
-        id: 'scans',
-        label: 'Scans Hub',
-        icon: <Zap className="w-3.5 h-3.5" />,
-        onSelect: () => {
-          setReconAutomationModalOpen(true);
-          if (soundEnabled) playCyberSound('click');
-        },
-      },
-      {
-        id: 'revshell',
-        label: 'Reverse Shell Crafter',
-        icon: <Radio className="w-3.5 h-3.5" />,
-        onSelect: () => {
-          setRevShellModalOpen(true);
-          if (soundEnabled) playCyberSound('click');
-        },
-      },
-      {
-        id: 'snippets',
-        label: 'Snippets Drawer',
-        icon: <Terminal className="w-3.5 h-3.5" />,
-        onSelect: () => {
-          setSnippetsDrawerOpen(true);
-          if (soundEnabled) playCyberSound('click');
-        },
-      },
-      {
-        id: 'notes',
-        label: isNotesOpen ? 'Hide Field Notes' : 'Field Notes',
-        icon: <BookOpen className="w-3.5 h-3.5" />,
-        onSelect: () => {
-          toggleNotesWorkspace();
-          if (soundEnabled) playCyberSound('click');
-        },
-      },
-    ],
-    [
-      isNotesOpen,
-      setNewMachineModalOpen,
-      setReconAutomationModalOpen,
-      setRevShellModalOpen,
-      setSnippetsDrawerOpen,
-      soundEnabled,
-      toggleNotesWorkspace,
-    ]
-  );
+  const iconBtn =
+    'h-8 w-8 p-0 rounded-lg border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium flex flex-shrink-0 items-center justify-center transition-interactive active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
 
-  const ghostBtn =
-    'items-center justify-center gap-1.5 h-8 px-2 rounded-lg text-secondary hover:bg-surface-hover hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-  const copyReveal =
-    'p-0.5 rounded text-muted hover:text-primary transition-[opacity,color] cursor-pointer opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 touch:opacity-100';
-  const segmentCls = 'group flex items-center gap-1 h-6 px-1.5 rounded-md hover:bg-surface-hover focus-within:bg-surface-card';
-  const segmentLabelCls = 'text-[10px] font-medium text-muted flex-shrink-0 cursor-pointer select-none';
-  const segmentInputCls =
-    'bg-transparent text-primary focus:outline-none placeholder:text-muted font-semibold text-[11px] font-mono tabular-nums truncate';
-  const flagBtnBase =
-    'px-2 py-0.5 rounded-md text-[11px] font-medium transition-[transform,background-color,border-color,color] flex items-center gap-1 active:scale-[0.97] cursor-pointer border';
-
-  return (
-    <header
-      data-testid="app-header"
-      data-tauri-drag-region="true"
-      className="h-[52px] px-3 sm:px-4 bg-surface-base border-b border-subtle flex items-center justify-between font-sans select-none z-40 transition-colors flex-shrink-0 whitespace-nowrap overflow-hidden"
-    >
-      {/* 1. Left: brand and route */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
+  const brand = (
+      <div className="flex items-center flex-shrink-0">
         {isTauriTarget() ? (
           <Link to="/tracker" className="flex items-center gap-2 group transition-opacity hover:opacity-90 active:scale-[0.97]" title="ZeroBox">
             <CyberLogo size="sm" />
@@ -352,142 +151,114 @@ export const UnifiedHeader: React.FC = () => {
             </div>
           </a>
         )}
-
-        <div className="hidden 2xl:flex items-center gap-1 text-secondary text-xs pl-1">
-          <ChevronRight className="w-3 h-3 text-muted" />
-          <span className="text-secondary text-xs font-medium tracking-tight">{routeName}</span>
-        </div>
       </div>
+  );
 
-      {/* 2. Center: target switcher & exam HUD */}
-      <div className="relative flex items-center gap-1.5 mx-1 sm:mx-2 flex-shrink-0" ref={dropdownRef}>
+  const headerClass =
+    'h-[52px] px-1.5 sm:px-4 gap-1.5 sm:gap-2 bg-surface-base border-b border-subtle flex items-center font-sans select-none z-40 transition-colors flex-shrink-0 whitespace-nowrap overflow-hidden';
+
+  // Target focus page: only the brand and the exam clock stay (the page owns "Exit focus").
+  if (focusPage) {
+    return (
+      <header data-testid="app-header" data-tauri-drag-region="true" className={headerClass}>
+        {brand}
+        <div className="flex min-w-0 flex-1 items-center" data-tauri-drag-region="false">
+          <ExamHeaderCapsule />
+        </div>
+      </header>
+    );
+  }
+
+  return (
+    <header
+      data-testid="app-header"
+      data-tauri-drag-region="true"
+      className="h-[52px] px-1.5 sm:px-4 gap-1.5 sm:gap-2 bg-surface-base border-b border-subtle flex items-center font-sans select-none z-40 transition-colors flex-shrink-0 whitespace-nowrap overflow-hidden"
+    >
+      {/* 1. Brand */}
+      {brand}
+
+      {/* 2. Exam clock, engaged target and the RHOST copy chip. This group takes the spare width and shrinks first. */}
+      <div className="relative flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2" ref={dropdownRef} data-tauri-drag-region="false">
         <ExamHeaderCapsule />
         {activeMachine ? (
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 h-8 rounded-lg bg-surface-card border border-subtle text-xs min-w-0 flex-shrink machined-edge">
-            {/* Target name + switcher */}
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <PlatformIcon platform={activeMachine.platform} className="w-3.5 h-3.5 flex-shrink-0" />
-              <Link
-                to={`/target/${activeMachine.id}`}
-                className="font-semibold text-primary hover:text-accent transition-colors truncate max-w-[60px] sm:max-w-[80px] md:max-w-[95px] xl:max-w-[120px] 2xl:max-w-[150px] min-w-0"
-                title="View Target Command Center"
-              >
-                {activeMachine.name}
-              </Link>
-              <button
-                onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
-                className="p-1 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors flex-shrink-0 cursor-pointer"
-                title="Switch Active Target"
-                aria-label="Switch Active Target"
-              >
-                <ChevronDown className={`w-3 h-3 transition-transform ${targetDropdownOpen ? 'rotate-180 text-accent' : ''}`} />
-              </button>
-            </div>
-
-            {/* Target IP */}
-            <div className="hidden min-[2000px]:inline-block flex-shrink-0">
-              <EditableIpBadge machineId={activeMachine.id} initialIp={activeMachine.ip} size="xs" />
-            </div>
-
-            {/* Quick flags */}
-            <div className="hidden sm:flex items-center gap-1 border-l border-subtle pl-1.5 flex-shrink-0">
-              <button
-                onClick={handleQuickUserPwn}
-                className={`${flagBtnBase} ${
-                  (activeMachine.userPwnedAt || activeMachine.userFlag || activeMachine.status === 'foothold' || activeMachine.status === 'root' || activeMachine.status === 'completed')
-                    ? 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border/40'
-                    : 'bg-transparent hover:bg-surface-hover text-muted hover:text-primary border-subtle'
-                }`}
-                title="1-Click: Toggle User Flag"
-              >
-                <Flag className="w-2.5 h-2.5" />
-                <span>USER</span>
-              </button>
-
-              <button
-                onClick={handleQuickRootPwn}
-                className={`${flagBtnBase} ${
-                  (activeMachine.rootPwnedAt || activeMachine.rootFlag || activeMachine.status === 'root' || activeMachine.status === 'completed')
-                    ? 'bg-callout-success-bg text-callout-success-fg border-callout-success-border/40'
-                    : 'bg-transparent hover:bg-surface-hover text-muted hover:text-primary border-subtle'
-                }`}
-                title="1-Click: Toggle Root Flag (Celebration!)"
-              >
-                <Flag className="w-2.5 h-2.5" />
-                <span>ROOT</span>
-              </button>
-            </div>
-
-            {/* Stopwatch */}
-            <div className="flex items-center gap-1 pl-1.5 border-l border-subtle flex-shrink-0">
-              <button
-                onClick={() => {
-                  if (isTimerRunning) pauseTimer();
-                  else startTimer();
-                  if (soundEnabled) playCyberSound('timer');
-                }}
-                className="p-1 rounded-md hover:bg-surface-hover text-secondary hover:text-primary transition-colors cursor-pointer"
-                title={isTimerRunning ? 'Pause Stopwatch' : 'Start Stopwatch'}
-              >
-                {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              </button>
-
-              <UnifiedHeaderTimerDisplay />
-
-              <button
-                onClick={() => {
-                  resetTimer();
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="hidden sm:inline-block p-1 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer"
-                title="Reset Stopwatch"
-              >
-                <RotateCcw className="w-2.5 h-2.5" />
-              </button>
-            </div>
-
-            {/* Target actions: pentest report and disengage (physically separated) */}
-            <div className="flex items-center border-l border-subtle pl-1.5 flex-shrink-0" data-tauri-drag-region="false">
-              <button
-                type="button"
-                onClick={() => {
-                  setReportMachineId(activeMachine.id);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="hidden md:flex p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 items-center justify-center rounded-md text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer"
-                title={`Generate Pentest Report for ${activeMachine.name}`}
-                aria-label={`Pentest Report for ${activeMachine.name}`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-              </button>
-
-              <div className="w-px h-3.5 bg-[rgb(var(--border-strong))] mx-1" aria-hidden="true" />
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTarget(null);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="p-1.5 min-w-[24px] min-h-[24px] flex-shrink-0 flex items-center justify-center rounded-md text-muted hover:text-callout-danger-fg hover:bg-callout-danger-bg transition-colors active:scale-[0.97] cursor-pointer"
-                title={`Disengage ${activeMachine.name} — Release active engagement`}
-                aria-label="Disengage Active Target"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="flex h-8 min-w-0 items-center gap-1 overflow-hidden rounded-lg border border-subtle bg-surface-card pl-2 pr-0.5 text-xs machined-edge max-sm:pl-1.5">
+            <PlatformIcon platform={activeMachine.platform} className="w-3.5 h-3.5 flex-shrink-0 max-sm:hidden" />
+            <Link
+              to={`/target/${activeMachine.id}`}
+              className="inline-flex min-h-6 min-w-6 flex-shrink items-center truncate font-semibold max-sm:min-w-0 text-primary transition-colors hover:text-accent"
+              title="View Target Command Center"
+            >
+              <span className="min-w-0 truncate">{activeMachine.name}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
+              className="inline-flex min-h-6 min-w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md p-1 text-muted transition-colors hover:bg-surface-hover hover:text-primary"
+              title="Switch Active Target"
+              aria-label="Switch Active Target"
+            >
+              <ChevronDown className={`w-3 h-3 transition-transform ${targetDropdownOpen ? 'rotate-180 text-accent' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTarget(null);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className="inline-flex min-h-6 min-w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md p-1 text-muted transition-colors max-sm:hidden hover:bg-callout-danger-bg hover:text-callout-danger-fg active:scale-[0.97]"
+              title={`Disengage ${activeMachine.name} — Release active engagement`}
+              aria-label="Disengage Active Target"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
             aria-label="Engage target"
-            className="flex items-center gap-1.5 px-2 sm:px-3 h-8 rounded-lg bg-surface-card border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer"
+            className="group flex h-8 min-w-0 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-2.5 text-xs font-medium text-secondary transition-[transform,background-color,border-color,color] hover:border-strong hover:text-primary active:scale-[0.97]"
           >
             <Crosshair className="w-3.5 h-3.5 text-muted group-hover:text-accent transition-colors" />
-            <span className="hidden 2xl:inline">Engage target</span>
+            <span className="max-sm:hidden">Engage target</span>
             <ChevronDown className={`w-3 h-3 text-muted group-hover:text-accent transition-transform ${targetDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
         )}
+
+        {/* RHOST: one click copies; when none is set it opens the Session popover on the RHOST field. */}
+        {targetShown ? (
+          <button
+            type="button"
+            onClick={() => copy(targetShown, 'target')}
+            className="group inline-flex h-8 min-w-20 shrink-[2] cursor-pointer items-center gap-1.5 rounded-lg border border-subtle bg-surface-sunken px-2 text-xs transition-interactive hover:border-strong hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] max-sm:hidden [@media(pointer:coarse)]:h-11"
+            title={copied === 'target' ? 'Copied Target IP to clipboard!' : 'Copy Target IP (RHOST)'}
+            aria-label={`Copy RHOST ${targetShown}`}
+          >
+            <span className="flex-shrink-0 text-[11px] font-medium text-muted">RHOST</span>{' '}
+            <span className="min-w-0 truncate font-mono text-xs font-semibold tabular-nums text-primary">{targetShown}</span>
+            {copied === 'target' ? (
+              <Check className="w-3 h-3 flex-shrink-0 text-callout-success-fg" aria-hidden="true" />
+            ) : (
+              <Copy className="w-3 h-3 flex-shrink-0 text-muted group-hover:text-primary" aria-hidden="true" />
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setSessionField('rhost');
+              setSessionOpen(true);
+            }}
+            className="inline-flex h-8 min-w-0 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-callout-warn-border/60 bg-surface-sunken px-2 text-xs font-medium text-secondary transition-interactive hover:border-strong hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.97] max-sm:hidden [@media(pointer:coarse)]:h-11"
+            title="Set the target IP (RHOST)"
+          >
+            <span>Set RHOST</span>
+          </button>
+        )}
+        <span className="sr-only" role="status" aria-live="polite">
+          {copied === 'target' ? 'Copied Target IP to clipboard' : ''}
+        </span>
 
         {/* Target selector popover (portaled out of overflow-hidden header) */}
         {targetDropdownOpen &&
@@ -557,286 +328,39 @@ export const UnifiedHeader: React.FC = () => {
           )}
       </div>
 
-      {/* 3. Right: telemetry, tools, theme, operator */}
-      <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0" data-tauri-drag-region="false">
-        {/* Deploy box (secondary, icon-only) */}
+      {/* 3. Session popover, search, theme, profile and settings */}
+      <div className="flex flex-shrink-0 items-center gap-0.5 sm:gap-1.5" data-tauri-drag-region="false">
+        <SessionDropdown open={sessionOpen} onOpenChange={handleSessionOpenChange} initialField={sessionField} />
+
         <button
-          onClick={() => {
-            setNewMachineModalOpen(true);
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`hidden xl:flex ${ghostBtn}`}
-          title="Deploy Custom Lab Target"
-          aria-label="Deploy Box - Deploy Custom Lab Target"
-        >
-          <Plus className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="hidden 2xl:inline">Deploy Box</span>
-        </button>
-
-        {/* Scans hub (secondary, icon-only) */}
-        <button
-          onClick={() => {
-            setReconAutomationModalOpen(true);
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`hidden xl:flex ${ghostBtn}`}
-          title="Recon & Scan Automation (Nmap / Rustscan / XML)"
-          aria-label="Scans Hub"
-        >
-          <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="hidden 2xl:inline">Scans</span>
-        </button>
-
-        {/* Telemetry chip: LHOST | RHOST | LPORT (visible on lg+; floating payload bar always active on all screens) */}
-        <div
-          aria-label="Tactical Variables (LHOST / RHOST / LPORT)"
-          data-tauri-drag-region="false"
-          className={`hidden lg:flex items-center gap-0.5 h-8 px-1 rounded-lg bg-surface-sunken border ${tacticalUnset ? 'border-dashed border-callout-warn-border/60' : 'border-subtle'} text-[11px] hover:border-strong transition-colors flex-shrink-0`}
-        >
-          {/* L: attacker IP */}
-          <div className={segmentCls} title="Attacker IP (Tun0 LHOST)">
-            <label htmlFor="unified-lhost" className={segmentLabelCls}>
-              L
-            </label>
-            <input
-              id="unified-lhost"
-              name="lhost"
-              aria-label="Attacker IP (LHOST)"
-              type="text"
-              value={lhostShown || ''}
-              onChange={(e) => {
-                setGlobalVars({ lhost: e.target.value });
-                if (copiedVar === 'lhost') {
-                  if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-                  setCopiedVar(null);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur();
-              }}
-              placeholder="Set IP"
-              title={lhostShown || 'Set your attacker IP (LHOST)'}
-              className={`w-16 xl:w-20 ${segmentInputCls}`}
-            />
-            <button
-              type="button"
-              onClick={() => handleCopyVar(globalVars.lhost, 'lhost')}
-              className={copyReveal}
-              title={copiedVar === 'lhost' ? 'Copied LHOST to clipboard!' : 'Copy LHOST'}
-              aria-label="Copy LHOST"
-            >
-              {copiedVar === 'lhost' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </div>
-
-          <div className="w-px h-3 bg-[rgb(var(--border-strong))]" aria-hidden="true" />
-
-          {/* R: target IP */}
-          <div className={segmentCls} title="Target IP (RHOST)">
-            <label htmlFor="unified-target-ip" className={segmentLabelCls}>
-              R
-            </label>
-            <input
-              id="unified-target-ip"
-              name="targetIp"
-              aria-label="Target IP (RHOST)"
-              type="text"
-              value={targetIpDraft ?? targetShown}
-              onChange={(e) => {
-                setTargetIpDraft(e.target.value);
-                if (copiedVar === 'target') {
-                  if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-                  setCopiedVar(null);
-                }
-              }}
-              onBlur={() => {
-                if (targetIpDraft === null) return;
-                commitTargetIp(targetIpDraft);
-                setTargetIpDraft(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur();
-              }}
-              placeholder="Target IP"
-              title={targetShown || 'Set the target IP (RHOST)'}
-              className={`w-16 xl:w-20 ${segmentInputCls}`}
-            />
-            <button
-              type="button"
-              onClick={() => handleCopyVar(targetShown, 'target')}
-              className={copyReveal}
-              title={copiedVar === 'target' ? 'Copied Target IP to clipboard!' : 'Copy Target IP (RHOST)'}
-              aria-label="Copy Target IP"
-            >
-              {copiedVar === 'target' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </div>
-
-          <div className="w-px h-3 bg-[rgb(var(--border-strong))]" aria-hidden="true" />
-
-          {/* P: listener port */}
-          <div className={segmentCls} title="Listener Port (LPORT)">
-            <label htmlFor="unified-lport" className={segmentLabelCls}>
-              P
-            </label>
-            <input
-              id="unified-lport"
-              name="lport"
-              aria-label="Listener Port (LPORT)"
-              type="text"
-              inputMode="numeric"
-              maxLength={5}
-              value={globalVars.lport || ''}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '');
-                if (!digits) {
-                  setGlobalVars({ lport: '' });
-                } else {
-                  const num = parseInt(digits, 10);
-                  if (num <= 65535) {
-                    setGlobalVars({ lport: String(num) });
-                  }
-                }
-                if (copiedVar === 'lport') {
-                  if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-                  setCopiedVar(null);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur();
-              }}
-              placeholder="4444"
-              title={globalVars.lport || '4444'}
-              className={`w-10 xl:w-11 ${segmentInputCls}`}
-            />
-            <button
-              type="button"
-              onClick={() => handleCopyVar(globalVars.lport, 'lport')}
-              className={copyReveal}
-              title={copiedVar === 'lport' ? 'Copied LPORT to clipboard!' : 'Copy LPORT'}
-              aria-label="Copy LPORT"
-            >
-              {copiedVar === 'lport' ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </div>
-
-          {/* Screen reader live announcement for copy operations */}
-          <span className="sr-only" role="status" aria-live="polite">
-            {copiedVar ? `Copied ${copiedVar === 'target' ? 'Target IP' : copiedVar.toUpperCase()} to clipboard` : ''}
-          </span>
-        </div>
-
-        {/* RevShell */}
-        <button
-          onClick={() => {
-            setRevShellModalOpen(true);
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`hidden xl:flex ${ghostBtn}`}
-          title="Open Rapid Reverse Shell Crafter (Alt+P)"
-          aria-label="RevShell - Open Rapid Reverse Shell Crafter"
-        >
-          <Radio className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-          <span className="hidden min-[1650px]:inline">RevShell</span>
-        </button>
-
-        {/* Snippets */}
-        <button
-          onClick={() => {
-            setSnippetsDrawerOpen(true);
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`hidden xl:flex ${ghostBtn}`}
-          title="Open Snippets Drawer (Alt+S)"
-          aria-label="Snippets - Open Tactical Snippets Drawer"
-        >
-          <Terminal className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="hidden 2xl:inline">Snippets</span>
-        </button>
-
-        {/* Field Notes Workspace Sidecar */}
-        <button
-          onClick={() => {
-            toggleNotesWorkspace();
-            if (soundEnabled) playCyberSound('click');
-          }}
-          className={`hidden lg:flex ${ghostBtn} ${isNotesOpen ? 'bg-surface-hover text-primary font-medium' : ''}`}
-          title="Toggle notes panel (Alt+N)"
-          aria-label="Toggle notes panel"
-        >
-          <div className="relative flex items-center justify-center">
-            <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
-          </div>
-          <span className="hidden lg:inline">Notes</span>
-          {openNotesCount > 0 && (
-            <span title={`${openNotesCount} open`} aria-label={`${openNotesCount} open`} data-testid="notes-open-badge" className="hidden min-w-[16px] rounded-full bg-accent px-1 text-center text-[10px] font-medium leading-4 tabular-nums text-on-accent lg:inline-block">
-              {openNotesCount}
-            </span>
-          )}
-        </button>
-
-        {/* Tablet / split-screen quick tools + search (768px..1279px where xl buttons collapse) */}
-        <div className="hidden md:flex xl:hidden items-center gap-1 flex-shrink-0">
-          <OverflowMenu
-            portal
-            items={tabletToolItems}
-            label="Quick tools"
-            align="right"
-            triggerClassName={`flex ${ghostBtn}`}
-            triggerContent={
-              <>
-                <Wrench className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-                <span className="hidden lg:inline">Tools</span>
-              </>
-            }
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setCommandPaletteOpen(true);
-              if (soundEnabled) playCyberSound('click');
-            }}
-            className="flex items-center justify-center h-8 w-8 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            title="Quick Search (Ctrl+K)"
-            aria-label="Quick search (Ctrl+K)"
-          >
-            <Search className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-          </button>
-        </div>
-
-        {/* Command palette trigger */}
-        <button
+          type="button"
           onClick={() => {
             setCommandPaletteOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="hidden xl:flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-surface-sunken hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className={`${iconBtn} bg-surface-sunken hover:bg-surface-hover max-sm:hidden`}
           title="Open Command Palette (Ctrl+K)"
           data-tour="command-palette"
           aria-label="Search Ctrl+K, open command palette"
         >
-          <Search className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="hidden 2xl:inline">Search</span>
-          <kbd className="px-1 text-[10px] font-medium font-mono rounded bg-surface-card text-muted border border-subtle">
-            Ctrl+K
-          </kbd>
+          <Search className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
         </button>
 
         <UpdateReadyButton />
 
-        {/* Light / Dark toggle */}
-        <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0" />
+        {/* Theme toggle moves into MobileNavDrawer / Settings on phones (<640px) so the engaged target chip has room during exams */}
+        <ThemeToggle size="sm" soundEnabled={soundEnabled} className="flex-shrink-0 max-sm:hidden" />
 
-        {/* Operator profile */}
+        {/* Operator profile (phones reach it from the menu drawer, which frees room for the target name) */}
         <button
           type="button"
           onClick={() => {
             setOperatorProfileModalOpen(true);
             if (soundEnabled) playCyberSound('click');
           }}
-          className="h-8 w-8 p-0 overflow-hidden rounded-lg bg-transparent hover:bg-surface-hover border border-subtle hover:border-strong text-secondary hover:text-primary text-xs font-medium flex items-center justify-center transition-interactive active:scale-[0.97] group flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
-          title={`Active Operator: ${user?.callsign || user?.name || 'Local Operator'} (${user?.role || 'Offline Mode'}). Click to switch or log in (Alt+O)`}
-          aria-label={`Operator: ${user?.callsign || user?.name || 'Local Operator'} · ${operatorRootedCount} rooted. Open profile (Alt+O)`}
+          className={`${iconBtn} overflow-hidden bg-transparent hover:bg-surface-hover group max-sm:hidden`}
+          title={`Profile: ${user?.callsign || user?.name || 'Local profile'} (${user?.role || 'Offline Mode'}). Click to switch or log in (Alt+O)`}
+          aria-label={`Profile: ${user?.callsign || user?.name || 'Local profile'} · ${operatorRootedCount} rooted. Open profile (Alt+O)`}
         >
           {user?.avatarId ? (
             <img

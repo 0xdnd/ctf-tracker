@@ -11,7 +11,9 @@ const KB = 1024;
 // Entry measured at 514.8 KB on 2026-10-18 (after v2.0 tactical HUD & offline suite); limit = +10%, rounded up.
 // 2026-11-14: the mobile menu sheet, the header settings menu and the Tauri API glue moved to lazy chunks; entry measured
 // 538.7 KB (was 559.4 KB), so the limit dropped from 560 KB to 549 KB (measured + 10 KB) to lock the saving in.
-const MAX_ENTRY_BYTES = 549 * KB;
+// 2026-11-22 (Phase E): KanbanBoard went lazy and the store split landed; entry measured 476.0 KB, so the limit
+// dropped from 549 KB to 486 KB (measured + 10 KB, owner decision). New UI goes behind React.lazy (AGENTS.md).
+const MAX_ENTRY_BYTES = 486 * KB;
 // Total JS measured on 2026-10-18 (56 files). Update deliberately when the app grows.
 // 2026-11-05 (import panel): measured 3,315,889 B total; baseline raised so limit = 3,316,500 B (baseline * 1.10).
 // 2026-11-05: +30 KB covers the OSCP points calculator, pass card and first-run tour features.

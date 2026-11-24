@@ -98,13 +98,17 @@ describe('CsvImportPanel', () => {
     render(<CsvImportPanel />);
     choose('Box title,Where,Result\nLame,HTB,done\n');
     // "Box title" is not an alias, so the pickers appear.
-    const nameSelect = await screen.findByLabelText('Name column');
+    const pick = (label: string, option: string) => {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }));
+      fireEvent.click(within(screen.getByRole('listbox', { name: new RegExp(`^${label}`) })).getByRole('option', { name: option }));
+    };
+    await screen.findByRole('button', { name: /^Name column/ });
     expect(screen.getByText('Choose the column that holds the machine names.')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
 
-    fireEvent.change(nameSelect, { target: { value: '0' } });
-    fireEvent.change(screen.getByLabelText('Platform column'), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText('Status column'), { target: { value: '2' } });
+    pick('Name column', 'Box title');
+    pick('Platform column', 'Where');
+    pick('Status column', 'Result');
     await screen.findByRole('table');
     expect(count('Will link to catalog')).toBe('1');
     fireEvent.click(screen.getByRole('button', { name: 'Import 1 machine' }));

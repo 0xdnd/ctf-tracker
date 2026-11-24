@@ -178,5 +178,34 @@ describe('OverflowMenu', () => {
       await user.click(screen.getByRole('button', { name: 'More actions' }));
       expect(await screen.findByRole('menuitem', { name: 'Share direct link to Lame' })).toBeInTheDocument();
     });
+
+    it('clamps portaled menu above the mobile bottom navigation bar on narrow viewports', async () => {
+      const user = userEvent.setup();
+      const origW = window.innerWidth;
+      const origH = window.innerHeight;
+      Object.defineProperty(window, 'innerWidth', { value: 375, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: 812, configurable: true });
+      const offsetHSpy = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(320);
+      const offsetWSpy = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(200);
+      try {
+        render(<OverflowMenu portal items={makeItems()} label="Card actions" />);
+        const trigger = screen.getByRole('button', { name: 'Card actions' });
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+          top: 720, bottom: 752, left: 320, right: 360, width: 40, height: 32, x: 320, y: 720, toJSON: () => ({}),
+        } as DOMRect);
+        await user.click(trigger);
+        const menu = await screen.findByRole('menu');
+        await waitFor(() => {
+          const topPx = Number.parseFloat(menu.style.top || '9999');
+          expect(topPx + 320).toBeLessThanOrEqual(812 - 72);
+          expect(topPx).toBeGreaterThanOrEqual(8);
+        });
+      } finally {
+        offsetHSpy.mockRestore();
+        offsetWSpy.mockRestore();
+        Object.defineProperty(window, 'innerWidth', { value: origW, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { value: origH, configurable: true });
+      }
+    });
   });
 });

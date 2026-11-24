@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { playCyberSound } from '../../utils/helpers';
 import { useCtfStore } from '../../store/useCtfStore';
 
-export type CyberButtonVariant =
+type CyberButtonVariant =
   | 'default'     // Calm tactical slate/zinc surface
   | 'primary'     // Theme-locked accent CTA (Sky in Obsidian, Tactical Red in OffSec, Neon Lime in HTB)
   | 'secondary'   // Muted surface-card button with subtle border
@@ -12,7 +12,7 @@ export type CyberButtonVariant =
   | 'outline'     // Clean 1px border with transparent body
   | 'hardware';   // Specular etched cyber chip button
 
-export type CyberButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+type CyberButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 export interface CyberButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: CyberButtonVariant;
@@ -140,5 +140,3 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, CyberButtonProps>
 });
 
 CyberButton.displayName = 'CyberButton';
-
-export default CyberButton;

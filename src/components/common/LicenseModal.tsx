@@ -221,7 +221,11 @@ export const LicenseModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-surface-inverse border border-inverse text-[11px] font-mono text-on-inverse-muted overflow-x-auto max-h-44 scrollbar-thin select-all leading-relaxed whitespace-pre-wrap">
+            <div
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable (WCAG 2.1.1)
+              tabIndex={0}
+              className="p-3.5 rounded-xl bg-surface-inverse border border-inverse text-[11px] font-mono text-on-inverse-muted overflow-x-auto max-h-44 scrollbar-thin select-text leading-relaxed whitespace-pre-wrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               {FULL_LICENSE_TEXT}
             </div>
           </div>

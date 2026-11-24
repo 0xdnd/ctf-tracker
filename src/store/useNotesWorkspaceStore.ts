@@ -10,7 +10,7 @@ export type DockSize = 'normal' | 'expanded';
 /** Narrowest the desktop dock can be dragged. */
 export const DOCK_MIN_PX = 320;
 /** Space always left for the main page beside the dock. */
-export const DOCK_MAIN_MIN_PX = 480;
+const DOCK_MAIN_MIN_PX = 480;
 
 export const dockMaxPx = (viewportWidth: number): number => Math.max(DOCK_MIN_PX, viewportWidth - DOCK_MAIN_MIN_PX);
 

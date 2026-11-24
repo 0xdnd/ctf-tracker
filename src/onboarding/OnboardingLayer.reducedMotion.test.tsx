@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
+import { domAnimation, LazyMotion } from 'framer-motion';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { OnboardingLayer } from './OnboardingLayer';
@@ -51,9 +52,11 @@ describe('import step with prefers-reduced-motion', () => {
     const observer = new MutationObserver(record);
     observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['style'] });
     render(
-      <MemoryRouter initialEntries={['/tracker']}>
-        <OnboardingLayer />
-      </MemoryRouter>,
+      <LazyMotion features={domAnimation}>
+        <MemoryRouter initialEntries={['/tracker']}>
+          <OnboardingLayer />
+        </MemoryRouter>
+      </LazyMotion>,
     );
     act(() => useOnboardingStore.getState().startTour('first-run'));
     act(() => useOnboardingStore.setState({ stepIndex: FIRST_RUN_STEP_IDS.indexOf('import') - 1 }));

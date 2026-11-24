@@ -70,15 +70,14 @@ export const ExamHeaderCapsule: React.FC = () => {
           toggleQuickDrawer();
         }
       }}
-      className={`group cursor-pointer select-none flex max-w-full min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-lg border font-sans text-xs transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] machined-edge-subtle shadow-xs ${containerStyle}`}
+      className={`group cursor-pointer select-none flex h-8 max-w-full flex-shrink-0 flex-nowrap items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 rounded-lg border font-sans text-xs transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] machined-edge-subtle shadow-xs ${containerStyle}`}
       title="ZeroBox Persistent Exam HUD - Click to toggle Quick Actions (Alt+E)"
-      aria-label={`${track} ${formatSecondsToHms(remainingTime)} ${score.totalScore}/${score.maxScore || 100} PTS - Exam Mission HUD Capsule`}
       aria-expanded={isQuickDrawerOpen}
     >
       {/* Track Badge */}
       <span
         data-testid="exam-capsule-track"
-        className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
+        className="hidden 2xl:inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken text-secondary border border-subtle flex-shrink-0"
       >
         {track}
       </span>
@@ -91,9 +90,12 @@ export const ExamHeaderCapsule: React.FC = () => {
         {status === 'paused' ? (
           <Pause className="w-3.5 h-3.5 text-callout-warn-fg flex-shrink-0" />
         ) : (
-          <Clock className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+          <Clock className="w-3.5 h-3.5 text-accent flex-shrink-0 max-sm:hidden" />
         )}
-        <span className="font-mono text-sm tabular-nums sm:text-base">{formatSecondsToHms(remainingTime)}</span>
+        <span className="font-mono text-sm tabular-nums sm:text-base">
+          <span className="max-sm:hidden">{formatSecondsToHms(remainingTime)}</span>
+          <span className="sm:hidden" aria-hidden="true">{formatSecondsToHms(remainingTime).slice(0, 5)}</span>
+        </span>
         {status === 'paused' && (
           <span className="text-[11px] text-callout-warn-fg font-semibold hidden md:inline">
             [PAUSED]
@@ -101,12 +103,12 @@ export const ExamHeaderCapsule: React.FC = () => {
         )}
       </div>
 
-      <div className="h-3 border-l border-strong flex-shrink-0" />
+      <div className="h-3 border-l border-strong flex-shrink-0 hidden 2xl:block" />
 
       {/* Points Counter: XX / 100 PTS */}
       <div
         data-testid="exam-capsule-score"
-        className="flex items-center gap-0.5 flex-shrink-0"
+        className="hidden 2xl:flex items-center gap-0.5 flex-shrink-0"
       >
         <span
           className={`font-mono font-semibold tabular-nums ${
@@ -119,7 +121,7 @@ export const ExamHeaderCapsule: React.FC = () => {
         >
           {score.totalScore}
         </span>
-        <span className="text-[11px] text-muted font-mono tabular-nums">
+        <span className="text-[11px] text-muted font-mono tabular-nums max-sm:hidden">
           / {score.maxScore || 100}<span className="hidden sm:inline"> PTS</span>
         </span>
       </div>
@@ -161,7 +163,10 @@ export const ExamHeaderCapsule: React.FC = () => {
           title={`Active ${activeBreak.type} break`}
         >
           <Coffee className="w-2.5 h-2.5 flex-shrink-0" />
-          <span className="font-mono tabular-nums">{formatSecondsToHms(breakRemaining)}</span>
+          <span className="font-mono tabular-nums max-sm:hidden">{formatSecondsToHms(breakRemaining)}</span>
+          <span className="font-mono tabular-nums sm:hidden" aria-hidden="true">
+            {breakRemaining >= 3600 ? formatSecondsToHms(breakRemaining).slice(0, 5) : formatSecondsToHms(breakRemaining).slice(3)}
+          </span>
         </span>
       )}
 

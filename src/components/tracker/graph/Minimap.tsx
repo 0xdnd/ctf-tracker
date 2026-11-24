@@ -156,7 +156,7 @@ export const MinimapPanel: React.FC<MinimapPanelProps> = ({
   {isMinimapOpen ? (
     <div 
       data-testid="graph-minimap-container"
-      className="w-48 p-2 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle shadow-lg space-y-1.5 font-sans machined-edge"
+      className="w-36 p-1.5 rounded-xl bg-surface-elevated/95 backdrop-blur-sm border border-subtle shadow-lg space-y-1 font-sans machined-edge"
     >
       <div className="flex items-center justify-between text-xs font-semibold text-muted px-1">
         <span className="flex items-center gap-1 text-primary">
@@ -166,7 +166,7 @@ export const MinimapPanel: React.FC<MinimapPanelProps> = ({
         <button
           data-testid="graph-minimap-toggle"
           onClick={() => setIsMinimapOpen(false)}
-          className="p-0.5 rounded hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
+          className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
           title="Hide minimap"
           aria-label="Hide minimap"
         >

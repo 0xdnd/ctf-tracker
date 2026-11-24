@@ -34,9 +34,9 @@ const MIN_NOTE_COLUMN_PX = 300;
  * The left sidebar sits beside the note from this dock body width (ribbon + list + a 300px note column, so it
  * stays inline in the normal-width dock on 1366/1440 laptops); below it, it slides over the note.
  */
-export const DOCK_LEFT_INLINE_PX = RIBBON_PX + 260 + MIN_NOTE_COLUMN_PX;
+const DOCK_LEFT_INLINE_PX = RIBBON_PX + 260 + MIN_NOTE_COLUMN_PX;
 /** The right sidebar (outline, backlinks) sits beside the note from this width. */
-export const DOCK_RIGHT_INLINE_PX = 1000;
+const DOCK_RIGHT_INLINE_PX = 1000;
 /** Edit opens the editor beside a live preview from this width, else the plain editor. */
 const DOCK_SPLIT_EDIT_PX = 1000;
 const DOCK_SIDEBAR_PX = 260;
@@ -46,7 +46,7 @@ const iconBtn =
 const ribbonBtn =
   'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 const segBtn =
-  'cursor-pointer rounded-sm px-2 py-0.5 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ';
+  'inline-flex min-h-6 cursor-pointer items-center rounded-sm px-2 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ';
 const segOn = 'bg-accent font-semibold text-on-accent';
 const segOff = 'text-secondary hover:text-primary';
 
@@ -286,7 +286,7 @@ export const DockBody: React.FC<DockBodyProps> = ({
   const renderLeft = () => {
     if (!leftView) return null;
     return (
-      <div className="flex h-full flex-col" style={{ width: DOCK_SIDEBAR_PX }} data-dock-left-view={leftView}>
+      <div className="flex h-full w-full min-w-0 flex-col" data-dock-left-view={leftView}>
         {leftView === 'search' ? (
           <DockSearchPanel
             focusSignal={searchFocusSignal}
@@ -581,5 +581,3 @@ export const DockBody: React.FC<DockBodyProps> = ({
     </>
   );
 };
-
-export default DockBody;

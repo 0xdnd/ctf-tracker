@@ -2,7 +2,7 @@ import React from 'react';
 import { GlobalVariables } from '../../types';
 import { splitPlaceholderSegments } from '../../utils/placeholderSegments';
 
-export const UNRESOLVED_PLACEHOLDER_HINT = 'Set it in the target bar';
+const UNRESOLVED_PLACEHOLDER_HINT = 'Set it in the target bar';
 
 export interface PlaceholderChipProps {
   /** Token name without brackets, e.g. `TARGET`. */
@@ -22,7 +22,7 @@ const TONES = {
 const UNRESOLVED = 'bg-callout-warn-bg text-callout-warn-fg border-callout-warn-border';
 
 /** Inline chip for a `{VAR}` placeholder: shows the resolved value, token name in the tooltip. */
-export const PlaceholderChip: React.FC<PlaceholderChipProps> = ({ name, value, resolved, tone = 'default' }) => {
+const PlaceholderChip: React.FC<PlaceholderChipProps> = ({ name, value, resolved, tone = 'default' }) => {
   const tooltip = resolved ? `{${name}}` : `{${name}} is not set. ${UNRESOLVED_PLACEHOLDER_HINT}`;
   return (
     <span

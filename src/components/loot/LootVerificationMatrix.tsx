@@ -131,10 +131,10 @@ export const LootVerificationMatrix: React.FC<LootVerificationMatrixProps> = ({
     <div className={`space-y-4 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <div>
-          <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-primary flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-accent" />
             <span>Cross-Host Loot Verification Matrix</span>
-          </h3>
+          </h2>
           <p className="text-xs text-muted">
             Track credential reuse across active labs. Click any cell to cycle verification status (Untested &rarr; User &rarr; Admin/Pwn3d &rarr; Failed).
           </p>
@@ -196,7 +196,7 @@ export const LootVerificationMatrix: React.FC<LootVerificationMatrixProps> = ({
                           <button
                             type="button"
                             onClick={() => handleCopyBatchCommand(cred)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] text-secondary hover:text-primary transition-colors cursor-pointer"
+                            className="inline-flex min-h-6 items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] text-secondary hover:text-primary transition-colors cursor-pointer"
                             title="Copy NetExec batch scan command across all target hosts"
                           >
                             {isCopiedBatch ? <Check className="w-3 h-3 text-callout-success-fg" /> : <Terminal className="w-3 h-3" />}
@@ -206,7 +206,7 @@ export const LootVerificationMatrix: React.FC<LootVerificationMatrixProps> = ({
                           <button
                             type="button"
                             onClick={() => handleUseInCheatsheet(cred)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] text-secondary hover:text-accent transition-colors cursor-pointer"
+                            className="inline-flex min-h-6 items-center gap-1 px-2 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[11px] text-secondary hover:text-accent transition-colors cursor-pointer"
                             title="Load credentials into active HUD variables (USER, CRED, DOMAIN)"
                           >
                             <Key className="w-3 h-3" />
@@ -228,7 +228,7 @@ export const LootVerificationMatrix: React.FC<LootVerificationMatrixProps> = ({
                           <button
                             type="button"
                             onClick={() => handleCycleStatus(cred.id, lab.id, status)}
-                            className={`w-full py-1 px-1.5 rounded-lg border text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1 cursor-pointer active:scale-[0.96] ${config.bg} ${config.text} ${config.border}`}
+                            className={`w-full min-h-6 py-1 px-1.5 rounded-lg border text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1 cursor-pointer active:scale-[0.96] ${config.bg} ${config.text} ${config.border}`}
                             title={`Click to cycle status for ${lab.name} (Current: ${config.label})`}
                           >
                             <Icon className="w-3 h-3 flex-shrink-0" />

@@ -1,5 +1,5 @@
 // /htb-vs-tryhackme/
-// The catalogue has four sources (HTB, THM, Proving Grounds, VulnHub); this page compares only HTB and THM, the machines of the static directory that have a full entry (the directory also lists the PG and VulnHub rows without pages).
+// The catalog has four sources (HTB, THM, Proving Grounds, VulnHub); this page compares only HTB and THM, the machines of the static directory that have a full entry (the directory also lists the PG and VulnHub rows without pages).
 // Every number comes from model.machines and model.catalogCounts at build time.
 const PATH = '/htb-vs-tryhackme/';
 const DIFF_HARD = ['Hard', 'Insane'];
@@ -59,7 +59,8 @@ ${compare}`;
   const body = `<h2>What each platform is</h2>
 <p><strong>Hack The Box (HTB)</strong> hosts machines and labs that you attack as standalone targets, usually with no built-in walkthrough. You find the foothold and the escalation yourself, which is closer to how a practical exam feels.</p>
 <p><strong>TryHackMe (THM)</strong> is built around guided rooms. A room typically walks through a topic in tasks with questions to answer, and some rooms are full challenge machines. That structure makes it easier to learn a concept from scratch.</p>
-<p><strong>Proving Grounds (PG)</strong> is OffSec's own practice platform, and the catalogue holds ${pgCount} Proving Grounds entries. The full ZeroBox catalogue has four sources, Hack The Box, TryHackMe, Proving Grounds and VulnHub (${catalogTotal} entries in all), but this page compares only Hack The Box and TryHackMe, ${total} machines in all. The <a href="/machines/">machine directory</a> lists those ${total} and also the Proving Grounds and VulnHub entries, without pages, ${catalogTotal} in all. The community TJ Null spreadsheet does list Proving Grounds boxes; the <a href="/tj-null-list/">TJ Null list</a> page explains how it overlaps with this catalogue.</p>
+<p><strong>Proving Grounds (PG)</strong> is OffSec's own practice platform, and the catalog holds ${pgCount} Proving Grounds entries. The full ZeroBox catalog covers four sources (Hack The Box, TryHackMe, Proving Grounds and VulnHub — ${catalogTotal} entries in all), while this page compares the ${total} Hack The Box and TryHackMe machines in detail.</p>
+<p>The <a href="/machines/">machine directory</a> lists those ${total} boxes alongside the Proving Grounds and VulnHub rows without pages. The community TJ Null spreadsheet also lists Proving Grounds boxes; see the <a href="/tj-null-list/">TJ Null list</a> page for the exact overlap.</p>
 <h2>The numbers</h2>
 <p>Counts come straight from the machine directory data and change when it does. A certification tag means ZeroBox tags the machine for that track, which is not an official endorsement by the platform or the certification body.</p>
 ${table}
@@ -71,28 +72,52 @@ ${table}
 <li>Certification tags: ${H(has('OSCP'))} HTB and ${T(has('OSCP'))} THM machines carry the OSCP tag.</li>
 </ul>
 <h2>Which to use for OSCP prep</h2>
-<p>The OSCP exam is a practical in which you compromise machines on your own, so the platform that makes you work without a walkthrough is the closer match. In this catalogue ${H(has('OSCP'))} HTB machines and ${T(has('OSCP'))} THM machines carry the OSCP tag${T(has('OSCP')) > H(has('OSCP')) ? `. THM has more OSCP-tagged boxes (${T(has('OSCP'))} vs ${H(has('OSCP'))}), but HTB's unguided format is closer to the exam` : H(has('OSCP')) > T(has('OSCP')) ? `. HTB has more OSCP-tagged boxes (${H(has('OSCP'))} vs ${T(has('OSCP'))}) and its unguided format is closer to the exam` : ''}. Use the <a href="/oscp-like-machines/">OSCP-like machines</a> list, the <a href="/tj-null-list/">TJ Null list</a> for the community's picks, and rehearse under a clock in the <a href="/oscp-exam-simulator/">exam simulator</a>. TryHackMe rooms still help to fill gaps, such as a service you have not met before.</p>
+<p>The OSCP exam is a practical in which you compromise machines on your own, so the platform that makes you work without a walkthrough is the closer match. In this catalog ${H(has('OSCP'))} HTB machines and ${T(has('OSCP'))} THM machines carry the OSCP tag${T(has('OSCP')) > H(has('OSCP')) ? `. THM has more OSCP-tagged boxes (${T(has('OSCP'))} vs ${H(has('OSCP'))}), but HTB's unguided format is closer to the exam` : H(has('OSCP')) > T(has('OSCP')) ? `. HTB has more OSCP-tagged boxes (${H(has('OSCP'))} vs ${T(has('OSCP'))}) and its unguided format is closer to the exam` : ''}.</p>
+<p>Use the <a href="/oscp-like-machines/">OSCP-like machines</a> list and the <a href="/tj-null-list/">TJ Null list</a> for standalone practice, then rehearse under a clock in the <a href="/oscp-exam-simulator/">exam simulator</a>. TryHackMe rooms remain useful for filling specific gaps before returning to unguided boxes.</p>
 <h2>Which to use as a beginner</h2>
-<p>Start where a topic is explained as you go. TryHackMe's guided rooms are built for that, and the catalogue has ${T(easy)} Easy or Very Easy THM machines. When you can finish those without reading the questions, move to the ${H(easy)} Easy or Very Easy HTB machines to practise unaided. Browse them all in the <a href="/machines/">machine directory</a> or by skill in the <a href="/techniques/">technique hubs</a>.</p>
+<p>Start where a topic is explained as you go. TryHackMe's guided rooms are built for that, and the catalog has ${T(easy)} Easy or Very Easy THM machines. When you can finish those without reading the questions, move to the ${H(easy)} Easy or Very Easy HTB machines to practice unaided. Browse them all in the <a href="/machines/">machine directory</a> or by skill in the <a href="/techniques/">technique hubs</a>.</p>
 <h2>Which to use for Active Directory</h2>
-<p>Both platforms have domain content. The catalogue has ${H(ad)} HTB and ${T(ad)} THM machines with Active Directory or Kerberos tags, out of ${H(win)} HTB and ${T(win)} THM Windows machines. See the <a href="/techniques/active-directory/">Active Directory</a> technique hub for the list with key commands, and <a href="/crto-like-machines/">CRTO-like machines</a> for the ones tagged for that certification.</p>
+<p>Both platforms have domain content. The catalog has ${H(ad)} HTB and ${T(ad)} THM machines with Active Directory or Kerberos tags, out of ${H(win)} HTB and ${T(win)} THM Windows machines. See the <a href="/techniques/active-directory/">Active Directory</a> technique hub for the list with key commands, and <a href="/crto-like-machines/">CRTO-like machines</a> for the ones tagged for that certification.</p>
 <h2>Use both</h2>
-<p>You do not have to choose. A simple pattern is to learn a technique in a guided room, then practise it on a standalone machine, and log both in one tracker. Certification-specific lists are on the <a href="/oscp-like-machines/">OSCP</a>, <a href="/crto-like-machines/">CRTO</a> and <a href="/cpts-like-machines/">CPTS</a> pages, and the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> covers that exam's format.</p>`;
+<p>You do not have to choose. Learn a technique in a guided room, then practice it on a standalone machine and log both in one offline board.</p>
+<p>Explore certification lists on the <a href="/oscp-like-machines/">OSCP</a>, <a href="/crto-like-machines/">CRTO</a> and <a href="/cpts-like-machines/">CPTS</a> hubs, or read <a href="/oscp-vs-cpts/">OSCP vs CPTS</a> and the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a>.</p>`;
+
+  const faq = [
+    [
+      'Is Hack The Box or TryHackMe better for OSCP preparation?',
+      `Hack The Box is closer to the OSCP exam because machines are unguided, while TryHackMe is better for learning unfamiliar techniques step by step. Most candidates start on TryHackMe guided rooms and switch to Hack The Box and OffSec Proving Grounds before booking OSCP+.`,
+    ],
+    [
+      'Should complete beginners start on TryHackMe or Hack The Box?',
+      `Start on TryHackMe (${T(easy)} Easy or Very Easy rooms in the ZeroBox catalog) to learn enumeration, web basics, and privilege escalation with structured tasks, then transition to HTB Starting Point and Easy Hack The Box machines (${H(easy)} in the catalog).`,
+    ],
+    [
+      'Which platform has more Active Directory practice machines?',
+      `In the ZeroBox catalog, Hack The Box has ${H(ad)} machines tagged Active Directory or Kerberos and TryHackMe has ${T(ad)}. Hack The Box also offers multi-host Pro Labs for enterprise domain pivoting.`,
+    ],
+    [
+      'Where does OffSec Proving Grounds fit compared to HTB and TryHackMe?',
+      `Proving Grounds is OffSec's own lab platform (${pgCount} boxes in ZeroBox) and shares a dedicated tab on the TJ Null OSCP list alongside Hack The Box. TryHackMe is not on the TJ Null spreadsheet.`,
+    ],
+  ];
 
   return {
     path: PATH,
     crumb: 'HTB vs TryHackMe',
     title: 'HTB vs TryHackMe: Which for OSCP, Beginners, AD?',
-    description: `HTB vs TryHackMe compared with catalogue data: ${H()} HTB and ${T()} THM machines by OS, difficulty and OSCP tags, and which to use. Free.`,
+    description: `HTB vs TryHackMe compared with catalog data: ${H()} HTB and ${T()} THM machines by OS, difficulty and OSCP tags, and which to use. Free.`,
     h1: 'HTB vs TryHackMe: which platform for OSCP prep, beginners and Active Directory',
-    lead: esc(`Hack The Box and TryHackMe are the two platforms behind ${total} of the ${catalogTotal} machines in the machine directory, which also lists the Proving Grounds and VulnHub entries of the ZeroBox catalogue without pages. This page compares them using that data, then says which fits OSCP preparation, a first month of practice and Active Directory work.`),
+    lead: esc(`Hack The Box and TryHackMe are the two platforms behind ${total} of the ${catalogTotal} machines in the ZeroBox catalog. This page compares them with that data and says which fits OSCP preparation, a first month of practice and Active Directory work.`),
     directAnswer,
     body,
-    topCta: { body: 'Track HTB and THM machines together in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' },
-    cta: { title: 'One tracker for both platforms.', body: 'Keep Hack The Box and TryHackMe progress, notes and flags in one offline board. No account.', href: '/tracker/', label: 'Open tracker' },
-    related: ['/oscp-like-machines/', '/tj-null-list/', '/machines/', '/techniques/'],
-    faq: [],
-    sources: [],
+    cta: { title: 'One tracker for both platforms.', body: 'Keep Hack The Box and TryHackMe progress, notes and flags in one offline board. No account.', href: '/tracker/', label: 'Open the tracker' },
+    related: ['/oscp-like-machines/', '/tj-null-list/', '/oscp-vs-cpts/', '/machines/', '/techniques/'],
+    faq,
+    sources: [
+      ['https://www.hackthebox.com/hacker/hacking-labs', 'Hack The Box: Hacking Labs and Machines'],
+      ['https://tryhackme.com/paths', 'TryHackMe: Guided Learning Paths'],
+      ['https://www.offsec.com/labs/', 'OffSec: Proving Grounds Play and Practice'],
+    ],
     affil: 'ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe or OffSec.',
   };
 }

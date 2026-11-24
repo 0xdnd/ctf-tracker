@@ -2,7 +2,7 @@ import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { CyberButton } from './CyberButton';
 
-export interface EmptyStateAction {
+interface EmptyStateAction {
   label: string;
   onClick: () => void;
   icon?: LucideIcon;
@@ -18,6 +18,8 @@ export interface EmptyStateProps {
   secondaryAction?: { label: string; onClick: () => void };
   compact?: boolean;
   className?: string;
+  /** Heading level of the title. Use h2 where the page has no h2 above it. */
+  headingAs?: 'h2' | 'h3';
 }
 
 /** Calm, centered placeholder for lists and panels with nothing to show yet. */
@@ -29,6 +31,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   secondaryAction,
   compact = false,
   className = '',
+  headingAs: Heading = 'h3',
 }) => {
   const ActionIcon = action?.icon;
   return (
@@ -46,7 +49,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           <Icon className={compact ? 'h-4 w-4' : 'h-5 w-5'} aria-hidden="true" />
         </div>
       )}
-      <h3 className={`font-semibold text-primary ${compact ? 'text-sm' : 'text-base'}`}>{title}</h3>
+      <Heading className={`font-semibold text-primary ${compact ? 'text-sm' : 'text-base'}`}>{title}</Heading>
       {description && <p className="max-w-sm text-sm text-secondary">{description}</p>}
       {(action || secondaryAction) && (
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
@@ -71,5 +74,3 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </div>
   );
 };
-
-export default EmptyState;

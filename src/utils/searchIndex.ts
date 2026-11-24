@@ -10,7 +10,7 @@ import type { CheatsheetCommand, Credential, LootItem, Machine } from '../types'
 
 export type SearchSection = 'notes' | 'writeups' | 'vault' | 'cheats';
 
-export type SearchRef =
+type SearchRef =
   | { kind: 'note'; id: string }
   | { kind: 'machine-note'; id: string }
   | { kind: 'writeup'; id: string }

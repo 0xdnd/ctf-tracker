@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Flame,
   Award,
@@ -19,6 +19,7 @@ import { classifyMachine } from '../../utils/categoryUtils';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { CyberButton } from '../common/CyberButton';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
+import { EmptyState } from '../common/EmptyState';
 import { ReadinessSection } from './ReadinessSection';
 import { useGoalsStore, MAX_WEEKLY_ROOT_TARGET } from '../../store/useGoalsStore';
 import { buildActivityCounts, computeStreaks, startOfWeek, weeklyProgress } from '../../utils/streakEngine';
@@ -119,7 +120,7 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ counts }) => {
                 aria-label={WEEKDAY_LONG[r]}
                 className="w-8 text-[11px] text-muted"
               >
-                {r % 2 === 0 ? WEEKDAY_SHORT[r] : ''}
+                {r % 2 === 0 ? WEEKDAY_SHORT[r] : <span className="sr-only">{WEEKDAY_LONG[r]}</span>}
               </span>
               {weekRow.map((cell, c) =>
                 cell ? (
@@ -328,7 +329,7 @@ export const AnalyticsView: React.FC = () => {
         })}
 
         {/* Animated Radar Polygon */}
-        <motion.polygon
+        <m.polygon
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, ease: EASE_OUT }}
@@ -354,7 +355,7 @@ export const AnalyticsView: React.FC = () => {
 
             return (
               <g key={i}>
-                <motion.circle
+                <m.circle
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2, ease: EASE_OUT, delay: stagger(i) }}
@@ -400,6 +401,7 @@ export const AnalyticsView: React.FC = () => {
     totalSecondsTracked > 0 ||
     Object.keys(heatmapCounts).length > 0;
   const hasRooted = rootedMachines.length > 0;
+  const hasRadarData = skillDimensions.some((d) => d.rawCount > 0);
 
   // Arriving from the sidebar review badge: bring the review queue into view once it is rendered.
   const scrollTarget = (location.state as { scrollTo?: string } | null)?.scrollTo;
@@ -415,8 +417,11 @@ export const AnalyticsView: React.FC = () => {
     setEditingGoal(false);
   };
 
+  const solvedPct = machines.length > 0 ? (rootedMachines.length / machines.length) * 100 : 0;
+  const solvedShare = `${solvedPct > 0 && solvedPct < 1 ? '<1' : Math.round(solvedPct)}%`;
+
   const kpis = [
-    { label: 'Total pwned', val: rootedMachines.length.toLocaleString(), icon: Award, sub: `of ${machines.length.toLocaleString()} solved` },
+    { label: 'Total pwned', val: rootedMachines.length.toLocaleString(), icon: Award, sub: `${solvedShare} of ${machines.length.toLocaleString()} boxes` },
     { label: 'Engagement time', val: formatDurationHuman(totalSecondsTracked), icon: Clock, sub: `${formatSeconds(totalSecondsTracked)} exact timer` },
     { label: 'Avg time to user', val: avgTimeToUser > 0 ? formatDurationHuman(avgTimeToUser) : 'N/A', icon: Target, sub: avgTimeToUser > 0 ? 'Initial foothold benchmark' : 'Appears after a timed user flag' },
     { label: 'Avg time to root', val: avgTimeToRoot > 0 ? formatDurationHuman(avgTimeToRoot) : 'N/A', icon: Zap, sub: avgTimeToRoot > 0 ? 'Privesc benchmark' : 'Appears after a timed root' },
@@ -471,7 +476,7 @@ export const AnalyticsView: React.FC = () => {
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <motion.div
+            <m.div
               key={kpi.label}
               initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -486,8 +491,8 @@ export const AnalyticsView: React.FC = () => {
                 </div>
               </div>
               <div className="text-xl sm:text-2xl font-semibold font-mono text-primary tabular-nums tracking-tight truncate">{kpi.val}</div>
-              <div className="text-[11px] text-muted mt-1 tabular-nums flex items-center gap-1.5 min-w-0">
-                <span className="truncate">{kpi.sub}</span>
+              <div className="text-[11px] text-muted mt-1 tabular-nums flex flex-wrap items-center gap-x-1.5 gap-y-0.5 leading-snug">
+                <span>{kpi.sub}</span>
                 {'active' in kpi && kpi.active && (
                   <span className="inline-flex items-center gap-1 text-secondary shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
@@ -495,18 +500,19 @@ export const AnalyticsView: React.FC = () => {
                   </span>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           );
         })}
       </div>
 
-      {/* Weekly goal */}
-      <motion.div
+      {/* Weekly goal + Readiness */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+      <m.div
         initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={TACTICAL_SPRING}
-        className={`${CARD} space-y-3`}
+        className={`${CARD} space-y-3 h-full`}
       >
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-3">
           <div className="flex items-center gap-2">
@@ -546,7 +552,7 @@ export const AnalyticsView: React.FC = () => {
                 placeholder="Boxes per week"
                 className="h-8 w-32 px-2.5 rounded-md bg-surface-sunken border border-subtle text-xs text-primary placeholder:text-muted tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
-              <CyberButton type="submit" size="md" variant="primary" disabled={!goalDraft}>Set goal</CyberButton>
+              <CyberButton type="submit" size="md" variant="primary" disabled={!goalDraft} className="disabled:!opacity-100 disabled:!border-subtle disabled:!bg-surface-sunken disabled:!text-muted">Set goal</CyberButton>
               {weeklyRootTarget && (
                 <CyberButton size="md" variant="ghost" onClick={() => setEditingGoal(false)}>Cancel</CyberButton>
               )}
@@ -568,7 +574,7 @@ export const AnalyticsView: React.FC = () => {
             aria-valuenow={Math.min(weekly.rootedThisWeek, weeklyRootTarget)}
             className="w-full bg-surface-sunken h-2 rounded-full border border-subtle overflow-hidden"
           >
-            <motion.div
+            <m.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: goalPct / 100 }}
               transition={{ duration: 0.3, ease: EASE_OUT }}
@@ -579,15 +585,16 @@ export const AnalyticsView: React.FC = () => {
         ) : (
           <p className="text-xs text-muted">Set a weekly target to track how many boxes you root.</p>
         )}
-      </motion.div>
+      </m.div>
 
       <ReadinessSection />
+      </div>
 
       {/* Main Grid: Skill Radar Chart + Difficulty Progress Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Left: Skill Radar Chart */}
-        <motion.div
+        <m.div
           data-tour="analytics-radar"
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -608,14 +615,19 @@ export const AnalyticsView: React.FC = () => {
               Scored from the attack vectors of the machines you have rooted.
             </p>
 
-            <div className="py-4">{renderRadarChart()}</div>
-            {!hasRooted && (
-              <p className="text-xs text-muted text-center -mt-2 mb-2">
-                The radar fills in once you root a box. Each axis shows a 10% baseline until then.
-              </p>
+            {hasRadarData ? (
+              <div className="py-4">{renderRadarChart()}</div>
+            ) : (
+              <EmptyState
+                compact
+                icon={Radar}
+                title="No skill data yet"
+                description={hasRooted ? 'The radar fills in once a rooted box has an attack-vector tag.' : 'The radar fills in once you root a box.'}
+              />
             )}
           </div>
 
+          {hasRadarData && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-4 border-t border-subtle text-[11px]">
             {skillDimensions.map((d) => (
               <div
@@ -627,13 +639,14 @@ export const AnalyticsView: React.FC = () => {
               </div>
             ))}
           </div>
-        </motion.div>
+          )}
+        </m.div>
 
         {/* Right: Difficulty Tier Progress Matrix & Platform Breakdown */}
         <div className="space-y-4">
 
           {/* Difficulty Tier Progress Matrix */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -662,7 +675,7 @@ export const AnalyticsView: React.FC = () => {
                   </div>
 
                   <div className="w-full bg-surface-sunken h-2 rounded-full border border-subtle overflow-hidden">
-                    <motion.div
+                    <m.div
                       initial={{ scaleX: 0 }}
                       whileInView={{ scaleX: item.percentage / 100 }}
                       viewport={{ once: true }}
@@ -674,10 +687,10 @@ export const AnalyticsView: React.FC = () => {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Platform Distribution Card */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -708,14 +721,14 @@ export const AnalyticsView: React.FC = () => {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
         </div>
 
       </div>
 
       {/* Activity Heatmap: weekday rows by week columns */}
-      <motion.div
+      <m.div
         data-tour="analytics-heatmap"
         initial={{ opacity: 0, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -736,7 +749,7 @@ export const AnalyticsView: React.FC = () => {
         </p>
 
         <ActivityHeatmap counts={heatmapCounts} />
-      </motion.div>
+      </m.div>
       </>
       )}
 

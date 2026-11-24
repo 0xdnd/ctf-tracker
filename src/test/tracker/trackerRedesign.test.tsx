@@ -336,7 +336,7 @@ describe('Wave 2 lane B - tracker redesign', () => {
     it('caps inline badges at three and groups the rest behind a +N pill', () => {
       wrap(<KanbanBoard filteredMachines={[makeMachine()]} />);
       // Platform + OS + difficulty inline, two certifications overflow
-      expect(screen.getByRole('button', { name: '2 more' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^2 more/ })).toBeInTheDocument();
     });
 
     it('shows the platform badge first, inline, and absent without a platform', () => {
@@ -374,10 +374,53 @@ describe('Wave 2 lane B - tracker redesign', () => {
       window.matchMedia = original;
     });
 
-    it('renders stacked cards instead of a table', () => {
+    it('renders the compact phone table (Target, Status, Flags, menu) instead of the wide table', async () => {
       wrap(<TableView filteredMachines={useCtfStore.getState().machines} />);
-      expect(screen.getByTestId('table-stacked-cards')).toBeInTheDocument();
-      expect(screen.queryByRole('table')).toBeNull();
+      expect(await screen.findByTestId('table-compact')).toBeInTheDocument();
+      const table = screen.getByRole('table');
+      for (const name of ['Target', 'Status', 'Flags']) {
+        expect(within(table).getByRole('columnheader', { name: new RegExp(name) })).toBeInTheDocument();
+      }
+      expect(within(table).getAllByRole('row')).toHaveLength(3);
+      expect(screen.getByRole('button', { name: /More actions for Lame/ })).toBeInTheDocument();
+    });
+
+    it('sorts by Target from the phone header', async () => {
+      wrap(<TableView filteredMachines={useCtfStore.getState().machines} />);
+      await screen.findByTestId('table-compact');
+      const names = () => screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('checkbox')[0].getAttribute('aria-label'));
+      expect(names()).toEqual(['Select Lame', 'Select Legacy']);
+      fireEvent.click(screen.getByRole('button', { name: /Sort by Target/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Sort by Target, ascending/ }));
+      expect(names()).toEqual(['Select Legacy', 'Select Lame']);
+    });
+
+    it('selects rows and shows the bulk toolbar', async () => {
+      wrap(<TableView filteredMachines={useCtfStore.getState().machines} />);
+      await screen.findByTestId('table-compact');
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select Lame' }));
+      expect(screen.getByRole('toolbar', { name: /Bulk actions/ })).toHaveTextContent('1');
+      fireEvent.click(screen.getByRole('checkbox', { name: /Select all 2 filtered targets/ }));
+      expect(screen.getByRole('toolbar', { name: /Bulk actions/ })).toHaveTextContent('2');
+    });
+
+    it('toggles flags from the pill and the row menu, and moves stage from the menu', async () => {
+      // TableView takes its rows as a prop, so a store change reaches it through a re-render.
+      const ui = () => <MemoryRouter><TableView filteredMachines={useCtfStore.getState().machines} /></MemoryRouter>;
+      const { rerender } = render(ui());
+      await screen.findByTestId('table-compact');
+      const userFlag = () => Boolean(useCtfStore.getState().machines.find((m) => m.id === 'box-1')?.userPwnedAt);
+      fireEvent.click(screen.getByRole('button', { name: /Toggle user flag for Lame/ }));
+      expect(userFlag()).toBe(true);
+      rerender(ui());
+      fireEvent.click(screen.getByRole('button', { name: /More actions for Lame/ }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Clear user flag for Lame/ }));
+      expect(userFlag()).toBe(false);
+      // Capturing the user flag already moved Lame from recon to foothold, so the next stage is System pwned.
+      rerender(ui());
+      fireEvent.click(screen.getByRole('button', { name: /More actions for Lame/ }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Move Lame to System pwned/ }));
+      expect(useCtfStore.getState().machines.find((m) => m.id === 'box-1')?.status).toBe('root');
     });
   });
 

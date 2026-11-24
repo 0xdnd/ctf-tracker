@@ -1,0 +1,60 @@
+{
+  "version": "2.5.6",
+  "releasedAt": "2026-11-17",
+  "catalogAsOf": "2026-11-17",
+  "activePoolCount": 20,
+  "highlights": [
+    "Target & AD credentials HUD (DOMAIN, DC IP, USER, PASS) in the Session popover with password reveal and Evidence Vault quick-fill.",
+    "Update Ready & post-update What's New popups (Web + Desktop) highlighting short release notes and added, active, and retired catalog machines.",
+    "Exam & Personal Pivot Attack Graph inside the Exam Simulator with custom internal hosts, linked credentials, and SVG / Obsidian Canvas export.",
+    "Fixed stuck target detail modal when closing or switching into Assign IP, and resolved accessibility and mobile layout regressions across all themes."
+  ],
+  "machines": {
+    "added": [],
+    "active": [
+      {
+        "name": "RedEye",
+        "platform": "HTB",
+        "os": "Windows",
+        "difficulty": "Hard",
+        "releasedAt": "2026-11-14"
+      },
+      {
+        "name": "Unclaimed",
+        "platform": "HTB",
+        "os": "Windows",
+        "difficulty": "Medium",
+        "releasedAt": "2026-11-07"
+      },
+      {
+        "name": "Takeoff",
+        "platform": "HTB",
+        "os": "Linux",
+        "difficulty": "Hard",
+        "releasedAt": "2026-10-31"
+      },
+      {
+        "name": "DutyBound",
+        "platform": "HTB",
+        "os": "Linux",
+        "difficulty": "Medium",
+        "releasedAt": "2026-10-24"
+      },
+      {
+        "name": "Autopilot",
+        "platform": "HTB",
+        "os": "Windows",
+        "difficulty": "Insane",
+        "releasedAt": "2026-10-17"
+      },
+      {
+        "name": "Stream",
+        "platform": "HTB",
+        "os": "Linux",
+        "difficulty": "Medium",
+        "releasedAt": "2026-10-10"
+      }
+    ],
+    "retired": []
+  }
+}

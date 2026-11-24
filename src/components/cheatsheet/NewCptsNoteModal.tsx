@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { X, BookOpen, Plus, Terminal, Folder } from 'lucide-react';
 import { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
@@ -134,6 +134,7 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close new note modal"
             className="active:scale-[0.97] p-1.5 rounded bg-surface-sunken text-muted hover:text-primary border border-subtle transition-interactive"
           >
             <X className="w-4 h-4" />
@@ -394,14 +395,14 @@ export const NewCptsNoteModal: React.FC<NewCptsNoteModalProps> = ({
             >
               Cancel
             </button>
-            <motion.button
+            <m.button
               whileTap={{ scale: 0.98 }}
               type="submit"
               className="px-5 py-2 rounded-lg bg-accent hover:brightness-105 text-on-accent font-semibold transition-[box-shadow,background-color,border-color,color] flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Save Field Note</span>
-            </motion.button>
+            </m.button>
           </div>
         </form>
       </div>

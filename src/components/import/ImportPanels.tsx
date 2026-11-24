@@ -5,7 +5,7 @@ import { PasteImportPanel } from './PasteImportPanel';
 import { Skeleton, SkeletonRegion } from '../common/Skeleton';
 
 // The CSV importer and its parser load only when the visitor opens it.
-const CsvImportPanel = lazy(() => import('./CsvImportPanel'));
+const CsvImportPanel = lazy(() => import('./CsvImportPanel').then((m) => ({ default: m.CsvImportPanel })));
 
 interface ImportPanelsProps {
   onApplied?: (count: number) => void;
@@ -47,7 +47,7 @@ export const ImportPanels: React.FC<ImportPanelsProps> = ({ csvRequested, focusO
           <button
             type="button"
             onClick={paste.onSkip}
-            className="text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
+            className="text-xs text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
           >
             Skip, I&apos;m starting fresh
           </button>
@@ -76,7 +76,7 @@ export const ImportPanels: React.FC<ImportPanelsProps> = ({ csvRequested, focusO
           aria-expanded={csvOpen}
           aria-controls={csvId}
           onClick={() => setCsvOpen((o) => !o)}
-          className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
+          className="inline-flex items-center gap-1.5 text-xs text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
         >
           <FileSpreadsheet className="w-3.5 h-3.5" aria-hidden="true" />
           <span>{csvOpen ? 'Hide CSV import' : 'Have a spreadsheet? Import a CSV file'}</span>
@@ -93,4 +93,3 @@ export const ImportPanels: React.FC<ImportPanelsProps> = ({ csvRequested, focusO
   );
 };
 
-export default ImportPanels;

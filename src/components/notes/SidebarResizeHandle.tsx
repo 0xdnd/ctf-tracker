@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-export const SIDEBAR_MIN_PX = 180;
-export const SIDEBAR_ABS_MAX_PX = 600;
+const SIDEBAR_MIN_PX = 180;
+const SIDEBAR_ABS_MAX_PX = 600;
 const STEP_PX = 16;
 const STEP_SHIFT_PX = 48;
 
 /** Max width: 600px or half the shell, whichever is smaller (never below the minimum). */
-export const sidebarMaxPx = (shellWidth: number): number =>
+const sidebarMaxPx = (shellWidth: number): number =>
   Math.max(SIDEBAR_MIN_PX, shellWidth > 0 ? Math.min(SIDEBAR_ABS_MAX_PX, Math.floor(shellWidth / 2)) : SIDEBAR_ABS_MAX_PX);
 
 export const clampSidebarWidth = (w: number, shellWidth: number): number =>
@@ -141,7 +141,7 @@ export const SidebarResizeHandle: React.FC<Props> = ({
       onPointerCancel={onPointerUp}
       onDoubleClick={onReset}
       onKeyDown={onKeyDown}
-      className="group absolute inset-y-0 right-0 z-30 flex w-2 cursor-col-resize touch-none items-stretch justify-end outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      className="group absolute inset-y-0 -right-3 z-30 flex w-6 cursor-col-resize touch-none items-stretch justify-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
     >
       <span
         aria-hidden="true"

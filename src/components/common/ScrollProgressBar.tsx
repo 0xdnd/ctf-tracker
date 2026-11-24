@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, useSpring } from 'framer-motion';
+import { m, useSpring } from 'framer-motion';
 import { useScrollState } from '../../context/ScrollContext';
 
 /**
@@ -12,7 +12,7 @@ export const ScrollProgressBar: React.FC = React.memo(() => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-surface-hover pointer-events-none" aria-hidden="true">
-      <motion.div
+      <m.div
         className="h-full bg-accent"
         style={{
           scaleX: smoothProgress,

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useIsPresent, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useIsPresent, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
 import { GUIDE_META, type TourStep } from './guideMeta';
 import { GUIDE_COUNT } from './guideRegistry';
@@ -22,7 +22,7 @@ const StepCopy: React.FC<{ step: TourStep; reduced: boolean; direction: number }
   const variants = reduced ? fadeVariants : copyVariants;
   return (
     <div className="min-w-0 [grid-area:stack]" aria-hidden={present ? undefined : true}>
-      <motion.h2
+      <m.h2
         id={present ? 'tour-title' : undefined}
         className={titleClass}
         custom={direction}
@@ -33,8 +33,8 @@ const StepCopy: React.FC<{ step: TourStep; reduced: boolean; direction: number }
         transition={{ duration: 0.22, ease: EASE_OUT }}
       >
         {step.title}
-      </motion.h2>
-      <motion.p
+      </m.h2>
+      <m.p
         id={present ? 'tour-body' : undefined}
         className={bodyClass}
         custom={direction}
@@ -45,7 +45,7 @@ const StepCopy: React.FC<{ step: TourStep; reduced: boolean; direction: number }
         transition={{ duration: 0.22, delay: reduced ? 0 : 0.04, ease: EASE_OUT }}
       >
         {step.body}
-      </motion.p>
+      </m.p>
     </div>
   );
 };
@@ -159,7 +159,7 @@ export const StepPanel: React.FC<StepPanelProps> = ({
 const FinishMark: React.FC = () => {
   const reduced = useReducedMotion();
   return (
-    <motion.span
+    <m.span
       aria-hidden="true"
       className="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] border-accent text-accent"
       initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.86 }}
@@ -169,7 +169,7 @@ const FinishMark: React.FC = () => {
       <span className="relative block h-4 w-4 overflow-hidden">
         <Check className="h-4 w-4" strokeWidth={2.5} />
         {!reduced && (
-          <motion.span
+          <m.span
             className="absolute inset-0 bg-surface-card"
             initial={{ x: 0 }}
             animate={{ x: '101%' }}
@@ -177,7 +177,7 @@ const FinishMark: React.FC = () => {
           />
         )}
       </span>
-    </motion.span>
+    </m.span>
   );
 };
 
@@ -231,16 +231,16 @@ export const FinishPanel: React.FC<FinishPanelProps> = ({
 
       <div className="mt-4 flex items-center gap-3">
         <FinishMark />
-        <motion.h2 id="tour-title" className={`min-w-0 ${titleClass}`} {...rise(0)}>
+        <m.h2 id="tour-title" className={`min-w-0 ${titleClass}`} {...rise(0)}>
           {meta.doneTitle ?? `${meta.title} done`}
-        </motion.h2>
+        </m.h2>
       </div>
 
-      <motion.div className="mt-4 flex items-center gap-3" {...rise(1)}>
+      <m.div className="mt-4 flex items-center gap-3" {...rise(1)}>
         <GuideRuler total={GUIDE_COUNT} done={shownCount} arrivingIndex={completedCount - 1} />
         <span className="relative flex-shrink-0 overflow-hidden font-mono text-[11px] tabular-nums text-muted">
           <AnimatePresence initial={false} mode="popLayout">
-            <motion.span
+            <m.span
               key={shownCount}
               className="inline-block"
               initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
@@ -249,13 +249,13 @@ export const FinishPanel: React.FC<FinishPanelProps> = ({
               transition={{ duration: 0.18, ease: EASE_OUT }}
             >
               {shownCount}
-            </motion.span>
+            </m.span>
           </AnimatePresence>
           /{GUIDE_COUNT}
         </span>
-      </motion.div>
+      </m.div>
 
-      <motion.p id="tour-body" className="mt-3 text-[15px] leading-[1.55] text-secondary [text-wrap:pretty] md:text-sm md:leading-[1.6]" {...rise(2)}>
+      <m.p id="tour-body" className="mt-3 text-[15px] leading-[1.55] text-secondary [text-wrap:pretty] md:text-sm md:leading-[1.6]" {...rise(2)}>
         {next ? (
           <>
             <span className="font-medium text-primary">Next up: {next.listTitle ?? next.title}.</span> {next.intro}
@@ -263,7 +263,7 @@ export const FinishPanel: React.FC<FinishPanelProps> = ({
         ) : (
           `That was the last one. You have seen every guide that can run right now.`
         )}
-      </motion.p>
+      </m.p>
 
       {next ? (
         <CardActions

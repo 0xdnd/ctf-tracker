@@ -8,10 +8,12 @@ import { useToastStore } from '../../store/useToastStore';
 import { playCyberSound } from '../../utils/helpers';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { Tooltip } from '../common/Tooltip';
+import { OverflowMenu } from '../common/OverflowMenu';
+import { NARROW_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
 import { DOCK_SWITCHER_SHORTCUT_LABEL } from './DockQuickSwitcher';
 
 /** Workspace-scoped shortcuts (Alt combos the global hotkeys leave free). */
-export const NOTES_WORKSPACE_SHORTCUTS = [
+const NOTES_WORKSPACE_SHORTCUTS = [
   { keys: DOCK_SWITCHER_SHORTCUT_LABEL.replace('+', ' + '), label: 'Search notes' },
   { keys: 'Alt + =', label: 'New note' },
   { keys: 'Alt + C', label: 'Copy all commands' },
@@ -26,11 +28,15 @@ interface InlineVarFieldProps {
   label: string;
   value: string;
   onSave: (value: string) => void;
+  /** Opens straight in edit mode (used from the phone menu). */
+  startEditing?: boolean;
+  /** Called once editing ends, saved or cancelled. */
+  onClose?: () => void;
 }
 
 /** Click-to-edit variable value (Enter / blur saves, Escape cancels). */
-const InlineVarField: React.FC<InlineVarFieldProps> = ({ label, value, onSave }) => {
-  const [editing, setEditing] = useState(false);
+const InlineVarField: React.FC<InlineVarFieldProps> = ({ label, value, onSave, startEditing = false, onClose }) => {
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const doneRef = useRef(false);
@@ -45,6 +51,7 @@ const InlineVarField: React.FC<InlineVarFieldProps> = ({ label, value, onSave })
     doneRef.current = true;
     if (save) onSave(draft.trim());
     setEditing(false);
+    onClose?.();
   };
 
   if (editing) {
@@ -69,7 +76,7 @@ const InlineVarField: React.FC<InlineVarFieldProps> = ({ label, value, onSave })
               finish(false);
             }
           }}
-          className="h-7 w-32 rounded-md border border-accent bg-surface-sunken px-1.5 font-mono tabular-nums text-[11px] text-primary focus:outline-none [@media(pointer:coarse)]:h-11"
+          className="h-7 w-32 rounded-md border border-accent bg-surface-sunken px-1.5 font-mono tabular-nums text-[11px] text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 [@media(pointer:coarse)]:h-11"
         />
       </label>
     );
@@ -84,10 +91,10 @@ const InlineVarField: React.FC<InlineVarFieldProps> = ({ label, value, onSave })
         setEditing(true);
       }}
       title={unset ? `${label} is not set. Click to set it` : `Click to edit ${label}`}
-      aria-label={`${label}: ${unset ? 'not set' : value}. Edit`}
+      aria-label={`${label} ${unset ? 'not set' : value}, edit`}
       className="active:scale-[0.97] inline-flex h-7 items-center gap-1 rounded-md px-1.5 hover:bg-surface-hover transition-interactive cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11"
     >
-      <span className="font-semibold text-muted">{label}</span>
+      <span className="font-semibold text-muted">{label}</span>{' '}
       <span
         className={`rounded border px-1 font-mono tabular-nums ${
           unset
@@ -154,6 +161,9 @@ export const NotesWorkspaceTargetBar: React.FC<NotesWorkspaceTargetBarProps> = (
   const [lootSecret, setLootSecret] = useState('');
   const [lootType, setLootType] = useState<CredentialType>('password');
   const [lootSyncVars, setLootSyncVars] = useState(true);
+  // Phones: one row. Target note, LHOST, loot and the tools move into one menu.
+  const compact = useMediaQuery(NARROW_QUERY);
+  const [lhostOpen, setLhostOpen] = useState(false);
 
   const handleSaveLoot = (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,9 +335,9 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
   return (
     <div
       data-testid="notes-target-bar"
-      className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1 bg-surface-card border-b border-subtle text-[11px] flex-shrink-0 relative"
+      className={`flex items-center gap-x-2 gap-y-1 px-3 py-1 bg-surface-card border-b border-subtle text-[11px] flex-shrink-0 relative ${compact ? 'flex-nowrap' : 'flex-wrap'}`}
     >
-      <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
+      <div className={`flex min-w-0 items-center gap-1.5 ${compact ? 'flex-1 flex-nowrap' : 'flex-wrap'}`}>
         <Crosshair className="w-3.5 h-3.5 flex-shrink-0 text-accent" aria-hidden="true" />
         {activeMachine ? (
           <>
@@ -338,7 +348,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
                 setPickerQuery('');
               }}
               title="Click to switch engaged target"
-              className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-hover cursor-pointer"
+              className="inline-flex min-h-6 items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-hover cursor-pointer"
             >
               <span className="max-w-[140px] truncate font-semibold text-primary">
                 {activeMachine.name}
@@ -351,7 +361,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
             <EditableIpBadge machineId={activeMachine.id} initialIp={activeMachine.ip || ''} size="xs" />
 
             {/* Tier 1 Upgrade #1: 1-Click Bound Target Note */}
-            <button
+            {!compact && <button
               type="button"
               onClick={handleOpenOrCreateTargetNote}
               data-testid="open-target-note-btn"
@@ -361,7 +371,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
             >
               <BookOpen className="w-3 h-3" />
               <span>Target Note</span>
-            </button>
+            </button>}
 
             {/* Tier 1 Upgrade #2: In-Note Flag Capture & Pwn Sync */}
             <div className="inline-flex items-center gap-1" role="group" aria-label="Target flag capture controls">
@@ -379,7 +389,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
                 }`}
               >
                 <Flag className="w-2.5 h-2.5" />
-                <span>user.txt</span>
+                <span className="max-sm:hidden">user.txt</span>
                 {userPwned && <Check className="w-2.5 h-2.5" />}
               </button>
 
@@ -397,7 +407,7 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
                 }`}
               >
                 <Crown className="w-2.5 h-2.5" />
-                <span>root.txt</span>
+                <span className="max-sm:hidden">root.txt</span>
                 {rootPwned && <Check className="w-2.5 h-2.5" />}
               </button>
             </div>
@@ -497,20 +507,25 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
         </div>
       )}
 
-      <InlineVarField label="LHOST" value={globalVars.lhost || ''} onSave={(lhost) => setGlobalVars({ lhost })} />
+      {!compact && <InlineVarField label="LHOST" value={globalVars.lhost || ''} onSave={(lhost) => setGlobalVars({ lhost })} />}
+      {compact && lhostOpen && (
+        <div className="absolute left-3 right-3 top-full z-50 mt-1 rounded-lg border border-strong bg-surface-card p-2 shadow-2xl">
+          <InlineVarField label="LHOST" value={globalVars.lhost || ''} onSave={(lhost) => setGlobalVars({ lhost })} startEditing onClose={() => setLhostOpen(false)} />
+        </div>
+      )}
 
       {/* Phase 2 Power Tool: 1-Click Loot Capture to Vault & Active Note */}
-      <button
+      {!compact && <button
         type="button"
         onClick={() => setLootOpen((p) => !p)}
         data-testid="quick-loot-btn"
-        aria-label="Quick capture credential to Vault"
+        aria-label="+ Loot: quick capture credential to Vault"
         title="Capture credential to Vault & inject into active note"
         className="active:scale-[0.97] inline-flex h-6 items-center gap-1 rounded border border-callout-warn-border bg-callout-warn-bg px-1.5 text-[10px] font-semibold text-callout-warn-fg hover:bg-surface-hover transition-interactive cursor-pointer"
       >
         <KeyRound className="w-3 h-3" />
         <span>+ Loot</span>
-      </button>
+      </button>}
 
       {lootOpen && (
         <form
@@ -584,6 +599,23 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
         </form>
       )}
 
+      {compact ? (
+        <OverflowMenu
+          portal
+          label="More note actions"
+          className="ml-auto"
+          items={[
+            ...(activeMachine
+              ? [{ id: 'target-note', label: 'Target note', icon: <BookOpen className="h-3.5 w-3.5" />, onSelect: handleOpenOrCreateTargetNote }]
+              : []),
+            { id: 'lhost', label: `LHOST ${UNSET_VALUES.has((globalVars.lhost || '').trim()) ? 'not set' : globalVars.lhost}`, onSelect: () => setLhostOpen(true) },
+            { id: 'loot', label: 'Capture loot', ariaLabel: 'Capture loot: quick capture credential to Vault', icon: <KeyRound className="h-3.5 w-3.5" />, onSelect: () => setLootOpen(true) },
+            { id: 'search', label: 'Search notes', icon: <Search className="h-3.5 w-3.5" />, onSelect: onSearch },
+            { id: 'new', label: 'New note', icon: <FilePlus className="h-3.5 w-3.5" />, onSelect: onNewNote },
+            { id: 'copy', label: 'Copy all commands', icon: <ClipboardCopy className="h-3.5 w-3.5" />, onSelect: onCopyAll, disabled: !canCopyAll },
+          ]}
+        />
+      ) : (
       <div className="ml-auto flex items-center gap-0.5">
         <button type="button" onClick={onSearch} className={ICON_BTN} aria-label="Search notes" title={`Search notes (${DOCK_SWITCHER_SHORTCUT_LABEL})`}>
           <Search className="w-3.5 h-3.5" />
@@ -614,11 +646,12 @@ nmap -sC -sV -p- --min-rate 5000 -oN nmap_${activeMachine.name.toLowerCase().rep
             </ul>
           }
         >
-          <button type="button" className={ICON_BTN} aria-label="Notes keyboard shortcuts">
+          <button type="button" className={`${ICON_BTN} [@media(pointer:coarse)]:hidden`} aria-label="Notes keyboard shortcuts">
             <Keyboard className="w-3.5 h-3.5" />
           </button>
         </Tooltip>
       </div>
+      )}
     </div>
   );
 };

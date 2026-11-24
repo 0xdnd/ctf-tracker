@@ -1,0 +1,40 @@
+{
+  "updatedAt": "2026-11-17",
+  "entries": [
+    {
+      "date": "2026-11-17",
+      "added": [],
+      "active": [
+        {
+          "name": "RedEye",
+          "platform": "HTB",
+          "os": "Windows",
+          "difficulty": "Hard",
+          "releasedAt": "2026-11-14"
+        },
+        {
+          "name": "Unclaimed",
+          "platform": "HTB",
+          "os": "Windows",
+          "difficulty": "Medium",
+          "releasedAt": "2026-11-07"
+        },
+        {
+          "name": "Takeoff",
+          "platform": "HTB",
+          "os": "Linux",
+          "difficulty": "Hard",
+          "releasedAt": "2026-10-31"
+        },
+        {
+          "name": "DutyBound",
+          "platform": "HTB",
+          "os": "Linux",
+          "difficulty": "Medium",
+          "releasedAt": "2026-10-24"
+        }
+      ],
+      "retired": []
+    }
+  ]
+}

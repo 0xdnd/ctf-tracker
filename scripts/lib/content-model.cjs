@@ -97,9 +97,17 @@ const GITBOOK_LIVE = false;
 // /machines/all/ and /machines/page/<n>/ belong to the machines list.
 const RESERVED_MACHINE_SLUGS = new Set(['all', 'page']);
 
+const NUM_WORDS = [
+  'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty',
+];
+const numberWord = (n) => NUM_WORDS[n] || String(n);
+const listAnd = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
+
 function getModel() {
   if (cached) return cached;
   const d = loadData();
+  const initialMachines = Array.isArray(d.INITIAL_MACHINES) ? d.INITIAL_MACHINES : [];
   const trackById = new Map((d.PRACTICE_TRACKS || []).map((t) => [t.id, t]));
   const ippsecTrack = trackById.get('ippsec-vault');
 
@@ -107,11 +115,13 @@ function getModel() {
   const used = new Set();
   // Active HTB machines (src/data/activeMachines.json): listed by name/os/difficulty/room link only, never a page.
   const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-  const known = new Set(d.INITIAL_MACHINES.filter((m) => m.platform === 'HTB').map((m) => norm(m.name)));
-  const active = require(path.join(rootDir, 'src', 'data', 'activeMachines.json'))
-    .machines.filter((a) => !known.has(norm(a.name)))
+  const known = new Set(initialMachines.filter((m) => m.platform === 'HTB').map((m) => norm(m.name)));
+  const activeJson = require(path.join(rootDir, 'src', 'data', 'activeMachines.json'));
+  const activeRows = Array.isArray(activeJson && activeJson.machines) ? activeJson.machines : [];
+  const active = activeRows
+    .filter((a) => !known.has(norm(a.name)))
     .map((a) => ({ id: `htb-${norm(a.name)}`, name: a.name, platform: 'HTB', os: a.os, difficulty: a.difficulty, tags: [], certifications: [], roomUrl: `https://app.hackthebox.com/machines/${a.name}`, isActive: true }));
-  const machines = [...d.INITIAL_MACHINES, ...active].map((m) => {
+  const machines = [...initialMachines, ...active].map((m) => {
     let slug = slugify(`${m.platform}-${m.name}`);
     if (!slug || used.has(slug)) slug = slugify(m.id) || slug;
     if (RESERVED_MACHINE_SLUGS.has(slug)) throw new Error(`content-model: machine slug "${slug}" is reserved for the machines list`);
@@ -201,7 +211,39 @@ function getModel() {
   // Proving Grounds and VulnHub catalog rows (name, OS, difficulty, tags, room link only; no hint, flags or ids beyond the catalog's own).
   const extraMachines = EXTRA_ROWS.flatMap((rows, i) => rows.map((m) => ({ ...m, platform: EXTRA_PLATFORMS[EXTRA_SOURCES[i]] }))).map((m) => ({ id: m.id, name: m.name, platform: m.platform, os: m.os, difficulty: m.difficulty, tags: m.tags || [], roomUrl: m.roomUrl || '', hasPage: false }));
 
-  cached = { machines, extraMachines, proLabs, topics, phases, shellLangs, shellCount: d.ALL_SHELL_ITEMS.length, shellAvailableCount, shellUnavailable, notes, examTracks, examTrackConfigs: Object.values(d.EXAM_TRACK_CONFIGS), rabbitHoleExamMinutes: d.RABBIT_HOLE_THRESHOLDS.examMinutes, examTrackDurations, catalogCounts, MIN_WORDS };
+  const phaseCount = phases.length;
+  const phaseCountWord = numberWord(phaseCount);
+  const examTrackCount = examTracks.length;
+  const examTrackCountWord = numberWord(examTrackCount);
+  const examTracksList = listAnd(examTracks);
+  const examTracksCsv = examTracks.join(', ');
+
+  cached = {
+    machines,
+    extraMachines,
+    proLabs,
+    topics,
+    phases,
+    shellLangs,
+    shellCount: d.ALL_SHELL_ITEMS.length,
+    shellAvailableCount,
+    shellUnavailable,
+    notes,
+    examTracks,
+    examTrackConfigs: Object.values(d.EXAM_TRACK_CONFIGS),
+    rabbitHoleExamMinutes: d.RABBIT_HOLE_THRESHOLDS.examMinutes,
+    examTrackDurations,
+    catalogCounts,
+    MIN_WORDS,
+    phaseCount,
+    phaseCountWord,
+    phaseCountWordLower: phaseCountWord.toLowerCase(),
+    examTrackCount,
+    examTrackCountWord,
+    examTrackCountWordLower: examTrackCountWord.toLowerCase(),
+    examTracksList,
+    examTracksCsv,
+  };
   return cached;
 }
 
@@ -277,4 +319,4 @@ const hasOwnerWriteup = (m) =>
   Boolean(m.hasSiteWriteup || m.ownWriteup || String(m.myNotes || '').split(/\s+/).filter(Boolean).length >= OWNER_NOTES_MIN_WORDS);
 const isNoindexMachine = (m) => NOINDEX_UNTIL_WRITEUP.includes(m.slug) && !hasOwnerWriteup(m);
 
-module.exports = { TRACK_TO_CERT, hasOwnerWriteup, isNoindexMachine, NOINDEX_UNTIL_WRITEUP, getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };
+module.exports = { TRACK_TO_CERT, NUM_WORDS, numberWord, listAnd, hasOwnerWriteup, isNoindexMachine, NOINDEX_UNTIL_WRITEUP, getModel, getGuides, getWriteups, getTechSlugs, checkWriteups, slugify, isRealSummary, isStartingPointHub, STARTING_POINT_HUB_URL };

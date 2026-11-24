@@ -27,7 +27,7 @@ export const PASS_STAT_LABELS: Record<PassStatKey, string> = {
 export type PassStatToggles = Record<PassStatKey, boolean>;
 export const DEFAULT_PASS_STAT_TOGGLES: PassStatToggles = { machines: true, streak: true, hours: false };
 
-export const PASS_CARD_BRAND = 'ZeroBox';
+const PASS_CARD_BRAND = 'ZeroBox';
 export const PASS_CARD_SITE = 'ctftracker.com';
 export const PASS_CARD_WIDTH = 1200;
 export const PASS_CARD_HEIGHT = 630;
@@ -50,7 +50,7 @@ export interface PassCardOptions {
   stats: PassStatToggles;
 }
 
-export interface PassCardStat {
+interface PassCardStat {
   key: PassStatKey;
   label: string;
   value: string;

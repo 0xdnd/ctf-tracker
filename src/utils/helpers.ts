@@ -157,11 +157,32 @@ export function playCyberSound(type: 'click' | 'root' | 'toggle' | 'timer' | 'co
   }
 }
 
+type ConfettiFireFn = (options?: Record<string, unknown>) => Promise<null> | null;
+let mainThreadConfetti: ConfettiFireFn | null = null;
+
+function hasCanvas2DContext(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return typeof canvas.getContext === 'function' && canvas.getContext('2d') !== null;
+  } catch {
+    return false;
+  }
+}
+
 export function triggerRootCelebration() {
+  // Skip in headless/JSDOM environments without a 2D canvas context so canvas-confetti never crashes inside requestAnimationFrame.
+  if (!hasCanvas2DContext()) return;
   // Loaded on demand so canvas-confetti stays out of the entry preload graph.
+  // Use confetti.create with useWorker: false so strict production CSP (script-src without blob: worker) never logs a blocked worker error.
   import('canvas-confetti')
     .then(({ default: confetti }) => {
-      confetti({
+      const fire: ConfettiFireFn =
+        mainThreadConfetti ??
+        (typeof confetti.create === 'function'
+          ? (mainThreadConfetti = confetti.create(undefined, { useWorker: false, resize: true }) as ConfettiFireFn)
+          : (confetti as ConfettiFireFn));
+      fire({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },

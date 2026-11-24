@@ -119,18 +119,6 @@ const DIFFICULTY_TONE: Record<string, SemanticToneId> = {
   Insane: 'tip',
 };
 
-const STATUS_TONE: Record<string, SemanticToneId> = {
-  recon: 'info',
-  foothold: 'warn',
-  root: 'success',
-  pwned: 'success',
-  completed: 'tip',
-};
-
-export function getCategoryCatIndex(categoryId: string): CatIndex | undefined {
-  return CATEGORY_CAT_INDEX[categoryId];
-}
-
 export function getCategoryTone(categoryId: string): BadgeTone {
   const idx = CATEGORY_CAT_INDEX[categoryId];
   return idx ? CAT_TONES[idx] : NEUTRAL_TONE;
@@ -157,11 +145,6 @@ export function getOsTone(os?: string): BadgeTone {
 
 export function getDifficultyTone(difficulty?: string): BadgeTone {
   const id = difficulty ? DIFFICULTY_TONE[difficulty] : undefined;
-  return id ? SEMANTIC_TONES[id] : NEUTRAL_TONE;
-}
-
-export function getStatusTone(status?: string): BadgeTone {
-  const id = status ? STATUS_TONE[status.toLowerCase()] : undefined;
   return id ? SEMANTIC_TONES[id] : NEUTRAL_TONE;
 }
 

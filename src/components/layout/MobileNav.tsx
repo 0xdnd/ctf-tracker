@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { stripTrailingSlash } from '../../utils/pathUtils';
 import { Crosshair, Zap, Menu, Route, Code, NotebookText } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -91,12 +91,12 @@ export const MobileNav: React.FC = () => {
             className={`${tabBase} ${tabState(location.pathname.startsWith('/methodology'))}`}
           >
             <Route className="w-4 h-4" />
-            <span className="text-[11px] mt-0.5">Method</span>
+            <span className="text-[11px] mt-0.5">Playbook</span>
             {location.pathname.startsWith('/methodology') && <span className="absolute top-0 h-0.5 w-5 rounded-full bg-accent" aria-hidden="true" />}
           </button>
 
           {/* Automations */}
-          <motion.button
+          <m.button
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setReconAutomationModalOpen(true);
@@ -105,8 +105,8 @@ export const MobileNav: React.FC = () => {
             className={`${tabBase} ${tabState(reconAutomationModalOpen)}`}
           >
             <Zap className="w-4 h-4" />
-            <span className="text-[11px] mt-0.5">Auto</span>
-          </motion.button>
+            <span className="text-[11px] mt-0.5">Recon</span>
+          </m.button>
 
           {/* Cheatsheets */}
           <button

@@ -108,7 +108,7 @@ export interface SyncMergeSummary {
   lootAdded: number;
 }
 
-export interface MergedWorkspace {
+interface MergedWorkspace {
   machines: Machine[];
   deletedMachineIds: MachineTombstone[];
   customNotes: CptsNoteEntry[];
@@ -232,7 +232,7 @@ function hashString(str: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
-export const fingerprintHash = (m: Machine): string => hashString(machineFingerprint(m));
+const fingerprintHash = (m: Machine): string => hashString(machineFingerprint(m));
 
 export function machineFingerprint(m: Machine, options: { tags?: boolean } = {}): string {
   const pick: Record<string, unknown> = {};
@@ -268,7 +268,7 @@ const serviceKey = (s: { port?: number; protocol?: string }) => `${s.port}/${s.p
 const LOSSY_TEXT_KEYS = ['userFlag', 'rootFlag', 'quickNotes', 'writeupMarkdown', 'scanSummary', 'rawScanOutput'] as const;
 
 /** True when some text is non-empty on both sides and different. */
-export const textDiverges = (a: Machine, b: Machine): boolean =>
+const textDiverges = (a: Machine, b: Machine): boolean =>
   LOSSY_TEXT_KEYS.some((k) => filled(a[k]) && filled(b[k]) && a[k] !== b[k]);
 
 /** True when `to` lacks progress that `from` has (a downgrade). Plain text edits are not losses. */
@@ -387,7 +387,7 @@ function unredact(incoming: Machine, local: Machine | undefined): Machine {
   return out;
 }
 
-export function summarizeMachine(m: Machine): MachineSideSummary {
+function summarizeMachine(m: Machine): MachineSideSummary {
   return {
     status: (m.status as string) === 'unsolved' ? 'backlog' : m.status,
     userFlag: filled(m.userFlag) || filled(m.userPwnedAt),

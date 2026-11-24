@@ -31,6 +31,7 @@ import {
   getResilientRecord,
   listResilientRecordKeys,
   deleteResilientRecord,
+  clearWorkspacesForRestore,
 } from '../utils/resilientStorage';
 import {
   SCHEMA_VERSION,
@@ -45,7 +46,12 @@ import {
   ignoreRestoreLockToken,
 } from '../utils/schemaWriteGate';
 import { syncChannel } from '../utils/crossTabChannel';
-import { loadDeepProfileData, restoreDeepProfileData, type DeepProfilePayload } from '../utils/indexedDbDeepStorage';
+import {
+  loadDeepProfileData,
+  restoreDeepProfileData,
+  clearDeepProfileDataForRestore,
+  type DeepProfilePayload,
+} from '../utils/indexedDbDeepStorage';
 import { toast, useToastStore } from './useToastStore';
 
 export const PREMIGRATION_PREFIX = 'premigration_';
@@ -64,6 +70,7 @@ const EXACT_KEYS = new Set([
   'specter_ctf_store_v2',
   'zerobox_custom_machines_v1',
   'zerobox-goals-v1', // useGoalsStore (GOALS_STORAGE_KEY)
+  'zerobox_exam_state_v1', // useExamStore (EXAM_STORAGE_KEY)
 ]);
 const KEY_PREFIXES = ['zerobox_operator_profile_', 'specter_ctf_profile_', 'zerobox_custom_machines_v1_'];
 
@@ -556,18 +563,32 @@ async function runRestore(key: string, options: { reload?: () => void; settleMs?
   await new Promise((resolve) => setTimeout(resolve, options.settleMs ?? RESTORE_SETTLE_MS));
 
   // 3. Write. The rollback copy is taken now so it includes anything that landed during the settle window.
+  // Keys inside `include` that were created AFTER the snapshot (e.g. post-sync graph/loot/sync baselines)
+  // are removed so rollback never leaves stale post-sync keys behind, and restored on failure.
   const rollback = captureRawStorage(include);
   const written: string[] = [];
+  const removed: string[] = [];
   try {
     for (const [k, v] of Object.entries(rec.entries)) {
       localStorage.setItem(k, v);
       written.push(k);
+    }
+    for (const k of Object.keys(rollback)) {
+      if (!(k in rec.entries)) {
+        localStorage.removeItem(k);
+        removed.push(k);
+      }
     }
   } catch (err) {
     for (const k of written) {
       try {
         if (k in rollback) localStorage.setItem(k, rollback[k]);
         else localStorage.removeItem(k);
+      } catch { /* best-effort rollback of a single key; keep restoring the rest */ }
+    }
+    for (const k of removed) {
+      try {
+        if (k in rollback) localStorage.setItem(k, rollback[k]);
       } catch { /* best-effort rollback of a single key; keep restoring the rest */ }
     }
     try {
@@ -581,8 +602,13 @@ async function runRestore(key: string, options: { reload?: () => void; settleMs?
     return false;
   }
 
+  // 3a. Clear every cached `zb:workspace:*` IndexedDB copy via the ungated restore helper so
+  // `restoreFromResilientCopy()` on reload cannot overwrite the restored localStorage strings
+  // with a newer pre-restore workspace snapshot (for this or any other profile).
+  await clearWorkspacesForRestore().catch(() => false);
+
   // 3b. Pre-sync snapshots also carry the profile's IndexedDB deep record (writeups pruned out of a full
-  // localStorage). The localStorage strings are already back, so a failure here is reported, not rolled back.
+  // localStorage). If no deep record existed pre-sync, clear any post-sync deep writeups for restored profiles.
   if (rec.deep) {
     let ok = false;
     try {
@@ -596,6 +622,17 @@ async function runRestore(key: string, options: { reload?: () => void; settleMs?
         'Your tracker data was restored, but writeups kept only in IndexedDB could not be written back. A safety copy of the previous state is kept.',
         'Writeups not restored'
       );
+    }
+  } else if (rec.reason === 'pre-sync' || key.startsWith(PRESYNC_PREFIX)) {
+    const profileIds = new Set<string>();
+    for (const k of [...Object.keys(rec.entries), ...Object.keys(rollback)]) {
+      if (k.startsWith('zerobox_operator_profile_')) {
+        profileIds.add(k.slice('zerobox_operator_profile_'.length));
+      }
+    }
+    if (profileIds.size === 0) profileIds.add('guest');
+    for (const pid of profileIds) {
+      await clearDeepProfileDataForRestore(pid).catch(() => false);
     }
   }
 

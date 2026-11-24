@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Target & AD credentials HUD (`DOMAIN`, `DC IP`, `USER`, `PASS`) in the Session popover with password reveal and Evidence Vault quick-fill.
+- Update Ready & post-update What's New popups (Web + Desktop) highlighting short release notes and added, active, and retired catalog machines.
+- Exam & Personal Pivot Attack Graph inside the Exam Simulator with custom internal hosts, linked credentials, and SVG / Obsidian Canvas export.
+
+### Fixed
+- Fixed stuck target detail modal when closing or switching into Assign IP, and resolved accessibility and mobile layout regressions across all themes.
+
 ## [2.5.6] - 2026-11-15
 
 ### Changed

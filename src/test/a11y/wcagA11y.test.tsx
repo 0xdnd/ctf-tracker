@@ -7,6 +7,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { FloatingPayloadBar } from '../../components/common/FloatingPayloadBar';
 import { CyberSelect } from '../../components/common/CyberSelect';
 import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
+import { openSessionPanel } from '../layout/openSessionPanel';
 import { RevShellModal } from '../../components/common/RevShellModal';
 import { ExamSimulatorPage } from '../../pages/ExamSimulatorPage';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -234,7 +235,7 @@ describe('Layer 2: WCAG 2.1 AA Accessibility & Focus Trapping Assault', () => {
     expect(placeholderAria).toContain('Select Practice Track...');
   });
 
-  it('A11Y-7: UnifiedHeader variable copy and RevShell buttons comply with Label-in-Name', () => {
+  it('A11Y-7: UnifiedHeader variable copy and RevShell buttons comply with Label-in-Name', async () => {
     useCtfStore.setState({
       globalVars: {
         lhost: '10.10.14.99',
@@ -251,6 +252,8 @@ describe('Layer 2: WCAG 2.1 AA Accessibility & Focus Trapping Assault', () => {
       </MemoryRouter>
     );
 
+    await openSessionPanel();
+
     // Variable inputs and copy buttons comply with accessibility naming
     const copyLhostBtn = screen.getByRole('button', { name: /Copy LHOST/i });
     expect(copyLhostBtn).toBeInTheDocument();
@@ -264,10 +267,8 @@ describe('Layer 2: WCAG 2.1 AA Accessibility & Focus Trapping Assault', () => {
     expect(copyLportBtn).toBeInTheDocument();
     expect(screen.getByLabelText('Listener Port (LPORT)')).toHaveValue('9001');
 
-    // RevShell button: visible text is RevShell (prompt >_ is aria-hidden)
-    const revShellBtn = screen.getByRole('button', { name: /RevShell/ });
-    expect(revShellBtn).toBeInTheDocument();
-    expect(revShellBtn.getAttribute('aria-label')).toContain('RevShell');
+    // Reverse shell tool: the visible text is the accessible name (icon and shortcut hint are aria-hidden)
+    expect(screen.getByRole('button', { name: 'Reverse Shell Crafter' })).toBeInTheDocument();
   });
 
   it('A11Y-8: Form inputs in RevShellModal and ExamSimulatorPage have associated labels with htmlFor and id', () => {

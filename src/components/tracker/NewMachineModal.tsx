@@ -3,7 +3,7 @@ import { X, Plus, Server, Lock } from 'lucide-react';
 import { useCtfStore, KNOWN_ACTIVE_SEASONAL_NAMES, normalizeMachineSlug } from '../../store/useCtfStore';
 import { Platform, OperatingSystem, Difficulty } from '../../types';
 import { playCyberSound, sanitizeExternalUrl } from '../../utils/helpers';
-import { OsBadge, OsIcon } from '../common/OsBadge';
+import { OsIcon } from '../common/OsBadge';
 import { PlatformIcon } from '../common/PlatformBadge';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { Modal } from '../common/Modal';
@@ -17,7 +17,7 @@ const PLATFORM_OPTIONS: CyberSelectOption<Platform>[] = [
   { value: 'THM', label: 'TryHackMe', icon: <PlatformIcon platform="THM" /> },
   { value: 'PG', label: 'OffSec Proving Grounds', icon: <PlatformIcon platform="PG" /> },
   { value: 'VulnHub', label: 'VulnHub', icon: <PlatformIcon platform="VulnHub" /> },
-  { value: 'Custom', label: 'Custom / Private Lab', icon: <PlatformIcon platform="Custom" /> },
+  { value: 'Custom', label: 'Custom lab', icon: <PlatformIcon platform="Custom" /> },
 ];
 
 const OS_OPTIONS: CyberSelectOption<OperatingSystem>[] = [
@@ -115,7 +115,7 @@ export const NewMachineModal: React.FC = () => {
         <div className="flex-shrink-0 flex items-center justify-between border-b border-subtle p-4 bg-surface-sunken/95">
           <div className="flex items-center gap-2">
             <Server className="w-5 h-5 text-callout-success-fg" />
-            <h3 id="new-machine-title" className="text-base font-semibold text-primary">Add new target</h3>
+            <h2 id="new-machine-title" className="text-base font-semibold text-primary">Add new target</h2>
           </div>
           <button aria-label="Close dialog"
             onClick={() => setNewMachineModalOpen(false)}
@@ -125,7 +125,8 @@ export const NewMachineModal: React.FC = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs scrollbar-thin">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col text-xs">
+          <div className="flex-1 space-y-4 overflow-y-auto p-5 scrollbar-thin">
           <fieldset data-tour="new-machine-type">
             <legend className="block text-muted mb-1 font-semibold">Target type</legend>
             <div className="inline-flex rounded-lg border border-subtle bg-surface-sunken p-0.5">
@@ -189,7 +190,7 @@ export const NewMachineModal: React.FC = () => {
 
           <div data-tour="new-machine-name">
             <label htmlFor="new-machine-name-input" className="block text-muted mb-1 font-semibold">
-              {isPersonal ? `${TARGET_TYPE_LABELS[targetType]} name *` : 'Machine / Room Name *'}
+              {isPersonal ? `${TARGET_TYPE_LABELS[targetType]} name *` : 'Name *'}
             </label>
             <input
               id="new-machine-name-input"
@@ -200,7 +201,7 @@ export const NewMachineModal: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={isPersonal ? 'Type your own name for it' : 'e.g. Blackfield, Lame, Kioptrix'}
-              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+              className="w-full bg-surface-base px-3 py-2 rounded-lg border border-strong text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
             />
           </div>
 
@@ -253,7 +254,7 @@ export const NewMachineModal: React.FC = () => {
               value={roomUrl}
               onChange={(e) => setRoomUrl(e.target.value)}
               placeholder="https://app.hackthebox.com/machines/..."
-              className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+              className="w-full bg-surface-base px-3 py-2 rounded-lg border border-strong text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
             />
           </div>
 
@@ -272,7 +273,7 @@ export const NewMachineModal: React.FC = () => {
                     value={ip}
                     onChange={(e) => setIp(e.target.value)}
                     placeholder="10.10.10.x"
-                    className="font-mono tabular-nums w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+                    className="font-mono tabular-nums w-full bg-surface-base px-3 py-2 rounded-lg border border-strong text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                   />
                 </div>
 
@@ -289,7 +290,7 @@ export const NewMachineModal: React.FC = () => {
                     size="md"
                     className="w-full"
                     wrapLabel
-                    triggerClassName="w-full bg-surface-sunken"
+                    triggerClassName="w-full bg-surface-base"
                     soundEnabled={soundEnabled}
                   />
                 </div>
@@ -298,9 +299,8 @@ export const NewMachineModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between text-muted mb-1 font-semibold">
-                    <span>Operating System</span>
-                    <OsBadge os={os} size="xs" />
+                  <div className="block text-muted mb-1 font-semibold">
+                    Operating system
                   </div>
                   <CyberSelect<OperatingSystem>
                     value={os}
@@ -309,7 +309,7 @@ export const NewMachineModal: React.FC = () => {
                     variant="emerald"
                     size="md"
                     className="w-full"
-                    triggerClassName="w-full bg-surface-sunken"
+                    triggerClassName="w-full bg-surface-base"
                     soundEnabled={soundEnabled}
                   />
                 </div>
@@ -325,7 +325,7 @@ export const NewMachineModal: React.FC = () => {
                     variant="emerald"
                     size="md"
                     className="w-full"
-                    triggerClassName="w-full bg-surface-sunken"
+                    triggerClassName="w-full bg-surface-base"
                     soundEnabled={soundEnabled}
                   />
                 </div>
@@ -333,7 +333,7 @@ export const NewMachineModal: React.FC = () => {
 
               <div>
                 <label htmlFor="new-machine-tags-input" className="block text-muted mb-1 font-semibold">
-                  Attack Vectors / Tags (Comma-separated)
+                  Tags
                 </label>
                 <input
                   id="new-machine-tags-input"
@@ -342,14 +342,14 @@ export const NewMachineModal: React.FC = () => {
                   type="text"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  placeholder="SQLi, SUID, Kerberoasting, LinPEAS"
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border"
+                  placeholder="Comma-separated, e.g. SQLi, SUID, Kerberoasting"
+                  className="w-full bg-surface-base px-3 py-2 rounded-lg border border-strong text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
                 />
               </div>
 
               <div>
                 <label htmlFor="new-machine-hint-input" className="block text-muted mb-1 font-semibold">
-                  Key Hint / Vulnerability Intel
+                  Hint
                 </label>
                 <textarea
                   id="new-machine-hint-input"
@@ -359,13 +359,15 @@ export const NewMachineModal: React.FC = () => {
                   value={hint}
                   onChange={(e) => setHint(e.target.value)}
                   placeholder="Optional hint for when you get stuck..."
-                  className="w-full bg-surface-sunken px-3 py-2 rounded-lg border border-subtle text-primary focus:outline-none focus:border-callout-success-border resize-none"
+                  className="w-full bg-surface-base px-3 py-2 rounded-lg border border-strong text-primary focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 resize-none"
                 />
               </div>
             </>
           )}
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-subtle">
+          </div>
+
+          <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-subtle bg-surface-card px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() => setNewMachineModalOpen(false)}
@@ -378,7 +380,7 @@ export const NewMachineModal: React.FC = () => {
               data-tour="new-machine-submit"
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-callout-success-fg text-surface-base font-semibold text-xs hover:bg-callout-success-fg transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs"
             >
-              <Plus className="w-4 h-4" /> Deploy Machine
+              <Plus className="w-4 h-4" /> Add target
             </button>
           </div>
         </form>

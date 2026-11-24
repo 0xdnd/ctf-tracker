@@ -14,6 +14,7 @@ import {
 } from '../../components/tracker/GraphView';
 import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../store/useCtfStore';
 import { Machine } from '../../types';
+import { expandHubContaining, hubButtons, hubDotIds } from './graphHubTestUtils';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -68,8 +69,8 @@ function makeVariedMachines(count: number, prefix = 'snap'): Machine[] {
   })) as Machine[];
 }
 
-// Scoped (48 + overflow grid) default positions recorded from the layout before the SHOW ALL rework
-const SCOPED_SNAPSHOT: Record<string, [number, number]> = {"snap-0":[747,121],"snap-1":[800,110],"snap-4":[853,121],"snap-5":[678,45],"snap-7":[754,15],"snap-10":[846,15],"snap-13":[922,45],"snap-15":[800,10],"snap-3":[1188,315],"snap-6":[1224,355],"snap-9":[1241,407],"snap-11":[1219,217],"snap-12":[1284,268],"snap-16":[1330,347],"snap-18":[1342,428],"snap-21":[1311,305],"snap-2":[1241,793],"snap-8":[1224,845],"snap-17":[1188,885],"snap-22":[1342,772],"snap-23":[1330,853],"snap-27":[1284,932],"snap-28":[1219,983],"snap-32":[1311,895],"snap-35":[853,1079],"snap-36":[800,1090],"snap-38":[747,1079],"snap-39":[922,1155],"snap-40":[846,1185],"snap-42":[754,1185],"snap-43":[678,1155],"snap-46":[800,1190],"snap-25":[412,885],"snap-29":[376,845],"snap-33":[359,793],"snap-37":[381,983],"snap-41":[316,932],"snap-45":[270,853],"snap-44":[258,772],"snap-47":[289,895],"snap-14":[359,407],"snap-19":[376,355],"snap-20":[412,315],"snap-24":[258,428],"snap-26":[270,347],"snap-30":[316,268],"snap-31":[381,217],"snap-34":[289,305],"snap-48":[120,140],"snap-49":[360,140],"snap-50":[600,140],"snap-51":[840,140],"snap-52":[1080,140],"snap-53":[1320,140],"snap-54":[120,250],"snap-55":[360,250],"snap-56":[600,250],"snap-57":[840,250],"snap-58":[1080,250],"snap-59":[1320,250]};
+// Scoped default card positions (collapsible-hub grid blocks), recorded from the layout
+const SCOPED_SNAPSHOT: Record<string, [number, number]> = {"snap-0":[485,45],"snap-1":[695,45],"snap-4":[905,45],"snap-5":[1115,45],"snap-7":[485,155],"snap-10":[695,155],"snap-13":[905,155],"snap-15":[1115,155],"snap-3":[1275,89],"snap-6":[1485,89],"snap-9":[1695,89],"snap-11":[1905,89],"snap-12":[1275,199],"snap-16":[1485,199],"snap-18":[1695,199],"snap-21":[1905,199],"snap-2":[1296,1013],"snap-8":[1506,1013],"snap-17":[1716,1013],"snap-22":[1926,1013],"snap-23":[1296,1123],"snap-27":[1506,1123],"snap-28":[1716,1123],"snap-32":[1926,1123],"snap-35":[485,1093],"snap-36":[695,1093],"snap-38":[905,1093],"snap-39":[1115,1093],"snap-40":[485,1203],"snap-42":[695,1203],"snap-43":[905,1203],"snap-46":[1115,1203],"snap-25":[-326,1013],"snap-29":[-116,1013],"snap-33":[94,1013],"snap-37":[304,1013],"snap-41":[-326,1123],"snap-45":[-116,1123],"snap-44":[94,1123],"snap-47":[304,1123],"snap-14":[-305,89],"snap-19":[-95,89],"snap-20":[115,89],"snap-24":[325,89],"snap-26":[-305,199],"snap-30":[-95,199],"snap-31":[115,199],"snap-34":[325,199]};
 
 function cardCenters(container: HTMLElement): Map<string, [number, number]> {
   const out = new Map<string, [number, number]>();
@@ -196,7 +197,7 @@ describe('Attack graph large-graph performance modes', () => {
       });
     }
     const card = screen.getByTestId('attack-node-perf-0');
-    expect(card.querySelector('text')?.textContent).toBe('WWWWWWWWW…');
+    expect(card.parentElement?.querySelector('text')?.textContent).toBe('WWWWWWWWW…');
   });
 
   it('never culls exempt (selected / hovered / focused / dragged) cards', () => {
@@ -228,6 +229,10 @@ describe('Attack graph large-graph performance modes', () => {
     const machines = makeVariedMachines(70);
     renderGraph(machines);
     const btn = screen.getByTestId('graph-auto-layout') as HTMLButtonElement;
+    // Subnets start collapsed: auto layout needs one open subnet to arrange
+    expect(btn.disabled).toBe(true);
+    expect(btn.title).toBe('Open a subnet to auto-arrange its machines');
+    expandHubContaining('snap-5');
     expect(btn.disabled).toBe(false);
     expect(btn.getAttribute('aria-disabled')).toBeNull();
     expect(btn.title).toContain('arrange nodes');
@@ -253,6 +258,7 @@ describe('Attack graph large-graph performance modes', () => {
       const machines = makeVariedMachines(70);
       const { container } = renderGraph(machines);
       const storeBefore = JSON.stringify(useCtfStore.getState().graphNodePositions);
+      expandHubContaining('snap-5');
       const scopedBefore = cardCenters(container).get('snap-5')!;
 
       fireEvent.click(showAllBtn());
@@ -270,10 +276,11 @@ describe('Attack graph large-graph performance modes', () => {
       fireEvent.click(scopedBtn());
       const back = cardCenters(container).get('snap-5')!;
       expect(back).toEqual(scopedBefore);
-      expect(back[0]).toBeGreaterThanOrEqual(0);
-      expect(back[0]).toBeLessThanOrEqual(1600);
-      expect(back[1]).toBeGreaterThanOrEqual(0);
-      expect(back[1]).toBeLessThanOrEqual(1200);
+      // The expanded hub's card block may extend past the 1600x1200 basis, never absurdly far
+      expect(back[0]).toBeGreaterThanOrEqual(-600);
+      expect(back[0]).toBeLessThanOrEqual(2200);
+      expect(back[1]).toBeGreaterThanOrEqual(-300);
+      expect(back[1]).toBeLessThanOrEqual(1500);
       expect(JSON.stringify(useCtfStore.getState().graphNodePositions)).toBe(storeBefore);
 
       // and the local drag is gone: re-entering SHOW ALL shows the layout default again
@@ -290,6 +297,7 @@ describe('Attack graph large-graph performance modes', () => {
 
       useCtfStore.getState().setGraphNodePosition('snap-5', { x: 333, y: 444 });
       const { container } = renderGraph(machines);
+      expandHubContaining('snap-5');
       expect(cardCenters(container).get('snap-5')).toEqual([333, 444]);
 
       fireEvent.click(showAllBtn());
@@ -302,16 +310,25 @@ describe('Attack graph large-graph performance modes', () => {
     });
   });
 
-  it('keeps the scoped layout positions identical to the pre-rework snapshot', () => {
+  it('keeps the scoped default layout positions identical to the recorded snapshot', () => {
     const machines = makeVariedMachines(60);
     const { container } = renderGraph(machines);
-    const centers = cardCenters(container);
-    // Overflow machines (snap-48+) are no longer drawn in the scoped view; the clusters are unchanged
+    // Collapsed hubs hold exactly the 48 clustered machines; the 12 overflow machines are not drawn
+    expect(hubDotIds()).toHaveLength(48);
+    expect(cardCenters(container).size).toBe(0);
+    // Open each hub in turn (opening one folds the previous) and collect the default card positions
+    const centers = new Map<string, [number, number]>();
+    const hubs = hubButtons();
+    hubs.forEach((_, i) => {
+      fireEvent.click(hubButtons()[i]);
+      cardCenters(container).forEach((v, k) => centers.set(k, v));
+      fireEvent.click(hubButtons()[i]);
+    });
     expect(centers.size).toBe(48);
     for (const [id, pos] of Object.entries(SCOPED_SNAPSHOT)) {
-      if (Number(id.slice(5)) >= 48) expect(centers.has(id)).toBe(false);
-      else expect(centers.get(id)).toEqual(pos);
+      expect(centers.get(id)).toEqual(pos);
     }
+    for (let i = 48; i < 60; i++) expect(centers.has(`snap-${i}`)).toBe(false);
   });
 
   describe('SHOW ALL packed layout', () => {

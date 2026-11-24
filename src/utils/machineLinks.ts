@@ -17,7 +17,7 @@ const IPPSEC_HTB_NAMES: ReadonlySet<string> = new Set(
 export const ippsecSearchUrl = (name: string): string =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`ippsec HackTheBox ${name}`)}`;
 
-export const vulnhubSearchUrl = (name: string): string =>
+const vulnhubSearchUrl = (name: string): string =>
   `https://www.vulnhub.com/?q=${encodeURIComponent(name)}`;
 
 export const communityLink = (machine: LinkableMachine): CommunityLink | null => {

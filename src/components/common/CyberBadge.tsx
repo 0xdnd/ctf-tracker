@@ -61,5 +61,3 @@ export const CyberBadge: React.FC<CyberBadgeProps> = ({
     </span>
   );
 };
-
-export default CyberBadge;

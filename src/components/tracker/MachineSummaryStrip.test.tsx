@@ -54,26 +54,26 @@ describe('MachineSummaryStrip', () => {
     });
     render(<MachineSummaryStrip machine={machine} machineLoot={loot(credentials)} onNavigate={() => {}} />);
     const strip = screen.getByTestId('machine-summary-strip');
-    expect(within(strip).getByRole('button', { name: /^Stage: Recon/ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Access: User/ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Ports: 1\./ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Credentials: 1 work here, 1 found here/ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Not tried here: 2/ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Findings: 1\./ })).toBeInTheDocument();
-    expect(within(strip).getByRole('button', { name: /^Checklist: \d+%/ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Stage Recon/ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Access User/ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Ports 1\./ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Credentials 1 work here, 1 found here/ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Untried 2/ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Findings 1\./ })).toBeInTheDocument();
+    expect(within(strip).getByRole('button', { name: /^Checklist \d+%/ })).toBeInTheDocument();
   });
 
   it('shows "via credential" when an admin credential beats a user flag', () => {
     const machine = makeMachine({ status: 'foothold', userFlag: 'abc' });
     const credentials = [cred('adm', { verifications: { [M]: { status: 'admin' } } })];
     render(<MachineSummaryStrip machine={machine} machineLoot={loot(credentials)} onNavigate={() => {}} />);
-    expect(screen.getByRole('button', { name: /^Access: Root via credential/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Access Root via credential/ })).toBeInTheDocument();
     expect(screen.getByText('via credential')).toBeInTheDocument();
   });
 
-  it('hides the Not tried chip at 0', () => {
+  it('hides the Untried chip at 0', () => {
     render(<MachineSummaryStrip machine={makeMachine()} machineLoot={loot()} onNavigate={() => {}} />);
-    expect(screen.queryByRole('button', { name: /Not tried here/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Untried/ })).not.toBeInTheDocument();
   });
 
   it('shows "Nothing outstanding" for a completed machine', () => {
@@ -100,7 +100,7 @@ describe('MachineSummaryStrip', () => {
   it('navigates to recon when Ports is clicked', () => {
     const onNavigate = vi.fn();
     render(<MachineSummaryStrip machine={makeMachine()} machineLoot={loot()} onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Ports:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ports / }));
     expect(onNavigate).toHaveBeenCalledWith('recon');
   });
 });

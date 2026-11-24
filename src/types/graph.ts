@@ -44,7 +44,7 @@ export interface PivotCommandSet {
   quickCopyText: string;
 }
 
-export type AttackEdgeCategory = 'tunnel' | 'ad-trust' | 'lateral';
+type AttackEdgeCategory = 'tunnel' | 'ad-trust' | 'lateral';
 
 export interface AttackEdgeTypeMeta {
   type: AttackEdgeType;

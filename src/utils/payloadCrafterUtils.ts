@@ -6,10 +6,6 @@
 
 import { encodeUtf16LeBase64 } from './shellEncoders';
 
-// Re-exported so existing imports of the UTF-16LE Base64 encoder from this module
-// keep working — the implementation now lives in shellEncoders.ts.
-export { encodeUtf16LeBase64 };
-
 export type BypassEncoderType =
   | 'raw'
   | 'url'

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Modal } from '../common/Modal';
 import { 
   X, 
@@ -631,7 +631,7 @@ export const ReconAutomationModal: React.FC = () => {
 
               {/* Parser Output / Intelligence Dashboard */}
               {parsedResults && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="p-4 rounded-xl border border-subtle bg-surface-sunken/70 space-y-3.5"
@@ -722,7 +722,7 @@ export const ReconAutomationModal: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </div>
           )}

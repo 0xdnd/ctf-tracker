@@ -1,3 +1,4 @@
+import { CyberSelect } from '../common/CyberSelect';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, ClipboardPaste, Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -181,23 +182,23 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor={platformId} className="text-xs font-medium text-secondary">Platform for names without one</label>
-          <select
+          <CyberSelect<'' | Platform>
             id={platformId}
+            label="Platform for names without one"
             value={platform}
-            onChange={(e) => setPlatform(e.target.value as '' | Platform)}
-            className="w-full h-10 px-2 rounded-xl bg-surface-sunken border border-subtle text-sm text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            {PLATFORM_CHOICES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
+            onChange={setPlatform}
+            options={PLATFORM_CHOICES}
+            variant="card"
+            size="md"
+            className="w-full"
+            triggerClassName="w-full"
+          />
           {preview ? (
             <button
               ref={backRef}
               type="button"
               onClick={() => togglePreview(false)}
-              className="text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 [@media(pointer:coarse)]:min-h-11"
+              className="text-xs text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 [@media(pointer:coarse)]:min-h-11"
             >
               Back to my list
             </button>
@@ -205,7 +206,7 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
             <button
               type="button"
               onClick={() => togglePreview(true)}
-              className="text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 [@media(pointer:coarse)]:min-h-11"
+              className="text-xs text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 [@media(pointer:coarse)]:min-h-11"
             >
               Preview with an example
             </button>
@@ -285,7 +286,7 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
           <button
             type="button"
             onClick={onSkip}
-            className="text-xs text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
+            className="text-xs text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded min-h-6 px-1 [@media(pointer:coarse)]:min-h-11"
           >
             Skip, I&apos;m starting fresh
           </button>
@@ -312,5 +313,3 @@ export const PasteImportPanel: React.FC<PasteImportPanelProps> = ({ onApplied, f
     </section>
   );
 };
-
-export default PasteImportPanel;

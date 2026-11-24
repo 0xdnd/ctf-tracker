@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ScrollFade } from '../common/ScrollFade';
+import { CompactIconButton } from '../common/CompactIconButton';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
-import { motion } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
@@ -37,7 +39,9 @@ import {
   Lock,
   Upload,
   Radio,
-  FileCode
+  FileCode,
+  MoreHorizontal,
+  Share2
 } from 'lucide-react';
 import { useCtfStore, BRAND_THEMES } from '../../store/useCtfStore';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
@@ -67,10 +71,33 @@ import { LabFindingsPanel } from './LabFindingsPanel';
 import { LabTimelineAndIndependence } from './LabTimelineAndIndependence';
 import { communityLink, ownWriteupHref, resolveHubRootWriteupHref } from '../../utils/machineLinks';
 import { isTauriTarget } from '../../utils/runtimeTarget';
+import { useMediaQuery, PHONE_QUERY } from '../../hooks/useMediaQuery';
+import { entersRootStage } from '../../utils/pipeline';
+import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
+import { copyShareLink } from '../../utils/shareLink';
 
 const SEC_BTN = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent border border-strong text-secondary hover:text-primary hover:bg-surface-hover font-medium text-xs transition-colors active:scale-[0.97] cursor-pointer";
 const HEADER_ICON_BTN =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
+
+const FOOTER_PRIMARY_PHONE =
+  'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hover active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11';
+const FOOTER_PRIMARY_DESKTOP =
+  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-semibold text-xs transition-colors active:scale-[0.97] cursor-pointer';
+const FOOTER_DONE_DESKTOP =
+  'px-3 py-1.5 rounded-lg text-xs bg-transparent text-secondary hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] font-medium';
+
+/** One header or footer action: rendered inline on desktop and as a menu item on phones. */
+interface ModalAction {
+  id: string;
+  label: string;
+  /** Desktop tooltip. */
+  title?: string;
+  ariaLabel: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  onSelect: () => void;
+  danger?: boolean;
+}
 
 const ModalSessionTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: number; isActiveTarget: boolean }> = React.memo(({ machineId, fallbackSeconds, isActiveTarget }) => {
   const activeTimerSeconds = useCtfStore((s) =>
@@ -84,6 +111,7 @@ const ModalSessionTimerDisplay: React.FC<{ machineId: string; fallbackSeconds: n
 });
 
 export const MachineDetailModal: React.FC = () => {
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const {
     selectedMachineId,
     setSelectedMachineId,
@@ -249,9 +277,10 @@ export const MachineDetailModal: React.FC = () => {
   };
 
   const handleStatusChange = (newStatus: PipelineStatus) => {
+    const prevStatus = machine.status;
     updateMachineStatus(machine.id, newStatus);
     if (newStatus === 'root' || newStatus === 'completed') {
-      triggerRootCelebration();
+      if (entersRootStage(prevStatus, newStatus)) triggerRootCelebration();
       if (soundEnabled) playCyberSound('root');
     } else {
       if (soundEnabled) playCyberSound('toggle');
@@ -354,8 +383,96 @@ ${findingsBlock}
     { id: 'completed', label: 'Completed', title: 'Completed and logged' },
   ];
 
+  // One list drives the header actions: inline icon buttons on desktop, the "More actions" menu on phones.
+  const headerActions: ModalAction[] = [
+    ...(!machine.isActive
+      ? [{ id: 'report', label: 'Pre-report', title: 'Open Executive Pentest Pre-Report', ariaLabel: 'Open pre-report', Icon: FileText, onSelect: () => setReportMachineId(machine.id) }]
+      : []),
+    {
+      id: 'share',
+      label: 'Share link',
+      ariaLabel: `Share direct link to ${machine.name}`,
+      Icon: Share2,
+      onSelect: () => {
+        void copyShareLink(`/target/${machine.id}`).then((ok) => {
+          if (ok && soundEnabled) playCyberSound('copy');
+        });
+      },
+    },
+    {
+      id: 'full',
+      label: 'Full page',
+      title: 'Open Dedicated Full Page Mission Workspace',
+      ariaLabel: 'Open full page mission workspace',
+      Icon: Maximize2,
+      onSelect: () => {
+        navigate(`/target/${machine.id}`);
+        setSelectedMachineId(null);
+      },
+    },
+    ...(machine.isCustom
+      ? [{
+          id: 'delete',
+          label: 'Delete machine',
+          title: 'Delete Custom Machine',
+          ariaLabel: 'Delete custom machine',
+          Icon: Trash2,
+          danger: true,
+          onSelect: () => {
+            void confirmAction({
+              title: `Delete custom machine ${machine.name}?`,
+              body: 'This custom machine and its notes will be permanently removed.',
+              confirmLabel: 'Delete machine',
+              tone: 'danger',
+            }).then((ok) => {
+              if (ok) deleteMachine(machine.id);
+            });
+          },
+        }]
+      : []),
+  ];
+  // Phones: the header links that no longer fit inline live in the same menu.
+  const roomHref = sanitizeExternalUrl(machine.roomUrl);
+  const openExternal = (href: string) => window.open(href, '_blank', 'noopener,noreferrer');
+  const phoneLinkItems: OverflowItem[] = machine.isActive
+    ? []
+    : [
+        ...(machine.ip && machine.ip.includes('x')
+          ? [{ id: 'assign-ip', label: 'Assign IP', icon: <Crosshair className="w-3.5 h-3.5" />, onSelect: () => setAssignIpMachineId(machine.id) }]
+          : []),
+        ...(roomHref
+          ? [{ id: 'room', label: isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Official room', icon: <ExternalLink className="w-3.5 h-3.5" />, onSelect: () => openExternal(roomHref) }]
+          : []),
+        ...(community
+          ? [{ id: 'community', label: ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label, icon: <ExternalLink className="w-3.5 h-3.5" />, onSelect: () => openExternal(community.href) }]
+          : []),
+      ];
+  const headerOverflowItems: OverflowItem[] = [...headerActions.map(({ id, label, ariaLabel, Icon, danger, onSelect }) => ({
+    id,
+    label,
+    ariaLabel,
+    icon: <Icon className="w-3.5 h-3.5" />,
+    danger,
+    onSelect,
+  })), ...phoneLinkItems];
+  // Desktop order: the destructive action leads, then the rest.
+  const inlineHeaderActions = [...headerActions.filter((a) => a.danger), ...headerActions.filter((a) => !a.danger)];
+
+  const nextStep = NEXT_STEP[machine.status];
+  const footerActions: ModalAction[] = machine.isActive
+    ? []
+    : [
+        { id: 'pdf', label: 'Pre-Report PDF', title: 'Open Printable Pentest Report PDF', ariaLabel: 'Pre-Report PDF', Icon: FileText, onSelect: () => setReportMachineId(machine.id) },
+        { id: 'writeup', label: 'Writeup Studio', ariaLabel: 'Writeup Studio', Icon: FileText, onSelect: handleOpenInWriteup },
+      ];
+  const footerOverflowItems: OverflowItem[] = [
+    ...footerActions.map(({ id, label, Icon, onSelect }) => ({ id, label, icon: <Icon className="w-3.5 h-3.5" />, onSelect })),
+    ...(nextStep ? [{ id: 'done', label: 'Done', icon: <Check className="w-3.5 h-3.5" />, onSelect: () => setSelectedMachineId(null) }] : []),
+  ];
+
   const modalContent = (
-    <motion.div
+    <m.div
+      key="machine-detail-backdrop"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
@@ -363,7 +480,7 @@ ${findingsBlock}
       className="fixed inset-0 z-[100] bg-surface-inverse/80 backdrop-blur-sm font-sans overflow-hidden"
       onClick={() => setSelectedMachineId(null)}
     >
-      <motion.div 
+      <m.div 
         ref={modalRef}
         tabIndex={-1}
         initial={{ x: '100%' }}
@@ -378,17 +495,21 @@ ${findingsBlock}
       >
         {/* Modal Header (Pinned at Top) */}
         <div className="flex-shrink-0 flex items-start justify-between gap-3 border-b border-subtle p-4 sm:p-5 bg-surface-card sm:rounded-tl-2xl">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-xl font-semibold text-primary tracking-tight font-sans">{machine.name}</h2>
+          <div className="min-w-0 max-sm:flex max-sm:flex-1 max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2 max-sm:gap-y-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap max-sm:contents">
+              <h2 className="text-xl font-semibold text-primary tracking-tight font-sans max-sm:w-full max-sm:truncate">{machine.name}</h2>
+              {/* Phones: the chips wrap on their own row under the title; from sm up the wrapper disappears (display: contents). */}
+              <div className="flex min-w-0 items-center gap-2 max-sm:flex-wrap sm:contents">
               <TargetTypeBadge machine={machine} size="sm" />
               <BadgeOverflow
                 inline
-                max={3}
+                dense
+                max={isPhone ? 2 : 3}
                 badges={[
                   ...(machine.platform ? [<PlatformBadge key="plat" platform={machine.platform} size="md" />] : []),
+                  ...(isPhone ? [<DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />] : []),
                   <OsBadge key="os" os={machine.os} size="sm" />,
-                  <DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />,
+                  ...(isPhone ? [] : [<DifficultyBadge key="diff" difficulty={machine.difficulty} size="sm" />]),
                   ...(!machine.isActive ? [<CategoryBadge key="cat" machine={machine} size="sm" />] : []),
                 ]}
               />
@@ -398,19 +519,21 @@ ${findingsBlock}
                   <span>Active Lab · HTB ToS Protected</span>
                 </span>
               )}
+              </div>
             </div>
             {!machine.isActive && (
-              <div className="text-xs text-tertiary mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <div className="text-xs text-tertiary mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 max-sm:contents">
                 <EditableIpBadge machineId={machine.id} initialIp={machine.ip} size="sm" showLabel className="font-mono tabular-nums" />
                 {Boolean(machine.ip && machine.ip.includes('x')) && (
                   <button
                     type="button"
                     onClick={() => setAssignIpMachineId(machine.id)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors active:scale-[0.97] cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors active:scale-[0.97] cursor-pointer min-h-6 max-sm:hidden"
                     title="Target has placeholder IP. Click to assign live spawned IP"
                   >
                     <Crosshair className="w-3 h-3" />
-                    <span>Assign spawned IP</span>
+                    <span className="max-sm:hidden">Assign spawned IP</span>
+                    <span className="sm:hidden">Assign IP</span>
                   </button>
                 )}
                 {Boolean(sanitizeExternalUrl(machine.roomUrl)) && (
@@ -418,7 +541,7 @@ ${findingsBlock}
                     href={sanitizeExternalUrl(machine.roomUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors min-h-6 max-sm:hidden"
                   >
                     {isStartingPointHubUrl(machine.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Official room'} <ExternalLink className="w-3 h-3" />
                   </a>
@@ -427,7 +550,7 @@ ${findingsBlock}
                   <a
                     href={ownHref}
                     {...(isTauriTarget() ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors min-h-6"
                   >
                     Writeup
                   </a>
@@ -437,7 +560,7 @@ ${findingsBlock}
                     href={community.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-primary underline-offset-2 hover:underline transition-colors min-h-6 max-sm:hidden"
                   >
                     {ownHref && machine.platform !== 'HTB' ? 'Community writeup' : community.label} <ExternalLink className="w-3 h-3" />
                   </a>
@@ -462,54 +585,37 @@ ${findingsBlock}
               </button>
             )}
 
-            {machine.isCustom && (
-              <button
-                onClick={async () => {
-                  const ok = await confirmAction({
-                    title: `Delete custom machine ${machine.name}?`,
-                    body: 'This custom machine and its notes will be permanently removed.',
-                    confirmLabel: 'Delete machine',
-                    tone: 'danger',
-                  });
-                  if (ok) {
-                    deleteMachine(machine.id);
-                  }
-                }}
-                className={`${HEADER_ICON_BTN} hover:text-callout-danger-fg`}
-                title="Delete Custom Machine"
-                aria-label="Delete custom machine"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+            {isPhone ? (
+              <OverflowMenu
+                portal
+                items={headerOverflowItems}
+                label="More actions"
+                triggerContent={<MoreHorizontal className="w-4 h-4" aria-hidden="true" />}
+                triggerClassName={HEADER_ICON_BTN}
+              />
+            ) : (
+              inlineHeaderActions.map((a) =>
+                a.id === 'share' ? (
+                  <ShareLinkButton key={a.id} path={`/target/${machine.id}`} title={machine.name} iconOnly className={HEADER_ICON_BTN} />
+                ) : a.id === 'full' ? (
+                  // The tour spotlights this one, so its anchor stays a literal attribute.
+                  <button key={a.id} data-tour="quick-full" onClick={a.onSelect} className={HEADER_ICON_BTN} title={a.title} aria-label={a.ariaLabel}>
+                    <a.Icon className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    key={a.id}
+                    onClick={a.onSelect}
+                    className={a.danger ? `${HEADER_ICON_BTN} hover:text-callout-danger-fg` : HEADER_ICON_BTN}
+                    title={a.title}
+                    aria-label={a.ariaLabel}
+                  >
+                    <a.Icon className="w-4 h-4" />
+                  </button>
+                )
+              )
             )}
-
-            {!machine.isActive && (
-              <button
-                onClick={() => setReportMachineId(machine.id)}
-                className={HEADER_ICON_BTN}
-                title="Open Executive Pentest Pre-Report"
-                aria-label="Open pre-report"
-              >
-                <FileText className="w-4 h-4" />
-              </button>
-            )}
-            <ShareLinkButton
-              path={`/target/${machine.id}`}
-              title={machine.name}
-              iconOnly
-              className={HEADER_ICON_BTN}
-            />
-            <button data-tour="quick-full" aria-label="Open full page mission workspace"
-              onClick={() => {
-                navigate(`/target/${machine.id}`);
-                setSelectedMachineId(null);
-              }}
-              className={HEADER_ICON_BTN}
-              title="Open Dedicated Full Page Mission Workspace"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-            <button aria-label="Close machine details"
+            <button aria-label="Close machine details" title="Close (Esc)"
               onClick={() => setSelectedMachineId(null)}
               className={HEADER_ICON_BTN}
             >
@@ -520,15 +626,16 @@ ${findingsBlock}
 
         {/* Modal Navigation Tabs (pinned below header, single-line, scrollable) */}
         {!machine.isActive && (
-          <div
+          <ScrollFade
             role="tablist"
             data-tour="quick-tabs"
             aria-label="Machine detail sections"
-            className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-2 sm:px-4 overflow-x-auto no-scrollbar"
+            fadeSize="2.5rem"
+            className="flex-shrink-0 flex items-center border-b border-subtle bg-surface-card px-2 sm:px-4 max-sm:pr-10"
           >
             {([
               { id: 'overview', label: 'Overview', icon: <Crosshair className="w-3.5 h-3.5" /> },
-              { id: 'commands', label: 'Arsenal', icon: <Zap className="w-3.5 h-3.5" /> },
+              { id: 'commands', label: 'Commands', icon: <Zap className="w-3.5 h-3.5" /> },
               {
                 id: 'checklist',
                 label: 'Checklist',
@@ -541,7 +648,7 @@ ${findingsBlock}
               },
               { id: 'report', label: 'Report', icon: <FileText className="w-3.5 h-3.5" /> },
               ...(!machine.isActive && Boolean(machine.officialSynopsis || (machine.skillsLearned && machine.skillsLearned.length > 0) || machine.officialPdf)
-                ? [{ id: 'walkthrough', label: 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
+                ? [{ id: 'walkthrough', label: isPhone ? 'Intel' : 'Official intel', icon: <BookOpen className="w-3.5 h-3.5" /> }]
                 : []),
             ] as { id: typeof activeModalTab; label: string; icon: React.ReactNode; extra?: React.ReactNode }[]).map((tab) => (
               <button
@@ -550,7 +657,7 @@ ${findingsBlock}
                 role="tab"
                 aria-selected={activeModalTab === tab.id}
                 onClick={() => setActiveModalTab(tab.id)}
-                className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 min-h-[44px] sm:min-h-0 font-sans font-medium text-sm border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 py-2.5 px-3 max-sm:gap-1 max-sm:px-2 max-sm:[&>svg]:hidden sm:px-4 min-h-[44px] sm:min-h-0 font-sans font-medium text-sm border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeModalTab === tab.id
                     ? 'border-accent text-primary'
                     : 'border-transparent text-muted hover:text-primary'
@@ -561,7 +668,7 @@ ${findingsBlock}
                 {tab.extra}
               </button>
             ))}
-          </div>
+          </ScrollFade>
         )}
 
         {/* Modal Body (Scrollable Center Workspace) */}
@@ -593,7 +700,7 @@ ${findingsBlock}
                   onClick={() => {
                     engage(machine.id, { sound: 'engage', beforeNavigate: () => setSelectedMachineId(null) });
                   }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-accent-fg hover:opacity-90 font-medium text-xs transition-opacity"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-on-accent hover:opacity-90 font-medium text-xs transition-opacity"
                 >
                   <Play className="w-3.5 h-3.5" />
                   <span>Engage &amp; Start Timer</span>
@@ -983,17 +1090,18 @@ ${findingsBlock}
                         {isReached && !isSelected ? <Check className="h-3 w-3 stroke-[3]" /> : idx + 1}
                       </span>
                       <span
-                        className={`w-full truncate text-xs font-medium ${
+                        className={`w-full truncate text-xs max-sm:text-[11px] font-medium ${
                           isSelected ? 'text-primary' : isReached ? 'text-secondary' : 'text-muted group-hover:text-primary'
                         }`}
                       >
-                        {stage.label}
+                        <span className="max-sm:hidden">{stage.label}</span>
+                        <span className="sm:hidden">{stage.id === 'completed' ? 'Done' : stage.label}</span>
                       </span>
                     </button>
                     {!isLast && (
                       <span
                         aria-hidden="true"
-                        className={`mt-3 h-px w-3 shrink-0 sm:w-6 ${currentIdx > idx ? 'bg-accent' : 'bg-surface-hover'}`}
+                        className={`mt-3 h-px w-1.5 shrink-0 sm:w-6 ${currentIdx > idx ? 'bg-accent' : 'bg-surface-hover'}`}
                       />
                     )}
                   </li>
@@ -1119,23 +1227,23 @@ ${findingsBlock}
                     className="w-full bg-surface-card px-3 py-2 rounded-lg border border-subtle text-primary placeholder:text-tertiary text-xs focus:outline-none focus:border-accent pr-16 font-mono shadow-xs"
                   />
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <button
-                      type="button"
+                    <CompactIconButton
                       onClick={() => setShowUserFlag(!showUserFlag)}
-                      className="p-1 rounded-md text-muted hover:text-primary active:scale-[0.97] transition-transform cursor-pointer"
                       title={showUserFlag ? 'Hide Flag' : 'Show Flag'}
+                      aria-label={showUserFlag ? 'Hide user flag' : 'Show user flag'}
                     >
                       {showUserFlag ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    </button>
+                    </CompactIconButton>
                     <button
                       type="button"
                       onClick={() => handleCopy(machine.userFlag || '', 'user')}
-                      className={`p-1 rounded-md transition-interactive active:scale-[0.97] flex items-center gap-1 cursor-pointer ${
+                      className={`p-1 min-h-6 min-w-6 justify-center rounded-md transition-interactive active:scale-[0.97] flex items-center gap-1 cursor-pointer ${
                         copiedUser
                           ? 'bg-callout-success-fg text-surface-base font-semibold px-1.5'
                           : 'text-muted hover:text-primary'
                       }`}
                       title="Copy User Flag"
+                      aria-label={copiedUser ? undefined : 'Copy user flag'}
                     >
                       {copiedUser ? (
                         <>
@@ -1182,23 +1290,23 @@ ${findingsBlock}
                     className="w-full bg-surface-card px-3 py-2 rounded-lg border border-subtle text-primary placeholder:text-tertiary text-xs focus:outline-none focus:border-callout-success-border pr-16 font-mono shadow-xs"
                   />
                   <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <button
-                      type="button"
+                    <CompactIconButton
                       onClick={() => setShowRootFlag(!showRootFlag)}
-                      className="p-1 rounded-md text-muted hover:text-primary active:scale-[0.97] transition-transform cursor-pointer"
                       title={showRootFlag ? 'Hide Flag' : 'Show Flag'}
+                      aria-label={showRootFlag ? 'Hide root flag' : 'Show root flag'}
                     >
                       {showRootFlag ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    </button>
+                    </CompactIconButton>
                     <button
                       type="button"
                       onClick={() => handleCopy(machine.rootFlag || '', 'root')}
-                      className={`p-1 rounded-md transition-interactive active:scale-[0.97] flex items-center gap-1 cursor-pointer ${
+                      className={`p-1 min-h-6 min-w-6 justify-center rounded-md transition-interactive active:scale-[0.97] flex items-center gap-1 cursor-pointer ${
                         copiedRoot
                           ? 'bg-callout-success-fg text-surface-base font-semibold px-1.5'
                           : 'text-muted hover:text-primary'
                       }`}
                       title="Copy Root Flag"
+                      aria-label={copiedRoot ? undefined : 'Copy root flag'}
                     >
                       {copiedRoot ? (
                         <>
@@ -1308,7 +1416,7 @@ ${findingsBlock}
                 <button
                   type="button"
                   onClick={() => setShowHint(!showHint)}
-                  className="text-xs text-tertiary hover:text-primary flex items-center gap-1"
+                  className="text-xs text-tertiary hover:text-primary flex items-center gap-1 min-h-6"
                 >
                   {showHint ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   <span>{showHint ? 'Hide hint' : 'Show hint'}</span>
@@ -1358,8 +1466,12 @@ ${findingsBlock}
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => updateMachine(machine.id, { rating: star })}
-                    className="p-1 text-tertiary hover:text-callout-warn-fg transition-colors"
+                    aria-label={`Rate ${star} out of 5 stars`}
+                    aria-pressed={(machine.rating || 0) >= star}
+                    title={`Rate ${star} out of 5 stars`}
+                    className="p-1 min-h-6 min-w-6 inline-flex items-center justify-center text-tertiary hover:text-callout-warn-fg transition-colors"
                   >
                     <Star
                       className={`w-4 h-4 ${
@@ -1423,12 +1535,9 @@ ${findingsBlock}
                     className="px-2 py-0.5 rounded-md bg-accent-muted border border-accent text-callout-info-fg text-xs flex items-center gap-1"
                   >
                   {t}
-                  <button
-                    onClick={() => handleRemoveTag(t)}
-                    className="hover:text-callout-danger-fg ml-0.5"
-                  >
+                  <CompactIconButton tone="danger" onClick={() => handleRemoveTag(t)} aria-label={`Remove tag ${t}`} className="-my-1 -mr-1.5">
                     ×
-                  </button>
+                  </CompactIconButton>
                 </span>
               ))}
             </div>
@@ -1517,7 +1626,7 @@ ${findingsBlock}
                             const interpolated0 = interpolateCommand(note.commands[0], targetVars);
                             return (
                               <div className="flex items-center justify-between gap-2 p-1.5 rounded bg-surface-sunken border border-subtle font-mono text-xs">
-                                <code className="text-callout-info-fg truncate flex-1 select-all" title={interpolated0}>
+                                <code className="text-callout-info-fg truncate flex-1 select-text" title={interpolated0}>
                                   {interpolated0}
                                 </code>
                                 <button
@@ -1542,7 +1651,7 @@ ${findingsBlock}
                             const interpolated = interpolateCommand(cmd, targetVars);
                             return (
                               <div key={cIdx} className="flex items-center justify-between gap-2 p-1.5 rounded bg-surface-sunken border border-callout-tip-border font-mono text-xs">
-                                <code className="text-callout-tip-fg truncate flex-1 select-all" title={interpolated}>
+                                <code className="text-callout-tip-fg truncate flex-1 select-text" title={interpolated}>
                                   {interpolated}
                                 </code>
                                 <button
@@ -1586,49 +1695,56 @@ ${findingsBlock}
 
         {/* Modal Footer (Pinned at Bottom) */}
         <div className="flex-shrink-0 border-t border-subtle p-3 sm:p-3.5 bg-surface-sunken/95 backdrop-blur-sm flex items-center justify-between">
-          <div className="text-xs text-tertiary">
+          <div className="text-xs text-tertiary max-sm:hidden">
             Created: {new Date(machine.createdAt).toLocaleDateString()}
           </div>
 
-          <div className="flex items-center gap-2">
-            {!machine.isActive && (
-              <>
-                <button
-                  onClick={() => setReportMachineId(machine.id)}
-                  className={SEC_BTN}
-                  title="Open Printable Pentest Report PDF"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Pre-Report PDF</span>
+          <div className={isPhone ? 'flex w-full items-center justify-between gap-2' : 'flex items-center gap-2'}>
+            {isPhone ? (
+              <OverflowMenu
+                portal
+                align="left"
+                items={footerOverflowItems}
+                label="More actions"
+                triggerContent={<MoreHorizontal className="w-4 h-4" aria-hidden="true" />}
+                triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-strong text-secondary transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
+              />
+            ) : (
+              footerActions.map((a) => (
+                <button key={a.id} onClick={a.onSelect} className={SEC_BTN} title={a.title}>
+                  <a.Icon className="w-3.5 h-3.5" />
+                  <span>{a.label}</span>
                 </button>
-                <button
-                  onClick={handleOpenInWriteup}
-                  className={SEC_BTN}
-                >
-                  <FileText className="w-3.5 h-3.5" /> Writeup Studio
-                </button>
-              </>
+              ))
             )}
-            {NEXT_STEP[machine.status] && (
+            {nextStep && (
               <button
-                onClick={() => handleStatusChange(NEXT_STEP[machine.status]![0])}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-on-accent hover:bg-accent-hover font-semibold text-xs transition-colors active:scale-[0.97] cursor-pointer"
+                onClick={() => handleStatusChange(nextStep[0])}
+                className={isPhone ? FOOTER_PRIMARY_PHONE : FOOTER_PRIMARY_DESKTOP}
               >
-                {NEXT_STEP[machine.status]![1]}
+                {nextStep[1]}
               </button>
             )}
-            <button
-              onClick={() => setSelectedMachineId(null)}
-              className="px-3 py-1.5 rounded-lg text-xs bg-transparent text-secondary hover:text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] font-medium"
-            >
-              Done
-            </button>
+            {(!isPhone || !nextStep) && (
+              <button
+                onClick={() => setSelectedMachineId(null)}
+                className={isPhone ? FOOTER_PRIMARY_PHONE : FOOTER_DONE_DESKTOP}
+              >
+                Done
+              </button>
+            )}
           </div>
         </div>
 
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
   );
 
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+  const animatedModal = (
+    <AnimatePresence>
+      {Boolean(selectedMachineId) && modalContent}
+    </AnimatePresence>
+  );
+
+  return typeof document !== 'undefined' ? createPortal(animatedModal, document.body) : animatedModal;
 };

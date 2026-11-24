@@ -2,12 +2,12 @@
   {
     "path": "/tracker/",
     "title": "CTF Machine Tracker: HTB, THM, PG & VulnHub | ZeroBox",
-    "description": "Track Hack The Box, TryHackMe, Proving Grounds and VulnHub machines on a Kanban, table, grid or attack graph board. Free, with IPs and notes stored offline.",
+    "description": "Track Hack The Box, TryHackMe, Proving Grounds and VulnHub machines on a Kanban, table, grid or attack graph board. Free, with IPs and notes offline.",
     "h1": "CTF tracker for HTB, TryHackMe, Proving Grounds and VulnHub machines",
     "intro": "Keep every Hack The Box, TryHackMe, Proving Grounds, VulnHub and lab target in one board instead of scattered notes. Move machines through your own workflow, record IPs and findings, and pick up where you left off, all stored locally in your browser.",
     "bullets": [
       "Kanban, table, grid and attack graph views of your machines, with search and filters",
-      "Pre-loaded machine catalog for Hack The Box, TryHackMe, Proving Grounds and VulnHub",
+      "Pre-loaded machine catalog for Hack The Box, TryHackMe, Proving Grounds and VulnHub ({{catalogTotal}} machines)",
       "Per-machine detail with IP address, notes and status",
       "Add your own custom targets for any CTF or lab",
       "Works offline once loaded and stores data in your browser",
@@ -17,11 +17,11 @@
   {
     "path": "/methodology/",
     "title": "Interactive Pentest Checklist Per Box | ZeroBox",
-    "description": "Interactive pentest checklist you tick off per box: eight phases with copyable commands. Track your progress per machine, free in your browser.",
+    "description": "Interactive pentest checklist you tick off per box: {{phaseCountWordLower}} phases with copyable commands. Track your progress per machine, free in your browser.",
     "h1": "Interactive pentest checklist",
     "intro": "An interactive checklist you tick off for each box you work on. Pick a target, work through the phases, and your progress is saved per machine, so you can see what is done and what is left. Commands insert your target IP and attacker values.",
     "bullets": [
-      "Eight-phase attack lifecycle with checklist items per phase",
+      "{{phaseCountWord}}-phase attack lifecycle with checklist items per phase",
       "Service branches so the checklist adapts to what you find on a target",
       "Copyable commands with your target and attacker values interpolated",
       "Checklist progress tracked per machine",
@@ -76,7 +76,7 @@
   {
     "path": "/exam/",
     "title": "OSCP Exam Simulator: 24h Timer, Scoring & Report | ZeroBox",
-    "description": "Practice OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exams with a countdown timer, scoring, pacing, breaks and an exportable report. Free in the browser.",
+    "description": "Practice {{examTracksList}} exams with a countdown timer, scoring, pacing, breaks and an exportable report. Free in the browser.",
     "h1": "OSCP exam simulator",
     "intro": "Rehearse a certification exam under realistic time pressure. Pick a track, build your box set, run the clock, and finish with a scored report you can export.",
     "bullets": [

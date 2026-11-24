@@ -16,7 +16,7 @@ export type PacingTrackConfig = Pick<ExamTrackConfig, 'maxScore' | 'durationSeco
   Partial<Pick<ExamTrackConfig, 'scoringModel' | 'reportWindowSeconds' | 'debriefMinutes'>>;
 
 /** Below this much elapsed time a pts/hr rate is noise, so none is reported. */
-export const PACE_WARMUP_SECONDS = 10 * 60;
+const PACE_WARMUP_SECONDS = 10 * 60;
 
 const DEFAULT_PACING_TRACK: PacingTrackConfig = { maxScore: 100, durationSeconds: 86400 };
 

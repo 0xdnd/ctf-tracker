@@ -3,7 +3,7 @@ import type { Machine, SolveIndependence } from '../types';
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** First-review interval in days per solve independence: the more help a solve needed, the sooner it comes back. */
-export const REVIEW_BASE_DAYS: Record<SolveIndependence, number> = {
+const REVIEW_BASE_DAYS: Record<SolveIndependence, number> = {
   solo: 7,
   nudged: 3,
   assisted: 1,

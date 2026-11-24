@@ -56,7 +56,9 @@ jobs:
           node scripts/sync-htb-active.mjs | tee /tmp/htb-summary.txt
       - name: Update catalog counts
         id: counts
-        run: node scripts/update-catalog-counts.mjs
+        run: |
+          node scripts/update-catalog-counts.mjs
+          node scripts/catalog-stats.mjs
       - name: Job summary
         if: always()
         run: |
@@ -94,9 +96,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Only the data and count files; the build output stays out of the commit.
-          git add src/data/catalogSources/vulnhub.json src/data/catalogSources/pg.json src/data/activeMachines.json src/data/catalogStats.ts \
-            public/llms.txt public/llms-full.txt README.md docs/CATALOG_STATS.md \
+          # Only the data, release manifest, and count files; the build output stays out of the commit.
+          git add src/data/catalogSources/vulnhub.json src/data/catalogSources/pg.json src/data/activeMachines.json src/data/retiredHtb.json src/data/catalogChanges.json src/data/catalogStats.ts \
+            public/llms.txt public/llms-full.txt public/release-manifest.json README.md docs/CATALOG_STATS.md \
             scripts/data/vulnhub-raw.json scripts/data/vulnhub-id-map.json scripts/data/pg-raw.json scripts/data/pg-id-map.json
           if git diff --cached --quiet; then
             echo "Nothing staged; stopping."

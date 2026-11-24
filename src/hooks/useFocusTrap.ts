@@ -21,7 +21,7 @@ const FOCUSABLE_SELECTOR = [
  * Non-modal UI that floats over a trapped modal (the onboarding PageHint) marks itself with this
  * attribute. The top-most trap then includes it in its Tab cycle, so keyboard users can reach it.
  */
-export const TRAP_COMPANION_ATTR = 'data-trap-companion';
+const TRAP_COMPANION_ATTR = 'data-trap-companion';
 
 // Stack of active traps; only the top-most trap handles keys (nested modals).
 const activeTrapStack: symbol[] = [];

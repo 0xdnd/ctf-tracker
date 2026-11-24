@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useId } from 'react';
+import { EmptyState } from '../common/EmptyState';
 import { Key, Server, Terminal, Eye, EyeOff, Copy, Check, Trash2, ShieldCheck, Layers, Clock } from 'lucide-react';
 import { 
   VaultEvidenceItem, 
@@ -17,7 +18,7 @@ export interface LootTimelineProps {
   soundEnabled?: boolean;
 }
 
-export type TimelineGrouping = 'phase' | 'chronological';
+type TimelineGrouping = 'phase' | 'chronological';
 
 interface KillChainPhase {
   id: string;
@@ -212,22 +213,13 @@ export const LootTimeline: React.FC<LootTimelineProps> = ({
       </div>
 
       {filteredItems.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl border border-dashed border-subtle">
-          <ShieldCheck className="w-10 h-10 text-dim mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-primary">No artifacts in this scope</h3>
-          <p className="text-xs text-tertiary mt-1">
-            Log a flag or credential, or import a scan, to populate the timeline.
-          </p>
-          {filterTarget !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setFilterTarget('all')}
-              className="mt-3 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-primary border border-subtle cursor-pointer transition-colors"
-            >
-              Show all targets
-            </button>
-          )}
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="No artifacts in this scope"
+          description="Log a flag or credential, or import a scan, to populate the timeline."
+          action={filterTarget !== 'all' ? { label: 'Show all targets', onClick: () => setFilterTarget('all') } : undefined}
+          className="rounded-2xl border border-dashed border-subtle"
+        />
       ) : groupingMode === 'phase' ? (
         /* ================= Phase View ================= */
         <div className="space-y-6">
@@ -432,7 +424,7 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
           <div className="text-xs text-muted mb-0.5">
             User: <strong className="font-medium text-secondary">{item.username}</strong>
           </div>
-          <div className="truncate select-all text-primary font-mono">
+          <div className="truncate select-text text-primary font-mono">
             {isService ? (
               <span className="text-secondary font-mono tabular-nums">{item.secret}</span>
             ) : isRevealed ? (
@@ -462,5 +454,3 @@ const TimelineCard: React.FC<TimelineCardProps> = React.memo(({
     </div>
   );
 });
-
-export default LootTimeline;

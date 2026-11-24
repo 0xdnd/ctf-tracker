@@ -26,6 +26,14 @@ vi.mock('../../utils/resilientStorage', async (importOriginal) => ({
     idb.workspace.set(key, JSON.parse(JSON.stringify(data)));
     return true;
   }),
+  // Snapshot records (pre-sync snapshot taken by migrateGuestData).
+  putResilientRecord: vi.fn(async (key: string, value: string) => {
+    idb.workspace.set(key, value);
+    return true;
+  }),
+  getResilientRecord: vi.fn(async (key: string) => (idb.workspace.get(key) as string | undefined) ?? null),
+  listResilientRecordKeys: vi.fn(async (prefix: string) => [...idb.workspace.keys()].filter((k) => k.startsWith(prefix))),
+  deleteResilientRecord: vi.fn(async (key: string) => idb.workspace.delete(key)),
 }));
 
 // Autosave audit regressions. Each test boots a fresh store module against a prepared localStorage.

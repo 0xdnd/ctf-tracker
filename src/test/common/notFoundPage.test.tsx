@@ -21,19 +21,15 @@ describe('NotFoundPage (In-App 404 Component)', () => {
     useCtfStore.setState({ soundEnabled: false });
   });
 
-  it('renders 404 title, status badge, and the unresolved path', () => {
+  it('renders a short heading and one sentence', () => {
     render(
       <MemoryRouter initialEntries={['/some-broken-path']}>
         <NotFoundPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /isn.t on the board/i })).toBeInTheDocument();
-    expect(screen.getByText('404')).toBeInTheDocument();
-    expect(screen.getByText('404.404.404.404')).toBeInTheDocument();
-    expect(screen.getByText('Not found')).toBeInTheDocument();
-    expect(screen.getByText('No foothold')).toBeInTheDocument();
-    expect(screen.getAllByText('/some-broken-path').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { name: /isn.t here/i })).toBeInTheDocument();
+    expect(screen.getByText(/Nothing lives at this address/)).toBeInTheDocument();
   });
 
   it('provides smart contextual suggestions based on URL keywords', () => {
@@ -57,21 +53,15 @@ describe('NotFoundPage (In-App 404 Component)', () => {
     expect(screen.getAllByText('Exam Simulator').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders all 8 quick-link directory cards', () => {
+  it('offers two actions and no section directory', () => {
     render(
       <MemoryRouter initialEntries={['/random-404']}>
         <NotFoundPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Tracker')).toBeInTheDocument();
-    expect(screen.getByText('Evidence Vault')).toBeInTheDocument();
-    expect(screen.getByText('Attack Methodology')).toBeInTheDocument();
-    expect(screen.getByText('Cheatsheets')).toBeInTheDocument();
-    expect(screen.getByText('Notes')).toBeInTheDocument();
-    expect(screen.getByText('Writeup Studio')).toBeInTheDocument();
-    expect(screen.getByText('Exam Simulator')).toBeInTheDocument();
-    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.queryByRole('navigation')).toBeNull();
   });
 
   it('navigates back to tracker on button click and keyboard "T" press', async () => {

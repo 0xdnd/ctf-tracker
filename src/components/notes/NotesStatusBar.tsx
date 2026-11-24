@@ -18,5 +18,3 @@ export const NotesStatusBar: React.FC<NotesStatusBarProps> = ({ wordCount, backl
     </span>
   </div>
 );
-
-export default NotesStatusBar;

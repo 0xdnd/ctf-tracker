@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   FileText,
   Copy,
@@ -296,7 +296,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-    <motion.div
+    <m.div
       key="exam-report-modal"
       className="fixed inset-0 z-[125] overflow-y-auto flex items-center justify-center p-3 sm:p-6 font-sans"
       data-testid="exam-report-modal-container"
@@ -313,7 +313,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
       />
 
       {/* Modal Dialog Box */}
-      <motion.div
+      <m.div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
@@ -589,7 +589,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             {/* Preview Pane Container */}
             <div
               data-testid="report-preview-pane"
-              className="p-4 rounded-xl bg-surface-sunken border border-subtle max-h-72 sm:max-h-80 overflow-y-auto text-xs leading-relaxed"
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable (WCAG 2.1.1)
+              tabIndex={0}
+              className="p-4 rounded-xl bg-surface-sunken border border-subtle max-h-72 sm:max-h-80 overflow-y-auto text-xs leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               {activeTab === 'preview' ? (
                 <div
@@ -600,7 +602,7 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               ) : (
                 <pre
                   data-testid="report-raw-markdown"
-                  className="whitespace-pre-wrap text-secondary select-all font-mono"
+                  className="whitespace-pre-wrap text-secondary select-text font-mono"
                 >
                   {generatedMarkdown}
                 </pre>
@@ -653,9 +655,9 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
               data-testid="report-export-html-btn"
               onClick={handleExportHtml}
               disabled={resolvingProofImages}
-              className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
+              className="px-3.5 py-2 rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle hover:border-strong text-primary text-xs font-semibold flex items-center gap-1.5 transition-[transform,background-color,border-color,color] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait"
             >
-              <FileCode className="w-3.5 h-3.5 fill-current" />
+              <FileCode className="w-3.5 h-3.5 text-accent" />
               <span>Export HTML (.html)</span>
             </button>
 
@@ -672,8 +674,8 @@ export const ExamReportModal: React.FC<ExamReportModalProps> = ({
             </button>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
       )}
     </AnimatePresence>,
     document.body

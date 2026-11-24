@@ -5,6 +5,7 @@ import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
 import { GlobalHudVarsBar } from '../../components/methodology/GlobalHudVarsBar';
 import { useCtfStore } from '../../store/useCtfStore';
 import type { Machine } from '../../types';
+import { openSessionPanel } from './openSessionPanel';
 
 const box = (id: string, ip: string, extra: Partial<Machine> = {}) =>
   ({
@@ -33,12 +34,15 @@ const setup = (machines: Machine[], activeTargetId: string | null, targetIp = ''
   } as never);
 };
 
-const header = () =>
+/** The RHOST field lives in the header's Session popover. */
+const header = async () => {
   render(
     <MemoryRouter>
       <UnifiedHeader />
     </MemoryRouter>
   );
+  await openSessionPanel();
+};
 
 const rInput = () => screen.getByLabelText('Target IP (RHOST)') as HTMLInputElement;
 const machineIp = (id: string) => useCtfStore.getState().machines.find((m) => m.id === id)!.ip;
@@ -60,21 +64,21 @@ describe('header R field follows the engaged target', () => {
   });
   afterEach(() => cleanup());
 
-  it('shows the engaged machine IP, not a stale global RHOST', () => {
+  it('shows the engaged machine IP, not a stale global RHOST', async () => {
     setup([box('a', '10.10.10.5')], 'a', '10.10.10.99');
-    header();
+    await header();
     expect(rInput().value).toBe('10.10.10.5');
   });
 
-  it('never shows a placeholder machine IP; falls back to the global value', () => {
+  it('never shows a placeholder machine IP; falls back to the global value', async () => {
     setup([box('a', '10.10.10.X')], 'a', '10.10.10.77');
-    header();
+    await header();
     expect(rInput().value).toBe('10.10.10.77');
   });
 
-  it('saves into the engaged machine on blur, once, and not per keystroke', () => {
+  it('saves into the engaged machine on blur, once, and not per keystroke', async () => {
     setup([box('a', '10.10.10.5')], 'a', '10.10.10.5');
-    header();
+    await header();
     fireEvent.change(rInput(), { target: { value: '10.10.10.6' } });
     expect(machineIp('a')).toBe('10.10.10.5');
     expect(useCtfStore.getState().unexportedChangesCount).toBe(0);
@@ -84,9 +88,9 @@ describe('header R field follows the engaged target', () => {
     expect(useCtfStore.getState().unexportedChangesCount).toBe(1);
   });
 
-  it('saves on Enter and sanitises a pasted URL', () => {
+  it('saves on Enter and sanitises a pasted URL', async () => {
     setup([box('a', '10.10.10.5')], 'a', '10.10.10.5');
-    header();
+    await header();
     rInput().focus(); // Enter commits by blurring the focused input
     fireEvent.change(rInput(), { target: { value: ' http://10.10.10.8/admin ' } });
     fireEvent.keyDown(rInput(), { key: 'Enter' });
@@ -94,9 +98,9 @@ describe('header R field follows the engaged target', () => {
     expect(useCtfStore.getState().globalVars.targetIp).toBe('10.10.10.8');
   });
 
-  it('leaves a live box (isActive) untouched and only updates the global value', () => {
+  it('leaves a live box (isActive) untouched and only updates the global value', async () => {
     setup([box('live', '', { isActive: true })], 'live', '10.10.10.5');
-    header();
+    await header();
     fireEvent.change(rInput(), { target: { value: '10.10.10.9' } });
     fireEvent.blur(rInput());
     expect(useCtfStore.getState().globalVars.targetIp).toBe('10.10.10.9');
@@ -104,9 +108,9 @@ describe('header R field follows the engaged target', () => {
     expect(useCtfStore.getState().unexportedChangesCount).toBe(0);
   });
 
-  it('clearing R clears both the machine and the global IP', () => {
+  it('clearing R clears both the machine and the global IP', async () => {
     setup([box('a', '10.10.10.5')], 'a', '10.10.10.5');
-    header();
+    await header();
     fireEvent.change(rInput(), { target: { value: '' } });
     fireEvent.blur(rInput());
     expect(machineIp('a')).toBe('');
@@ -114,9 +118,9 @@ describe('header R field follows the engaged target', () => {
     expect(rInput().value).toBe('');
   });
 
-  it('with nothing engaged it only edits the global value', () => {
+  it('with nothing engaged it only edits the global value', async () => {
     setup([box('a', '10.10.10.5')], null, '10.10.10.5');
-    header();
+    await header();
     fireEvent.change(rInput(), { target: { value: '10.10.10.6' } });
     fireEvent.blur(rInput());
     expect(useCtfStore.getState().globalVars.targetIp).toBe('10.10.10.6');

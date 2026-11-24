@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { DRAWER_SLIDE_TRANSITION } from '../../utils/motionTokens';
 import { 
@@ -100,7 +100,7 @@ export const SnippetsDrawer: React.FC = () => {
   return createPortal(
     <AnimatePresence>
       {snippetsDrawerOpen && (
-        <motion.div
+        <m.div
           key="snippets-drawer"
           className="fixed inset-0 z-drawer overflow-hidden font-sans"
           initial={{ opacity: 0 }}
@@ -116,7 +116,7 @@ export const SnippetsDrawer: React.FC = () => {
 
           {/* Slide-over panel (intentionally dark in both color modes) */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <motion.div
+            <m.div
               ref={trapRef}
               role="dialog"
               aria-modal="true"
@@ -156,13 +156,13 @@ export const SnippetsDrawer: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search commands, flags, tools (nmap, smb, hashcat)..."
-                className="w-full pl-9 pr-8 py-1.5 bg-surface-inverse-elevated border border-inverse rounded-lg text-xs text-on-inverse placeholder:text-on-inverse-muted focus:outline-none focus:border-syntax-flag"
+                className="w-full pl-9 pr-8 py-1.5 bg-surface-inverse-elevated border border-inverse rounded-lg text-xs text-on-inverse placeholder:text-on-inverse-muted focus:outline-none focus:border-syntax-flag focus-visible:ring-2 focus-visible:ring-accent/50"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1.5 p-1 rounded text-on-inverse-muted hover:text-on-inverse cursor-pointer"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded text-on-inverse-muted hover:text-on-inverse cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export const SnippetsDrawer: React.FC = () => {
           </div>
 
           {/* Snippet list */}
-          <div data-tour="drawer-list" className="p-3 space-y-2.5 overflow-y-auto flex-1">
+          <div data-tour="drawer-list" className="p-3 space-y-2.5 overflow-y-auto overscroll-contain flex-1">
             {filteredCommands.map((cmd) => {
               // Cheatsheet content: legacy mode ({ip} = TARGET). Unresolved-token
               // reporting below comes from this same call, so the modes always match.
@@ -243,28 +243,32 @@ export const SnippetsDrawer: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
+                        type="button"
                         onClick={() => toggleStarCommand(cmd.id)}
-                        className={`p-1 max-md:p-2 rounded hover:bg-surface-inverse transition-colors cursor-pointer ${
+                        className={`inline-flex min-h-6 min-w-6 items-center justify-center p-1 max-md:p-2 rounded hover:bg-surface-inverse transition-colors cursor-pointer ${
                           cmd.isStarred ? 'text-syntax-number' : 'text-on-inverse-muted hover:text-on-inverse'
                         }`}
                         title={cmd.isStarred ? 'Unstar' : 'Star command'}
+                        aria-label={cmd.isStarred ? `Unstar ${cmd.title}` : `Star ${cmd.title}`}
                       >
                         <Star className={`w-3.5 h-3.5 ${cmd.isStarred ? 'fill-current' : ''}`} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
                           setSnippetsDrawerOpen(false);
                           useNotesWorkspaceStore.getState().openCheat(cmd.id);
                         }}
-                        className="p-1 max-md:p-2 rounded text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center p-1 max-md:p-2 rounded text-on-inverse-muted hover:text-on-inverse hover:bg-surface-inverse transition-colors cursor-pointer"
                         title="Open in Notes"
                         aria-label={`Open ${cmd.title} in Notes`}
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleCopy(cmd.id, interpolated)}
-                        className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors flex items-center gap-1 border cursor-pointer active:scale-[0.97] ${
+                        className={`min-h-6 px-2 py-0.5 rounded text-[11px] font-medium transition-colors flex items-center gap-1 border cursor-pointer active:scale-[0.97] ${
                           isCopied
                             ? 'border-syntax-string/60 text-syntax-string'
                             : unresolved.length > 0
@@ -285,7 +289,7 @@ export const SnippetsDrawer: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="p-2 rounded-lg text-xs font-mono tabular-nums break-all select-all bg-surface-inverse border border-inverse text-on-inverse">
+                  <div className="p-2 rounded-lg text-xs font-mono tabular-nums break-all select-text bg-surface-inverse border border-inverse text-on-inverse">
                     {interpolated}
                   </div>
                 </div>
@@ -313,9 +317,9 @@ export const SnippetsDrawer: React.FC = () => {
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
-            </motion.div>
+            </m.div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>,
     document.body

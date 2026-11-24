@@ -147,15 +147,22 @@
       window.__zbTfLastSynced = null;
     }
     var main = document.getElementById('main') || document.body;
-    var tables = main.querySelectorAll('table.list');
+    // /machines/all/ ships its first rows in the page and the rest inside <template data-tf-rest>, so the first paint has a small DOM; the rest is still read here (rows, tags, headings) so search and filters cover every machine, and is moved into the page on first use.
+    var rest = main.querySelector('template[data-tf-rest]');
+    var restRoot = rest && rest.content ? rest.content : null;
+    var tables = Array.prototype.slice.call(main.querySelectorAll('table.list'));
+    var liveTables = tables.length;
+    if (restRoot) tables = tables.concat(Array.prototype.slice.call(restRoot.querySelectorAll('table.list')));
+    var expanded = !restRoot;
     var groups = []; // one per table: { table, body, heading, rows: [{ el, ...row }] }
     var all = [];
     var idx = 0;
     for (var i = 0; i < tables.length; i++) {
       var body = tables[i].tBodies[0];
       if (!body) continue;
-      var group = { table: tables[i], body: body, heading: null, rows: [] };
+      var group = { table: tables[i], body: body, heading: null, rows: [], late: i >= liveTables };
       var prev = tables[i].previousElementSibling;
+      if (prev && prev.className === 'sec-note') prev = prev.previousElementSibling;
       if (prev && /^H[23]$/.test(prev.tagName)) group.heading = prev;
       // A row without data-os / data-difficulty (the big /machines/all/ page) is read from the cell under the OS / Difficulty column header.
       var colOs = -1;
@@ -174,6 +181,7 @@
         var diffAttr = tr.getAttribute('data-difficulty');
         var row = makeRow({ name: tr.getAttribute('data-name'), os: osAttr == null ? cellText(colOs) : osAttr, difficulty: diffAttr == null ? cellText(colDiff) : diffAttr, platform: tr.getAttribute('data-platform'), tags: tr.getAttribute('data-tags') }, idx++);
         row.el = tr;
+        row.late = group.late;
         group.rows.push(row);
         all.push(row);
       }
@@ -221,20 +229,27 @@
     var controls = el('div', { class: 'tf-controls' });
     var search = el('input', { type: 'search', autocomplete: 'off', spellcheck: 'false', placeholder: 'Name or tag' });
     controls.appendChild(field('q', 'Search', search, 'tf-search'));
+    // On a phone the filters sit behind a "Filters" button (one-line toolbar); from 640px up the panel is always shown and the button hidden by CSS.
+    var panel = el('div', { class: 'tf-panel', id: 'tf-panel' });
+    var filtersBtn = el('button', { type: 'button', class: 'btn btn-secondary tf-toggle', 'aria-expanded': 'false', 'aria-controls': 'tf-panel' }, 'Filters');
+    var badge = el('span', { class: 'tf-badge' });
+    filtersBtn.appendChild(badge);
+    controls.appendChild(filtersBtn);
+    controls.appendChild(panel);
     var filterDefs = [['os', 'OS', 'All OS'], ['difficulty', 'Difficulty', 'All difficulties'], ['platform', 'Platform', 'All platforms']];
     filterDefs.forEach(function (d) {
       var opts = distinct(all, d[0]);
-      if (d[0] === 'platform' ? opts.length > 1 : opts.length > 0) controls.appendChild(field(d[0], d[1], select(opts, d[2])));
+      if (d[0] === 'platform' ? opts.length > 1 : opts.length > 0) panel.appendChild(field(d[0], d[1], select(opts, d[2])));
     });
     var tags = tagOptions(all);
-    if (tags.length) controls.appendChild(field('tag', 'Tag', select(tags, 'All tags')));
+    if (tags.length) panel.appendChild(field('tag', 'Tag', select(tags, 'All tags')));
     var sortOptions = [{ value: 'name-asc', label: 'Name A-Z' }, { value: 'name-desc', label: 'Name Z-A' }];
     if (mixesDifficulty(groups.map(function (g) { return g.rows; }))) sortOptions.push({ value: 'difficulty', label: 'Difficulty, easiest first' });
-    controls.appendChild(field('sort', 'Sort', select(sortOptions, 'Default order')));
+    panel.appendChild(field('sort', 'Sort', select(sortOptions, 'Default order')));
     var reset = el('button', { type: 'button', class: 'btn btn-secondary btn-sm tf-reset' }, 'Reset');
-    controls.appendChild(reset);
+    panel.appendChild(reset);
     toolbar.appendChild(controls);
-    var count = el('p', { class: 'tf-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, countText(all.length, all.length));
+    var count = el('p', { class: 'tf-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, countText(all.filter(function (r) { return !r.late; }).length, all.length));
     toolbar.appendChild(count);
     var empty = el('div', { class: 'tf-empty', hidden: '' });
     empty.appendChild(el('p', null, 'No machines match your search and filters.'));
@@ -247,11 +262,86 @@
     var links = main.querySelectorAll('.chips a[href^="#"]');
     for (var c = 0; c < links.length; c++) {
       var id = decodeURIComponent(links[c].getAttribute('href').slice(1));
-      var target = id && document.getElementById(id);
+      var target = id && (document.getElementById(id) || (restRoot && restRoot.getElementById(id)));
       if (target && /^H[23]$/.test(target.tagName)) chipLinks.push({ a: links[c], target: target });
     }
 
+    // Moves the deferred rows into the page. The rows already carry their hidden flags, so filters and sort stay consistent.
+    // start() puts each deferred section in the page with an empty table body; rows then follow in chunks (idle time after load, or all at once on first use) so browser find-in-page reaches every machine without a big first-paint DOM.
+    var more = null;
+    var started = false;
+    var pending = []; // [tbody, row element] in document order
+    function start() {
+      if (started || !rest) return;
+      started = true;
+      Array.prototype.slice.call(rest.content.childNodes).forEach(function (node) {
+        if (node.nodeType === 1) {
+          var tabs = node.matches && node.matches('table.list') ? [node] : Array.prototype.slice.call(node.querySelectorAll('table.list'));
+          tabs.forEach(function (t) {
+            var tb = t.tBodies[0];
+            if (!tb) return;
+            while (tb.firstChild) pending.push([tb, tb.removeChild(tb.firstChild)]);
+          });
+        }
+        rest.parentNode.insertBefore(node, rest);
+      });
+    }
+    // Rows join their tbody through one DocumentFragment per tbody and chunk, so each chunk is one DOM insertion per table.
+    function drain(limit) {
+      var take = limit && limit < pending.length ? limit : pending.length;
+      var batch = pending.splice(0, take);
+      var frag = null;
+      var into = null;
+      for (var b = 0; b < batch.length; b++) {
+        if (batch[b][0] !== into) {
+          if (frag) into.appendChild(frag);
+          into = batch[b][0];
+          frag = document.createDocumentFragment();
+        }
+        frag.appendChild(batch[b][1]);
+      }
+      if (frag) into.appendChild(frag);
+    }
+    function expand() {
+      if (expanded) return;
+      start();
+      drain(0);
+      expanded = true;
+      if (rest.parentNode) rest.parentNode.removeChild(rest);
+      if (more && more.parentNode) more.parentNode.removeChild(more);
+    }
+    // After load, in idle time: the deferred rows join the page in chunks, so find-in-page works without waiting for a click.
+    function idleExpand() {
+      var ric = typeof window.requestIdleCallback === 'function';
+      function step(deadline) {
+        if (expanded) return;
+        if (ric && deadline && typeof deadline.timeRemaining === 'function') {
+          var before = pending.length;
+          while (pending.length && deadline.timeRemaining() > 4) drain(40);
+          // A timed-out or too-short idle slice still moves one chunk, so loading always progresses.
+          if (pending.length && (deadline.didTimeout || pending.length === before)) drain(40);
+        } else {
+          drain(100);
+        }
+        if (pending.length) {
+          applyFilters(); // keeps the count line in step with the rows already in the page
+          schedule();
+        } else {
+          expand();
+          applyFilters();
+        }
+      }
+      function schedule() {
+        if (ric) window.requestIdleCallback(step, { timeout: 1500 });
+        else setTimeout(step, 30);
+      }
+      if (expanded) return;
+      start();
+      schedule();
+    }
+
     function applyFilters() {
+      if (!expanded && (state.q || state.os || state.difficulty || state.platform || state.tag)) expand();
       var shown = 0;
       var secEls = [];
       var secVisible = [];
@@ -260,9 +350,12 @@
         g.rows.forEach(function (r) {
           var ok = matches(r, state);
           if (r.el.hidden === ok) r.el.hidden = !ok;
-          if (ok) visible++;
+          if (ok) {
+            visible++;
+            // Deferred rows count once they are in the page (all of them after expand).
+            if (!r.late || expanded || r.el.isConnected) shown++;
+          }
         });
-        shown += visible;
         g.table.hidden = !visible;
         if (g.heading) g.heading.hidden = !visible;
         if (g.section) {
@@ -295,8 +388,14 @@
     }
 
     function applySort() {
+      if (!expanded && sortMode) expand();
+      // Each tbody leaves the table while its rows are reordered, so the page lays out once per table, not once per row.
       groups.forEach(function (g) {
+        var parent = g.body.parentNode;
+        var next = g.body.nextSibling;
+        parent.removeChild(g.body);
         sortRows(g.rows, sortMode).forEach(function (r) { g.body.appendChild(r.el); });
+        parent.insertBefore(g.body, next);
       });
     }
 
@@ -352,6 +451,7 @@
       Object.keys(fields).forEach(function (k) { fields[k].value = ''; });
       applyFilters();
       applySort();
+      updateBadge();
       syncUrl();
     }
     // URL parameters preselect controls on load (?tag=, ?q=, ?os=, ?difficulty=, ?platform=, ?sort=).
@@ -424,6 +524,38 @@
         }
       }
     }
+    if (!expanded) {
+      more = el('p', { class: 'tf-more' });
+      var moreBtn = el('button', { type: 'button', class: 'btn btn-secondary' }, 'Show all ' + all.length.toLocaleString('en-US') + ' machines');
+      more.appendChild(moreBtn);
+      rest.parentNode.insertBefore(more, rest);
+      moreBtn.addEventListener('click', function () {
+        expand();
+        applyFilters();
+        fields.q.focus();
+      });
+      chipLinks.forEach(function (l) {
+        l.a.addEventListener('click', function (e) {
+          if (expanded) return;
+          e.preventDefault();
+          expand();
+          applyFilters();
+          if (l.target.scrollIntoView) l.target.scrollIntoView();
+        });
+      });
+      var hashId = '';
+      try { hashId = decodeURIComponent((location.hash || '').slice(1)); } catch { hashId = ''; }
+      if (hashId && rest.content.getElementById(hashId)) {
+        expand();
+        applyFilters();
+        var hashEl = document.getElementById(hashId);
+        if (hashEl && hashEl.scrollIntoView) hashEl.scrollIntoView();
+      }
+    }
+    if (!expanded) {
+      if (document.readyState === 'complete') idleExpand();
+      else window.addEventListener('load', idleExpand);
+    }
     readyForUrlSync = true;
 
     if (typeof window !== 'undefined') {
@@ -438,7 +570,20 @@
       document.addEventListener('keydown', window.__zbTfKeyHandler);
     }
 
+    // Filters button (phones): opens the panel; the badge counts the active filters and sort so a closed panel still shows them.
+    function updateBadge() {
+      var n = 0;
+      ['os', 'difficulty', 'platform', 'tag'].forEach(function (k) { if (state[k]) n++; });
+      if (sortMode) n++;
+      badge.textContent = n ? ' (' + n + ')' : '';
+    }
+    filtersBtn.addEventListener('click', function () {
+      var open = toolbar.classList.toggle('tf-open');
+      filtersBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    toolbar.addEventListener('change', updateBadge);
     reset.addEventListener('click', clearAll);
+    updateBadge();
     clear.addEventListener('click', function () {
       clearAll();
       search.focus();

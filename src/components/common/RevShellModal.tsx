@@ -140,4 +140,3 @@ export const RevShellModal: React.FC = () => {
   );
 };
 
-export default RevShellModal;

@@ -32,7 +32,8 @@ import {
   isDomainControllerBox,
 } from '../utils/examComplianceUtils';
 import { generateExamSeed, normalizeExamSeed } from '../utils/examTargetSelection';
-import type { Machine } from '../types';
+import type { Machine, OperatingSystem } from '../types';
+import type { AttackGraphEdge, AttackNodePosition } from '../types/graph';
 import { playCyberAlert } from '../utils/audioAlerts';
 import { RABBIT_HOLE_THRESHOLDS } from '../utils/rabbitHoleConfig';
 import { migrateLegacyProofImages, purgeRemovedProofImages } from '../utils/examProofImages';
@@ -58,9 +59,9 @@ function playDedupedAlarm() {
   playCyberAlert('alarm');
 }
 
-export type ExamStatus = 'idle' | 'running' | 'paused' | 'completed';
+type ExamStatus = 'idle' | 'running' | 'paused' | 'completed';
 
-export interface ExamBreakState {
+interface ExamBreakState {
   isActive: boolean;
   type: 'bio' | 'food' | 'rest' | 'custom';
   startedAt: number | null;
@@ -69,13 +70,31 @@ export interface ExamBreakState {
   expiresAt: number | null;
 }
 
-export interface ExamMilestone {
+interface ExamMilestone {
   id: string;
   targetId: string;
   type: 'initial_access' | 'priv_esc' | 'domain_admin' | 'break_start' | 'break_end' | 'pass_achieved';
   timestamp: string;
   notes: string;
 }
+
+/** Extra internal host discovered mid-exam (e.g. DC01, pivot box, internal DB) plotted on the Exam Pivot Graph. */
+export interface ExamCustomHost {
+  id: string;
+  name: string;
+  ip: string;
+  os: OperatingSystem;
+  role: string;
+  subnet?: string;
+  domain?: string;
+  username?: string;
+  secret?: string;
+  notes?: string;
+  compromised?: boolean;
+  createdAt: string;
+}
+
+type NewExamGraphEdge = Omit<AttackGraphEdge, 'id' | 'createdAt'> & { id?: string; createdAt?: string };
 
 export interface ExamSessionState {
   id: string;
@@ -112,9 +131,13 @@ export interface ExamSessionState {
   rabbitHoleSnoozeUntil: number | null;
   /** Structured report findings for this exam session (additive; absent in older payloads). */
   findings: Finding[];
+  /** Exam Pivot Graph node coordinates, pivot links, and custom discovered internal hosts (additive). */
+  examGraphPositions: Record<string, AttackNodePosition>;
+  examGraphEdges: AttackGraphEdge[];
+  examCustomNodes: ExamCustomHost[];
 }
 
-export interface ExamStoreActions {
+interface ExamStoreActions {
   // Session Lifecycle
   /** Keeps the previewed boxes and seed when idle; otherwise re-generates from the current seed. */
   startExam: (
@@ -160,6 +183,18 @@ export interface ExamStoreActions {
   addFinding: (finding?: Partial<Omit<Finding, 'id'>>) => string;
   updateFinding: (id: string, patch: Partial<Omit<Finding, 'id'>>) => void;
   deleteFinding: (id: string) => void;
+
+  // Exam Pivot Graph
+  setExamGraphNodePosition: (id: string, pos: AttackNodePosition) => void;
+  batchSetExamGraphNodePositions: (positions: Record<string, AttackNodePosition>) => void;
+  resetExamGraphLayout: () => void;
+  addExamGraphEdge: (edge: NewExamGraphEdge) => AttackGraphEdge;
+  updateExamGraphEdge: (id: string, updates: Partial<AttackGraphEdge>) => void;
+  deleteExamGraphEdge: (id: string) => void;
+  clearExamGraphEdges: () => void;
+  addExamCustomNode: (host: Omit<ExamCustomHost, 'id' | 'createdAt'>) => ExamCustomHost;
+  updateExamCustomNode: (id: string, patch: Partial<Omit<ExamCustomHost, 'id' | 'createdAt'>>) => void;
+  deleteExamCustomNode: (id: string) => void;
 
   // UI State
   setQuickDrawerOpen: (open: boolean) => void;
@@ -261,6 +296,9 @@ function createInitialSession(track: ExamTrack = 'OSCP', options: InitialSession
     scoringMode,
     reportExamDate: null,
     findings: [],
+    examGraphPositions: {},
+    examGraphEdges: [],
+    examCustomNodes: [],
     ...NO_ACTIVE_BOX,
   };
 }
@@ -310,7 +348,7 @@ const selectiveExamStorage = {
     }
   },
   setItem: (name: string, value: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     if (value === lastStoredPayload) {
       return; // Deduplicate identical discrete state; 0 disk write!
     }
@@ -322,7 +360,7 @@ const selectiveExamStorage = {
     }
   },
   removeItem: (name: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isSchemaWriteGated()) return;
     try {
       localStorage.removeItem(name);
       lastStoredPayload = '';
@@ -378,6 +416,9 @@ export const useExamStore = create<ExamStore>()(
           activeBreak: { ...DEFAULT_BREAK_STATE },
           breakHistory: [],
           reportExamDate: null,
+          ...(!keepPreview
+            ? { examGraphPositions: {}, examGraphEdges: [], examCustomNodes: [] }
+            : {}),
           ...NO_ACTIVE_BOX,
           milestones: [
             {
@@ -856,6 +897,86 @@ export const useExamStore = create<ExamStore>()(
         set((state) => ({ findings: (state.findings || []).filter((f) => f.id !== id) }));
       },
 
+      setExamGraphNodePosition: (id, pos) => {
+        set((state) => ({
+          examGraphPositions: {
+            ...(state.examGraphPositions || {}),
+            [id]: { x: pos.x, y: pos.y },
+          },
+        }));
+      },
+
+      batchSetExamGraphNodePositions: (positions) => {
+        set((state) => ({
+          examGraphPositions: {
+            ...(state.examGraphPositions || {}),
+            ...positions,
+          },
+        }));
+      },
+
+      resetExamGraphLayout: () => {
+        set({ examGraphPositions: {} });
+      },
+
+      addExamGraphEdge: (edge) => {
+        const created: AttackGraphEdge = {
+          ...edge,
+          id: edge.id || `exedge_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          createdAt: edge.createdAt || new Date().toISOString(),
+        };
+        set((state) => ({
+          examGraphEdges: [...(state.examGraphEdges || []), created],
+        }));
+        return created;
+      },
+
+      updateExamGraphEdge: (id, updates) => {
+        set((state) => ({
+          examGraphEdges: (state.examGraphEdges || []).map((e) => (e.id === id ? { ...e, ...updates, id } : e)),
+        }));
+      },
+
+      deleteExamGraphEdge: (id) => {
+        set((state) => ({
+          examGraphEdges: (state.examGraphEdges || []).filter((e) => e.id !== id),
+        }));
+      },
+
+      clearExamGraphEdges: () => {
+        set({ examGraphEdges: [] });
+      },
+
+      addExamCustomNode: (host) => {
+        const created: ExamCustomHost = {
+          ...host,
+          id: `exhost_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          examCustomNodes: [...(state.examCustomNodes || []), created],
+        }));
+        return created;
+      },
+
+      updateExamCustomNode: (id, patch) => {
+        set((state) => ({
+          examCustomNodes: (state.examCustomNodes || []).map((n) => (n.id === id ? { ...n, ...patch, id } : n)),
+        }));
+      },
+
+      deleteExamCustomNode: (id) => {
+        set((state) => {
+          const nextPositions = { ...(state.examGraphPositions || {}) };
+          delete nextPositions[id];
+          return {
+            examCustomNodes: (state.examCustomNodes || []).filter((n) => n.id !== id),
+            examGraphEdges: (state.examGraphEdges || []).filter((e) => e.sourceId !== id && e.targetId !== id),
+            examGraphPositions: nextPositions,
+          };
+        });
+      },
+
       // 1Hz tick: Pure in-memory derivation, excluded from partialize and selective storage
       tick: () => {
         const state = get();
@@ -976,9 +1097,17 @@ export const useExamStore = create<ExamStore>()(
       // Older payloads have no seed or scoringMode, or the removed legacy bonus mode: normalize them on every hydrate.
       merge: (persistedState, currentState) => {
         if (!persistedState) return currentState;
+        const normalized = normalizeExamModeFields(persistedState as Record<string, unknown>);
+        const raw = persistedState as Partial<ExamSessionState>;
         return {
           ...currentState,
-          ...normalizeExamModeFields(persistedState as Record<string, unknown>),
+          ...normalized,
+          examGraphPositions:
+            raw.examGraphPositions && typeof raw.examGraphPositions === 'object' && !Array.isArray(raw.examGraphPositions)
+              ? raw.examGraphPositions
+              : currentState.examGraphPositions,
+          examGraphEdges: Array.isArray(raw.examGraphEdges) ? raw.examGraphEdges : currentState.examGraphEdges,
+          examCustomNodes: Array.isArray(raw.examCustomNodes) ? raw.examCustomNodes : currentState.examCustomNodes,
         };
       },
       // Crucial: Only persist discrete state mutations!
@@ -1012,6 +1141,9 @@ export const useExamStore = create<ExamStore>()(
         scoringMode: state.scoringMode,
         reportExamDate: state.reportExamDate,
         findings: state.findings,
+        examGraphPositions: state.examGraphPositions,
+        examGraphEdges: state.examGraphEdges,
+        examCustomNodes: state.examCustomNodes,
         activeBoxId: state.activeBoxId,
         activeBoxSince: state.activeBoxSince,
         activeBoxPausedAt: state.activeBoxPausedAt,
@@ -1082,6 +1214,9 @@ const EXAM_SNAPSHOT_FIELDS = {
   seed: 'string',
   scoringMode: 'string',
   findings: 'array',
+  examGraphPositions: 'object',
+  examGraphEdges: 'array',
+  examCustomNodes: 'array',
   activeBoxId: 'string?',
   activeBoxSince: 'number?',
   activeBoxPausedAt: 'number?',
@@ -1131,6 +1266,9 @@ export function restoreExamBackupSnapshot(raw: unknown): boolean {
   for (const [key, kind] of Object.entries(EXAM_SNAPSHOT_FIELDS)) {
     if (key in incoming && matchesKind(incoming[key], kind)) patch[key] = incoming[key];
   }
+  if (!('examGraphPositions' in patch)) patch.examGraphPositions = {};
+  if (!('examGraphEdges' in patch)) patch.examGraphEdges = [];
+  if (!('examCustomNodes' in patch)) patch.examCustomNodes = [];
   // Old backups predate seed/scoringMode (or carry an invalid value): default them explicitly.
   Object.assign(
     patch,

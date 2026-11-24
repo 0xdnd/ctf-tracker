@@ -12,7 +12,7 @@ const MAX_NAME_LENGTH = 120;
 const MAX_TAGS = 20;
 const MAX_TAG_LENGTH = 40;
 
-export type CsvField = 'name' | 'platform' | 'status' | 'difficulty' | 'os' | 'tags' | 'userPwnedAt' | 'rootPwnedAt';
+type CsvField = 'name' | 'platform' | 'status' | 'difficulty' | 'os' | 'tags' | 'userPwnedAt' | 'rootPwnedAt';
 /** Column index per field, -1 when the file has no such column. */
 export type ColumnMap = Record<CsvField, number>;
 
@@ -167,7 +167,7 @@ export function toImportRows(rows: string[][], map: ColumnMap): ImportRow[] {
 
 type MachineDraft = Omit<Machine, 'id' | 'createdAt' | 'updatedAt'>;
 
-export interface PlanLink {
+interface PlanLink {
   line: number;
   machineId: string;
   name: string;
@@ -178,19 +178,19 @@ export interface PlanLink {
   /** Tags from the file that the catalog machine does not have yet. */
   addTags: string[];
 }
-export interface PlanSkip {
+interface PlanSkip {
   line: number;
   name: string;
   platform?: Platform;
   reason: string;
 }
-export interface PlanAdd {
+interface PlanAdd {
   line: number;
   draft: MachineDraft;
   /** The file's status text was not recognised, so the default was used. */
   statusUnknown: boolean;
 }
-export interface PlanError {
+interface PlanError {
   line: number;
   name: string;
   message: string;
@@ -242,7 +242,7 @@ const hasList = (v: unknown) => Array.isArray(v) && v.length > 0;
  * attempts or activity sessions pointing at it, and none of the fields users set by hand (IP, writeup link,
  * skills, review schedule, time to user/root). Stricter than hasUserProgress, which other callers rely on.
  */
-export function isUntouchedForImport(m: Machine, touchedIds: ReadonlySet<string>): boolean {
+function isUntouchedForImport(m: Machine, touchedIds: ReadonlySet<string>): boolean {
   if (hasUserProgress(m) || touchedIds.has(m.id)) return false;
   if (m.ip && !isPlaceholderIp(m.ip) && m.ip !== catalogIp(m.id)) return false;
   if (typeof m.writeupUrl === 'string' && m.writeupUrl.trim()) return false;

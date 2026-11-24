@@ -53,7 +53,7 @@ export const FIXTURE_IMPORTED_NOTES: CptsNoteEntry[] = [
   },
 ];
 
-export const FIXTURE_WIKILINK_MAP: Record<string, string> = {
+const FIXTURE_WIKILINK_MAP: Record<string, string> = {
   'network discovery & port scanning': '01-recon-port-scanning',
   'web content discovery': '02-web-directory-fuzzing',
   'kerberos attacks': '07-kerberos-attacks-master',

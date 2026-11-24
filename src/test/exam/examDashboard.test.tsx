@@ -29,6 +29,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, waitForElementToBeRemoved, act } from '@testing-library/react';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import { MemoryRouter } from 'react-router-dom';
 import { ExamSimulatorPage } from '../../pages/ExamSimulatorPage';
 import { ExamEvidenceDropzone, downscaleImageFile } from '../../components/exam/ExamEvidenceDropzone';
@@ -575,11 +576,17 @@ describe('Milestone 3: Dedicated Simulator Dashboard & Evidence Dropzone', () =>
 
     it('removes modal content from the DOM after isOpen flips to false (exit animation)', async () => {
       const { rerender } = render(
-        <ExamBioBreakModal isOpen={true} onClose={vi.fn()} />
+        <LazyMotion features={domAnimation}>
+          <ExamBioBreakModal isOpen={true} onClose={vi.fn()} />
+        </LazyMotion>
       );
       expect(screen.getByTestId('exam-bio-break-modal')).toBeInTheDocument();
 
-      rerender(<ExamBioBreakModal isOpen={false} onClose={vi.fn()} />);
+      rerender(
+        <LazyMotion features={domAnimation}>
+          <ExamBioBreakModal isOpen={false} onClose={vi.fn()} />
+        </LazyMotion>
+      );
       await waitForElementToBeRemoved(() => screen.queryByTestId('exam-bio-break-modal'));
       expect(screen.queryByTestId('exam-bio-break-dialog-container')).not.toBeInTheDocument();
     });

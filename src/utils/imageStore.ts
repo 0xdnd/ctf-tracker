@@ -5,6 +5,7 @@
  */
 
 import { openStoreDb } from './idbUtils';
+import { isSchemaWriteGated } from './schemaWriteGate';
 
 const DB_NAME = 'zerobox_images_db';
 const DB_VERSION = 1;
@@ -59,6 +60,7 @@ export function newImageId(): string {
 }
 
 export async function putImage(profileId: string, id: string, blob: Blob): Promise<void> {
+  if (isSchemaWriteGated()) return;
   const record: ImageRecord = { blob, createdAt: Date.now() };
   await withStore('readwrite', (s) => s.put(record, keyOf(profileId, id)));
 }
@@ -69,6 +71,7 @@ export async function getImage(profileId: string, id: string): Promise<Blob | nu
 }
 
 export async function deleteImage(profileId: string, id: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   await withStore('readwrite', (s) => s.delete(keyOf(profileId, id)));
 }
 
@@ -83,6 +86,7 @@ export async function listImages(profileId: string): Promise<string[]> {
 
 /** Removes every image stored for one profile (profile deletion). */
 export async function deleteProfileImages(profileId: string): Promise<void> {
+  if (isSchemaWriteGated()) return;
   await withStore('readwrite', (s) => s.delete(profileRange(profileId)));
 }
 

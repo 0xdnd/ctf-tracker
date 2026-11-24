@@ -1,27 +1,25 @@
 import React from 'react';
 import { ArrowDownCircle } from 'lucide-react';
 import { useDesktopUpdate } from '../../hooks/DesktopUpdateContext';
-import { confirmAction } from '../../store/useConfirmStore';
+import { useUpdateUiStore } from '../../store/useUpdateUiStore';
 
-/** Header icon shown on desktop once an update has finished downloading. */
+/** Header icon shown on Desktop or Web once an update is ready to install/reload. */
 export const UpdateReadyButton: React.FC = () => {
-  const { isDesktop, status, latestVersion, quitAndInstall } = useDesktopUpdate();
-  if (!isDesktop || status !== 'downloaded' || !latestVersion) return null;
+  const { isDesktop, status, latestVersion } = useDesktopUpdate();
+  const webUpdateWaiting = useUpdateUiStore((s) => s.webUpdateWaiting);
+  const openUpdateAvailable = useUpdateUiStore((s) => s.openUpdateAvailable);
 
-  const label = `Update ready: version ${latestVersion}. Click to update and restart`;
-  const onClick = async () => {
-    const ok = await confirmAction({
-      title: 'Update and restart?',
-      body: `Version ${latestVersion} is ready. The app will close and reopen.`,
-      confirmLabel: 'Update and restart',
-    });
-    if (ok) quitAndInstall();
-  };
+  const isDesktopReady = isDesktop && status === 'downloaded' && Boolean(latestVersion);
+  if (!isDesktopReady && !webUpdateWaiting) return null;
+
+  const label = isDesktopReady
+    ? `Update ready: version ${latestVersion}. Click to update and restart`
+    : 'Update ready: a new version of ZeroBox is available. Click to reload and update';
 
   return (
     <button
       type="button"
-      onClick={() => void onClick()}
+      onClick={openUpdateAvailable}
       title={label}
       aria-label={label}
       className="relative h-8 w-8 p-0 rounded-lg bg-transparent hover:bg-surface-hover border border-subtle hover:border-strong text-accent flex items-center justify-center transition-interactive active:scale-[0.97] flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"

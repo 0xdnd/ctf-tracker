@@ -45,6 +45,14 @@ function ratio(a: RGB, b: RGB): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+function blend(fg: RGB, bg: RGB, alpha: number): RGB {
+  return [
+    Math.round(fg[0] * alpha + bg[0] * (1 - alpha)),
+    Math.round(fg[1] * alpha + bg[1] * (1 - alpha)),
+    Math.round(fg[2] * alpha + bg[2] * (1 - alpha)),
+  ];
+}
+
 const CALLOUTS = ['info', 'tip', 'warn', 'danger', 'success'] as const;
 
 // Callout tokens live in shared blocks: light default on :root, dark override on .dark selector list.
@@ -100,6 +108,12 @@ describe('Token contrast matrix: every text token on every surface token (WCAG A
       it(`[${combo}] accent (border-accent) as text on ${surface} >= 4.5:1`, () => {
         const r = ratio(tokens['border-accent'], tokens[surface]);
         expect(r, `${combo}: border-accent [${tokens['border-accent']}] on ${surface} [${tokens[surface]}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it(`[${combo}] text-accent on bg-accent-muted (15%) over ${surface} >= 4.5:1`, () => {
+        const composited = blend(tokens['border-accent'], tokens[surface], 0.15);
+        const r = ratio(tokens['border-accent'], composited);
+        expect(r, `${combo}: border-accent [${tokens['border-accent']}] on accent-muted/${surface} [${composited}] = ${r.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
       });
     }
 

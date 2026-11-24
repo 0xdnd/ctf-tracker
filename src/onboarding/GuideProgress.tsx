@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { EASE_OUT } from './guideMotion';
 
 interface StepTrackProps {
@@ -25,7 +25,7 @@ export const StepTrack: React.FC<StepTrackProps> = ({ total, index, complete = f
       {Array.from({ length: total }, (_, i) => (
         <div key={i} className="relative h-1 flex-1 rounded-full bg-[rgb(var(--border-subtle))]">
           <div className="absolute inset-0 overflow-hidden rounded-full">
-            <motion.div
+            <m.div
               className="h-full w-full rounded-full bg-accent"
               initial={false}
               animate={{ x: i <= index ? '0%' : '-101%' }}
@@ -33,7 +33,7 @@ export const StepTrack: React.FC<StepTrackProps> = ({ total, index, complete = f
             />
           </div>
           {complete && i < total - 1 && (
-            <motion.span
+            <m.span
               aria-hidden="true"
               className="absolute left-[calc(100%-2px)] top-0 h-full w-2 origin-left bg-accent"
               initial={reduced ? { opacity: 0 } : { opacity: 0, scaleX: 0.25 }}
@@ -44,7 +44,7 @@ export const StepTrack: React.FC<StepTrackProps> = ({ total, index, complete = f
         </div>
       ))}
       {complete && (
-        <motion.span
+        <m.span
           aria-hidden="true"
           className="absolute inset-x-0 h-1 rounded-full bg-accent"
           initial={{ opacity: 0 }}
@@ -76,7 +76,7 @@ export const GuideRuler: React.FC<GuideRulerProps> = ({ total, done, arrivingInd
       {Array.from({ length: total }, (_, i) => (
         <span key={i} className="relative flex-1 rounded-[1.5px] bg-[rgb(var(--border-subtle))]">
           {i < done && (
-            <motion.span
+            <m.span
               className="absolute inset-0 rounded-[1.5px] bg-accent"
               initial={i === arrivingIndex ? (reduced ? { opacity: 0 } : { opacity: 0, y: -3 }) : false}
               animate={{ opacity: 1, y: 0 }}

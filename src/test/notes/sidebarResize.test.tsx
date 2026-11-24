@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { FieldManualShell } from '../../components/notes/FieldManualShell';
+import { NotesLeftPanel } from '../../components/notes/NotesLeftPanel';
 
 const KEY = 'zerobox.test.leftWidth';
 
@@ -94,5 +95,71 @@ describe('FieldManualShell left sidebar resize', () => {
     fireEvent.pointerUp(h, { pointerId: 1 });
     expect(document.body.style.userSelect).toBe('');
     expect(window.localStorage.getItem(KEY)).toBe('310');
+  });
+
+  it('grows the inner explorer wrapper and NotesLeftPanel fills the resized width without a hardcoded 260px cap', () => {
+    render(
+      <FieldManualShell
+        ribbon={<div />}
+        left={
+          <NotesLeftPanel
+            view="files"
+            onCollapse={() => {}}
+            tree={[]}
+            expandedFolders={{}}
+            onToggleFolder={() => {}}
+            selectedPath={null}
+            onSelectFolder={() => {}}
+            onSelectNote={() => {}}
+            langMode="en"
+            onExpandAll={() => {}}
+            onCollapseAll={() => {}}
+            onNewNote={() => {}}
+            onImport={() => {}}
+            activeTag={null}
+            onClearTag={() => {}}
+            query=""
+            onQueryChange={() => {}}
+            results={[]}
+            onOpenResult={() => {}}
+            tags={new Map()}
+            onSelectTag={() => {}}
+            deletedCount={0}
+            onRestoreDeleted={() => {}}
+            wipeCount={0}
+            onWipeVault={() => {}}
+            onShowCards={() => {}}
+            onShowTable={() => {}}
+            onBackToSnippets={() => {}}
+          />
+        }
+        right={<div>right</div>}
+        statusBar={null}
+        isLeftOpen
+        isRightOpen={false}
+        isNarrow={false}
+        resizeStorageKey={KEY}
+        onCloseDrawers={() => {}}
+      >
+        <div>center</div>
+      </FieldManualShell>,
+    );
+
+    const h = screen.getByTestId('notes-left-resize-handle');
+    fireEvent.keyDown(h, { key: 'ArrowRight', shiftKey: true });
+    expect(leftWidth()).toBe('308px');
+
+    const inner = screen.getByTestId('notes-left-panel-content');
+    expect(inner.style.width).toBe('308px');
+    const panelRoot = inner.firstElementChild as HTMLElement;
+    expect(panelRoot.className).toContain('w-full');
+    expect(panelRoot.className).not.toContain('w-[260px]');
+  });
+
+  it('ignores a wide desktop stored width when narrowLeft drawer mode is active', () => {
+    window.localStorage.setItem(KEY, '500');
+    shell({ resizeStorageKey: KEY, narrowLeft: true });
+    expect(leftWidth()).toBe('260px');
+    expect(screen.getByTestId('notes-left-panel-content').style.width).toBe('260px');
   });
 });

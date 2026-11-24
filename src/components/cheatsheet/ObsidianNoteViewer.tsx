@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
@@ -33,10 +33,9 @@ import { useNotesWorkspaceStore, ObsidianViewMode } from '../../store/useNotesWo
 import { useToastStore } from '../../store/useToastStore';
 import { buildNoteMenuEntries } from '../../utils/noteMenuEntries';
 
-export type { ObsidianViewMode };
-export type ObsidianNoteLanguage = 'en' | 'he';
+type ObsidianNoteLanguage = 'en' | 'he';
 /** 'page' is the full-screen workspace; 'popout' is a detached window. */
-export type ObsidianDisplayMode = 'page' | 'popout';
+type ObsidianDisplayMode = 'page' | 'popout';
 
 export interface ObsidianNoteViewerProps {
   note: CptsNoteEntry;
@@ -504,9 +503,9 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
   const crumbCategory = displayCategory(note);
 
   const iconBtn =
-    'inline-flex h-7 w-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1';
+    'inline-flex h-7 w-7 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1';
   const segBtn =
-    'cursor-pointer rounded-sm px-2.5 py-1 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ';
+    'cursor-pointer rounded-md px-2.5 py-1 transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ';
   const segOn = 'bg-accent font-semibold text-on-accent';
   const segOff = 'text-primary hover:bg-surface-hover';
 
@@ -580,106 +579,118 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
           ref={tabStripScrollRef}
           data-testid="tab-strip-scroll-container"
           dir="ltr"
-          className="flex items-end gap-0.5 flex-1 min-w-0 overflow-x-auto no-scrollbar h-full"
+          className="flex-1 min-w-0 overflow-x-auto no-scrollbar h-full"
           onWheel={(e) => {
             if (e.deltaY !== 0) {
               e.currentTarget.scrollLeft += e.deltaY;
             }
           }}
         >
-          {orderedTabs.map((tab) => {
-            const isActive = tab.id === note.id;
-            const isPinned = pinnedTabIds.includes(tab.id);
+          {/* A tablist may only own tabs, and a button cannot nest inside role="tab". The pin and close buttons live
+              in a sibling layer; both layers are `display: contents` in one grid and share cells, so each button sits
+              over the padding of its tab. */}
+          <div className="grid h-full w-max grid-flow-col auto-cols-max items-end gap-0.5">
+            <div role="tablist" aria-label="Open notes" className="contents">
+              {orderedTabs.map((tab, i) => {
+                const isActive = tab.id === note.id;
+                const isPinned = pinnedTabIds.includes(tab.id);
 
-            return (
-              <div
-                key={tab.id}
-                ref={isActive ? activeTabElementRef : undefined}
-                role="tab"
-                aria-selected={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onKeyDown={(e) => {
-                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    if (!isActive) onSelectNote?.(tab.id);
-                  }
-                }}
-                data-testid={`note-tab-${tab.id}`}
-                dir="ltr"
-                onClick={() => {
-                  if (soundEnabled && !isActive) playCyberSound('click');
-                  onSelectNote?.(tab.id);
-                }}
-                onAuxClick={(e) => {
-                  if (e.button === 1 && !isPinned) {
-                    e.preventDefault();
-                    if (soundEnabled) playCyberSound('click');
-                    handleCloseSpecificTab(tab.id);
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  togglePinTab(tab.id);
-                }}
-                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 rounded-t-md text-xs border border-b-0 cursor-pointer transition-colors duration-150 motion-reduce:transition-none max-w-[140px] md:max-w-[240px] flex-shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
-                  isActive
-                    ? 'h-[31px] bg-surface-base border-subtle text-primary font-semibold'
-                    : 'h-[30px] border-transparent text-muted hover:text-secondary hover:bg-surface-hover'
-                }`}
-                title={`${tab.titleEn || tab.title}${displayCategory(tab) ? ` (${displayCategory(tab)})` : ''}${isPinned ? ' [Pinned]' : ''}`}
-              >
-                {isActive && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={TACTICAL_SPRING}
-                    aria-hidden="true"
-                    data-testid="active-tab-line" className={`pointer-events-none absolute -top-px left-0 right-0 h-0 border-t-2 ${isSplitView && !isPaneActive ? 'border-strong' : 'border-accent'}`}
-                  />
-                )}
-                {/* Pin indicator */}
-                {isPinned ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                return (
+                  <div
+                    key={tab.id}
+                    ref={isActive ? activeTabElementRef : undefined}
+                    role="tab"
+                    aria-selected={isActive}
+                    tabIndex={isActive ? 0 : -1}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        if (!isActive) onSelectNote?.(tab.id);
+                      }
+                    }}
+                    data-testid={`note-tab-${tab.id}`}
+                    dir="ltr"
+                    style={{ gridColumn: i + 1, gridRow: 1 }}
+                    onClick={() => {
+                      if (soundEnabled && !isActive) playCyberSound('click');
+                      onSelectNote?.(tab.id);
+                    }}
+                    onAuxClick={(e) => {
+                      if (e.button === 1 && !isPinned) {
+                        e.preventDefault();
+                        if (soundEnabled) playCyberSound('click');
+                        handleCloseSpecificTab(tab.id);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
                       togglePinTab(tab.id);
                     }}
-                    className="flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-accent hover:text-callout-danger-fg transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
+                    className={`group relative flex items-center gap-1.5 sm:gap-2 ${isPinned ? 'pl-8 pr-3' : 'pl-3 pr-8'} rounded-t-md text-xs border border-b-0 cursor-pointer transition-colors duration-150 motion-reduce:transition-none max-w-[140px] md:max-w-[240px] flex-shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1 ${
+                      isActive
+                        ? 'h-[31px] bg-surface-base border-subtle text-primary font-semibold'
+                        : 'h-[30px] border-transparent text-muted hover:text-secondary hover:bg-surface-hover'
+                    }`}
+                    title={`${tab.titleEn || tab.title}${displayCategory(tab) ? ` (${displayCategory(tab)})` : ''}${isPinned ? ' [Pinned]' : ''}`}
+                  >
+                    {isActive && (
+                      <m.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={TACTICAL_SPRING}
+                        aria-hidden="true"
+                        data-testid="active-tab-line" className={`pointer-events-none absolute -top-px left-0 right-0 h-0 border-t-2 ${isSplitView && !isPaneActive ? 'border-strong' : 'border-accent'}`}
+                      />
+                    )}
+                    {!isPinned && (
+                      <span className="flex-shrink-0 text-accent" aria-hidden="true">
+                        {tab.stage ? <Target size={14} /> : <FileText size={14} />}
+                      </span>
+                    )}
+
+                    <span className="truncate flex-1 text-left">
+                      {tab.titleEn || tab.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div role="presentation" className="contents">
+              {orderedTabs.map((tab, i) => {
+                const isPinned = pinnedTabIds.includes(tab.id);
+                const tabTitleText = tab.titleEn || tab.title;
+                return isPinned ? (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => togglePinTab(tab.id)}
+                    style={{ gridColumn: i + 1, gridRow: 1, justifySelf: 'start', alignSelf: 'end' }}
+                    className="z-10 mb-[3px] ml-1 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm text-accent transition-colors duration-150 motion-reduce:transition-none hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     title="Unpin tab"
+                    aria-label={`Unpin tab ${tabTitleText}`}
                   >
                     <Pin className="w-3.5 h-3.5 fill-accent rotate-45" />
                   </button>
                 ) : (
-                  <span className="flex-shrink-0 text-accent" aria-hidden="true">
-                    {tab.stage ? <Target size={14} /> : <FileText size={14} />}
-                  </span>
-                )}
-
-                <span className="truncate flex-1 text-left">
-                  {tab.titleEn || tab.title}
-                </span>
-
-                {/* Close Button (Hidden on Pinned Tabs) */}
-                {!isPinned && (
                   <button
+                    key={tab.id}
                     type="button"
                     data-testid={`close-tab-${tab.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       if (soundEnabled) playCyberSound('click');
                       handleCloseSpecificTab(tab.id);
                     }}
-                    className="relative flex-shrink-0 cursor-pointer rounded-sm p-0.5 text-muted opacity-60 after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']  transition-[opacity,background-color,color] duration-150 motion-reduce:transition-none group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 hover:bg-callout-danger-bg hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
+                    style={{ gridColumn: i + 1, gridRow: 1, justifySelf: 'end', alignSelf: 'end' }}
+                    className="z-10 mb-[3px] mr-1 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm text-muted transition-[background-color,color] duration-150 motion-reduce:transition-none hover:bg-callout-danger-bg hover:text-callout-danger-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-1"
                     title="Close tab (Alt+W)"
-                    aria-label={`Close tab ${tab.titleEn || tab.title}`}
+                    aria-label={`Close tab ${tabTitleText}`}
                   >
                     <X className="w-3 h-3" />
                   </button>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Right scroll chevron */}
@@ -816,8 +827,8 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
                   ? 'bg-surface-hover border-strong text-primary'
                   : 'border-subtle text-secondary hover:bg-surface-hover hover:text-primary'
               }`}
-              title="View and navigate all open tabs vertically"
-              aria-label={`Open tabs list (${safeOpenNotes.length})`}
+              title="View all open tabs. Alt+1..9 switch, Alt+W close"
+              aria-label={`${safeOpenNotes.length} ${safeOpenNotes.length === 1 ? 'tab' : 'tabs'}, open list`}
             >
               <Layers className="w-3 h-3 text-accent" />
               <span>{safeOpenNotes.length} {safeOpenNotes.length === 1 ? 'tab' : 'tabs'}</span>
@@ -913,9 +924,6 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
             )}
           </div>
 
-          <span className="hidden xl:inline text-muted/70">
-            Alt+1..9 switch • Alt+W close
-          </span>
           {safeOpenNotes.length > 1 && onCloseAllTabs && (
             <button
               type="button"
@@ -970,7 +978,7 @@ export const ObsidianNoteViewer: React.FC<ObsidianNoteViewerProps> = ({
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-1">
-          <div className="flex items-center rounded-sm border border-strong bg-surface-sunken p-0.5 text-[11px]">
+          <div className="flex items-center rounded-lg border border-subtle bg-surface-sunken p-0.5 text-[11px]">
             <button
               type="button"
               onClick={() => setViewMode('reading')}

@@ -513,7 +513,7 @@ const GUIDE_STEPS: Record<string, TourStep[]> = {
       icon: 'check',
       anchor: 'new-machine-submit',
       title: 'Add it',
-      body: 'Press Deploy Machine to add it to your tracker.',
+      body: 'Press Add target to add it to your tracker.',
     },
   ],
   'notes-import': [

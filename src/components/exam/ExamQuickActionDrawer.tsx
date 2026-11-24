@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   X,
   ExternalLink,
@@ -182,7 +182,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
     <>
     <AnimatePresence>
       {isQuickDrawerOpen && (
-    <motion.div
+    <m.div
       key="exam-quick-drawer"
       className="fixed inset-0 z-drawer overflow-hidden"
       data-testid="exam-quick-action-drawer"
@@ -200,7 +200,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
 
       {/* Slide-over panel from right */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <motion.div
+        <m.div
           ref={trapRef}
           role="dialog"
           aria-modal="true"
@@ -270,7 +270,7 @@ export const ExamQuickActionDrawer: React.FC = () => {
           </div>
 
           {/* Drawer Body - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-5">
             {/* Feedback Banner */}
             {submissionFeedback && (
               <div
@@ -638,9 +638,9 @@ export const ExamQuickActionDrawer: React.FC = () => {
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
-        </motion.div>
+        </m.div>
       </div>
-    </motion.div>
+    </m.div>
       )}
     </AnimatePresence>
 

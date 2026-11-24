@@ -3,22 +3,45 @@ import { Machine } from '../../../types';
 import type { AttackNodePosition } from '../../../types/graph';
 import { classifyMachine } from '../../../utils/categoryUtils';
 import { SCOPED_CLUSTER_CAP, splitScopedOverflow } from '../graphScopedVisibility';
-import type { GraphNode, ClusterDef, ClusterTemplate } from './types';
-import { centerX, centerY } from './constants';
-import { SCOPED_BOUNDS, computeShowAllLayout } from './layout';
+import type { GraphNode, ClusterDef, ClusterTemplate, WorldBounds } from './types';
+import { SCOPED_BOUNDS, computeShowAllLayout, getClusterHub } from './layout';
+import {
+  hubRingRadius,
+  WIDE_COLS,
+  computeHubBlock,
+  computePortraitBlock,
+  portraitHubPosition,
+  rigFootprint,
+  hubFootprint,
+  unionBounds,
+} from './hubLayout';
 
 interface UseGraphLayoutArgs {
   universeMachines: Machine[];
   scopedPool: Machine[];
   showAllNodes: boolean;
   storedNodePositions: Record<string, AttackNodePosition>;
+  /** Scoped view only: hubs are collapsible, so machines get non-overlapping per-hub grid blocks. */
+  collapsible?: boolean;
+  /** Phone portrait canvas: hubs become rows in one column and an open hub's cards a single column. */
+  portrait?: boolean;
+  /** Collapsed-hub text multiplier (hubTextScale); the hub footprint, and so the block offset, follows it. */
+  hubText?: number;
 }
 
-export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, storedNodePositions }: UseGraphLayoutArgs) {
-  const { clusters, defaultNodePositions, clusteredNodes, overflowNodes, layoutBounds, realSubnetCount } = useMemo(() => {
+/**
+ * The text scale the block offset is laid out for: rounded up to the next 0.5, so a window-resize drag (which moves
+ * hubText in 0.1 steps) re-runs the whole layout a few times instead of at every step. Rounding up only pushes a
+ * block slightly farther from its hub, never into it.
+ */
+const quantizeHubText = (k: number): number => Math.ceil(k * 2) / 2;
+
+export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, storedNodePositions, collapsible = false, portrait = false, hubText = 1 }: UseGraphLayoutArgs) {
+  const layoutHubText = quantizeHubText(hubText);
+  const { clusters, defaultNodePositions, clusteredNodes, overflowNodes, layoutBounds, realSubnetCount, hubBlocks } = useMemo(() => {
     const sample = showAllNodes ? universeMachines : scopedPool.slice(0, SCOPED_CLUSTER_CAP);
     if (sample.length === 0)
-      return { clusters: [], defaultNodePositions: {}, clusteredNodes: [] as GraphNode[], overflowNodes: [] as GraphNode[], layoutBounds: SCOPED_BOUNDS, realSubnetCount: 0 };
+      return { clusters: [], defaultNodePositions: {}, clusteredNodes: [] as GraphNode[], overflowNodes: [] as GraphNode[], layoutBounds: SCOPED_BOUNDS, realSubnetCount: 0, hubBlocks: {} as Record<string, WorldBounds> };
 
     // Subnet Templates
     const hasOnlyWeb = sample.every(m => classifyMachine(m).primary.startsWith('Web'));
@@ -101,6 +124,7 @@ export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, sto
         overflowNodes: [] as GraphNode[],
         layoutBounds: layout.bounds,
         realSubnetCount: layout.clusters.length,
+        hubBlocks: {} as Record<string, WorldBounds>,
       };
     }
 
@@ -139,49 +163,44 @@ export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, sto
 
     const activeClusters: ClusterDef[] = activeTemplates.map((ct, idx) => {
       const angle = -Math.PI / 2 + (idx * 2 * Math.PI) / activeCount;
+      if (collapsible && portrait) {
+        // Phone portrait: hubs are rows in one column under the rig
+        return { id: ct.id, name: ct.name, angle: Math.PI / 2, radius: 0, color: ct.color, ...portraitHubPosition(idx) };
+      }
       return {
         id: ct.id,
         name: ct.name,
         angle,
-        radius: 360,
+        radius: collapsible ? hubRingRadius(layoutHubText) : 360,
         color: ct.color,
       };
     });
 
     const initialNodes: GraphNode[] = [];
     const positions: Record<string, AttackNodePosition> = {};
+    const blocks: Record<string, WorldBounds> = {};
+    let contentBounds: WorldBounds = rigFootprint();
 
     activeClusters.forEach(cluster => {
       const machinesInCluster = bucketMap[cluster.id] || [];
-      const clusterBaseX = centerX + Math.cos(cluster.angle) * cluster.radius;
-      const clusterBaseY = centerY + Math.sin(cluster.angle) * cluster.radius;
-      const count = machinesInCluster.length;
-      if (count === 0) return;
-
-      let nTier1 = Math.min(count, 3);
-      if (count === 4) nTier1 = 2;
-      else if (count === 5) nTier1 = 2;
-      const nTier2 = count - nTier1;
-
-      let tier1Offsets = [0];
-      if (nTier1 === 2) tier1Offsets = [-0.32, 0.32];
-      else if (nTier1 === 3) tier1Offsets = [-0.42, 0, 0.42];
-
-      let tier2Offsets: number[] = [];
-      if (nTier2 === 1) tier2Offsets = [0.46];
-      else if (nTier2 === 2) tier2Offsets = [-0.48, 0.48];
-      else if (nTier2 === 3) tier2Offsets = [-0.52, 0, 0.52];
-      else if (nTier2 >= 4) tier2Offsets = [-0.56, -0.20, 0.20, 0.56];
-
-      // Tier 1 nodes (dist 130)
-      machinesInCluster.slice(0, nTier1).forEach((m, idx) => {
-        const offset = tier1Offsets[idx] ?? 0;
-        const fanAngle = cluster.angle + offset;
-        const dist = 130;
-        const x = Math.round(clusterBaseX + Math.cos(fanAngle) * dist);
-        const y = Math.round(clusterBaseY + Math.sin(fanAngle) * dist);
-
-        const nodeObj: GraphNode = {
+      if (machinesInCluster.length === 0) return;
+      // Use non-overlapping per-hub grid blocks for BOTH collapsible and non-collapsible views
+      // so 180x84 machine cards never collide even on small (<=12) or exam graphs.
+      const maxCols = collapsible ? WIDE_COLS : 3;
+      const blockTextScale = collapsible ? layoutHubText : 1;
+      const hub = getClusterHub(cluster);
+      const block = collapsible && portrait
+        ? computePortraitBlock(hub, machinesInCluster.length)
+        : computeHubBlock(hub, cluster.angle, machinesInCluster.length, maxCols, blockTextScale);
+      blocks[cluster.id] = block.box;
+      contentBounds = unionBounds(contentBounds, hubFootprint(hub, blockTextScale));
+      if (!collapsible) {
+        contentBounds = unionBounds(contentBounds, block.box);
+      }
+      machinesInCluster.forEach((m, idx) => {
+        const x = Math.round(block.positions[idx].x);
+        const y = Math.round(block.positions[idx].y);
+        initialNodes.push({
           id: m.id,
           name: m.name,
           ip: m.ip,
@@ -193,33 +212,7 @@ export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, sto
           x,
           y,
           machine: m,
-        };
-        initialNodes.push(nodeObj);
-        positions[m.id] = { x, y };
-      });
-
-      // Tier 2 nodes (dist 230)
-      machinesInCluster.slice(nTier1).forEach((m, idx) => {
-        const offset = tier2Offsets[idx] ?? 0;
-        const fanAngle = cluster.angle + offset;
-        const dist = 230;
-        const x = Math.round(clusterBaseX + Math.cos(fanAngle) * dist);
-        const y = Math.round(clusterBaseY + Math.sin(fanAngle) * dist);
-
-        const nodeObj: GraphNode = {
-          id: m.id,
-          name: m.name,
-          ip: m.ip,
-          os: m.os,
-          platform: m.platform,
-          difficulty: m.difficulty,
-          status: m.status,
-          cluster: cluster.id,
-          x,
-          y,
-          machine: m,
-        };
-        initialNodes.push(nodeObj);
+        });
         positions[m.id] = { x, y };
       });
     });
@@ -253,15 +246,23 @@ export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, sto
     });
     const realSubnetCount = activeTemplates.filter(ct => matchedTemplateIds.has(ct.id)).length;
 
+    const computedBounds: WorldBounds = {
+      minX: Math.min(SCOPED_BOUNDS.minX, contentBounds.minX - 60),
+      minY: Math.min(SCOPED_BOUNDS.minY, contentBounds.minY - 60),
+      maxX: Math.max(SCOPED_BOUNDS.maxX, contentBounds.maxX + 60),
+      maxY: Math.max(SCOPED_BOUNDS.maxY, contentBounds.maxY + 60),
+    };
+
     return {
       clusters: activeClusters,
       defaultNodePositions: positions,
       clusteredNodes: initialNodes,
       overflowNodes,
-      layoutBounds: SCOPED_BOUNDS,
+      layoutBounds: computedBounds,
       realSubnetCount,
+      hubBlocks: blocks,
     };
-  }, [universeMachines, scopedPool, showAllNodes]);
+  }, [universeMachines, scopedPool, showAllNodes, collapsible, portrait, layoutHubText]);
 
   // Drawn nodes: the clustered ones, plus overflow machines the user already placed (saved position).
   // Saved positions are never touched; overflow without one stays out of the scoped view.
@@ -273,5 +274,5 @@ export function useGraphLayout({ universeMachines, scopedPool, showAllNodes, sto
     return { allNodes: shown.length > 0 ? [...clusteredNodes, ...shown] : clusteredNodes, hiddenOverflowNodes: hidden };
   }, [showAllNodes, clusteredNodes, overflowNodes, storedNodePositions]);
 
-  return { clusters, defaultNodePositions, clusteredNodes, overflowNodes, layoutBounds, realSubnetCount, allNodes, hiddenOverflowNodes };
+  return { clusters, defaultNodePositions, clusteredNodes, overflowNodes, layoutBounds, realSubnetCount, allNodes, hiddenOverflowNodes, hubBlocks };
 }

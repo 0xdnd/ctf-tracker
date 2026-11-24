@@ -50,9 +50,7 @@ export function parseBackupIndexedDb(raw: unknown): BackupIndexedDb | undefined 
   const notes = Array.isArray(raw.notes) ? raw.notes.map((item) => sanitizeObjectKeys(item)).filter(hasId) : [];
   const out: BackupIndexedDb = { notes: notes as unknown as CptsNoteEntry[] };
   if (isPlainRecord(raw.wikilinkMap)) {
-    out.wikilinkMap = Object.fromEntries(
-      Object.entries(sanitizeObjectKeys(raw.wikilinkMap)).filter(([, v]) => typeof v === 'string')
-    ) as Record<string, string>;
+    out.wikilinkMap = sanitizeStringMap(raw.wikilinkMap);
   }
   if (Array.isArray(raw.images)) out.images = raw.images.map((item) => sanitizeObjectKeys(item)).filter(hasId);
   return out;
@@ -83,6 +81,22 @@ export interface WorkspaceImportResult {
   data?: Partial<WorkspaceExportPayload>;
   error?: string;
   restoredCount?: number;
+}
+
+/**
+ * A copy of a title-to-id map (wikilink map) with string values only. Titles are user text, so "constructor" and
+ * "prototype" are valid keys and are kept; only "__proto__" is dropped. The result has no prototype as defence in
+ * depth, but a map can also arrive from elsewhere (plain objects, tests), so readers must still look keys up with
+ * an own-property check (resolveWikilink does).
+ */
+export function sanitizeStringMap(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = Object.create(null);
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (key === '__proto__' || typeof value !== 'string') continue;
+    out[key] = value;
+  }
+  return out;
 }
 
 /**
@@ -185,7 +199,7 @@ export function validateWorkspacePayload(raw: unknown): WorkspaceImportResult {
     activitySessions: sanitizeList<ActivitySession>(root.activitySessions),
     customNotes: sanitizeList<CptsNoteEntry>(root.customNotes),
     userNotes: sanitizeList<CptsNoteEntry>(root.userNotes),
-    userWikilinkMap: root.userWikilinkMap && typeof root.userWikilinkMap === 'object' ? (sanitizeObjectKeys(root.userWikilinkMap) as Record<string, string>) : undefined,
+    userWikilinkMap: root.userWikilinkMap && typeof root.userWikilinkMap === 'object' ? sanitizeStringMap(root.userWikilinkMap) : undefined,
     deletedNoteIds: Array.isArray(root.deletedNoteIds) ? root.deletedNoteIds : undefined,
     userSolvesReset: Boolean(root.userSolvesReset),
     themePreset: typeof root.themePreset === 'string' ? root.themePreset : undefined,

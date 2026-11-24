@@ -1,6 +1,7 @@
+import { ScrollFade } from '../components/common/ScrollFade';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key, Terminal } from 'lucide-react';
+import { Database, Search, Plus, Download, Copy, Check, Eye, EyeOff, Trash2, ExternalLink, FileText, Filter, X, Lock, Unlock, Key, Terminal, ChevronDown } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PlatformIcon } from '../components/common/PlatformBadge';
@@ -37,9 +38,6 @@ export interface VaultEvidenceItem {
   notes: string;
   isCustom?: boolean;
 }
-
-// Custom loot now lives in the store (src/store/lootPersistence.ts); this key is only the legacy migration source.
-export { LEGACY_LOOT_KEY as STORAGE_KEY_CUSTOM_LOOT } from '../store/lootPersistence';
 
 export const formatIsoTimestamp = (dateInput: string | number | Date): string => {
   const d = new Date(dateInput);
@@ -114,7 +112,7 @@ export const EvidenceVaultPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem, setGlobalVars } = useCtfStore(
+  const { machines, soundEnabled, credentials, lootItems, addCredential, addLootItem, setGlobalVars, restoreDanielSolves } = useCtfStore(
     useShallow((s) => ({
       machines: s.machines,
       soundEnabled: s.soundEnabled,
@@ -123,6 +121,7 @@ export const EvidenceVaultPage: React.FC = () => {
       addCredential: s.addCredential,
       addLootItem: s.addLootItem,
       setGlobalVars: s.setGlobalVars,
+      restoreDanielSolves: s.restoreDanielSolves,
     }))
   );
 
@@ -151,6 +150,8 @@ export const EvidenceVaultPage: React.FC = () => {
   // Secret visibility toggle state
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
   const [allRevealed, setAllRevealed] = useState(false);
+  // Phones: each evidence row is one compact line until tapped open.
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedCrackKey, setCopiedCrackKey] = useState<string | null>(null);
 
@@ -564,12 +565,35 @@ export const EvidenceVaultPage: React.FC = () => {
       />
 
       {evidenceItems.length === 0 ? (
-        <EmptyState
-          icon={Database}
-          title="Your vault is empty"
-          description="Flags, loot and other evidence you collect on targets will be stored here."
-          action={{ label: 'Log new evidence', icon: Plus, onClick: () => setIsAddModalOpen(true) }}
-        />
+        <div className="space-y-4">
+          <EmptyState
+            icon={Database}
+            headingAs="h2"
+            title="Your vault is empty"
+            description="Flags, credentials, hashes, SSH keys and recon findings collected across targets aggregate here automatically — masked by default and ready to export."
+            action={{ label: 'Log new evidence', icon: Plus, onClick: () => setIsAddModalOpen(true) }}
+            secondaryAction={{
+              label: 'Load demo data',
+              onClick: () => {
+                void restoreDanielSolves();
+                if (soundEnabled) playCyberSound('click');
+              },
+            }}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { title: 'Flags & Proofs', body: 'User and root flags auto-sync from any machine card or dossier.' },
+              { title: 'Credentials & Hashes', body: 'Auto-identifies NTLM/Kerberos hashes with ready-to-copy Hashcat commands.' },
+              { title: 'Cross-Host Matrix', body: 'Track credential reuse across hosts and push active creds straight to the HUD.' },
+              { title: 'Report Exports', body: 'Export masked or unmasked loot as CSV, JSON, or Markdown report tables.' },
+            ].map((cap) => (
+              <div key={cap.title} className="rounded-xl border border-subtle bg-surface-card p-3.5">
+                <div className="text-xs font-semibold text-primary">{cap.title}</div>
+                <p className="mt-1 text-xs leading-relaxed text-muted">{cap.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
       <>
       {/* 2. Stat tiles: clickable category filters */}
@@ -599,16 +623,16 @@ export const EvidenceVaultPage: React.FC = () => {
         })}
       </div>
 
-      {/* 3. Toolbar: one row on desktop; search + Filters at 390px */}
+      {/* 3. Toolbar: search + view switch on row 1, category chips on row 2 (desktop); search + Filters at 390px */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div data-tour="vault-search" className="relative flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <div data-tour="vault-search" className="relative flex-1 min-w-[14rem]">
             <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search credentials, target name, IP, username, hash, port..."
+              placeholder="Search credentials, targets, IPs..."
               className="w-full pl-9 pr-9 h-9 max-sm:h-11 rounded-lg bg-surface-card border border-subtle text-sm text-primary placeholder:text-muted focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40"
             />
             {searchQuery && (
@@ -620,29 +644,6 @@ export const EvidenceVaultPage: React.FC = () => {
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
-          </div>
-
-          {/* Category chips: always mounted; collapsed behind Filters below sm */}
-          <div
-            role="group"
-            aria-label="Filter by category"
-            className="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-none"
-          >
-            {(['all', 'flag', 'password', 'hash', 'ssh_key', 'token', 'service'] as EvidenceCategory[]).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                aria-pressed={selectedCategory === cat}
-                className={`px-2.5 h-8 rounded-md text-xs font-medium transition-[transform,background-color,color] whitespace-nowrap active:scale-[0.97] cursor-pointer ${
- selectedCategory === cat
- ? 'bg-accent text-on-accent'
- : 'text-muted hover:text-primary hover:bg-surface-hover'
- }`}
-              >
-                {categoryLabels[cat]}
-              </button>
-            ))}
           </div>
 
           {/* View toggle: table vs kill-chain timeline vs matrix */}
@@ -705,8 +706,30 @@ export const EvidenceVaultPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Target and platform filters (also set by the /vault?target= deep link) */}
+        {/* Row 2: category chips (desktop) + target and platform filters */}
         <div className="flex flex-wrap items-center gap-2">
+          <ScrollFade
+            role="group"
+            aria-label="Filter by category"
+            className="hidden sm:flex items-center gap-1 min-w-0 shrink"
+          >
+            {(['all', 'flag', 'password', 'hash', 'ssh_key', 'token', 'service'] as EvidenceCategory[]).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                aria-pressed={selectedCategory === cat}
+                className={`px-2.5 h-8 rounded-md text-xs font-medium transition-[transform,background-color,color] whitespace-nowrap active:scale-[0.97] cursor-pointer ${
+ selectedCategory === cat
+ ? 'bg-accent text-on-accent'
+ : 'text-muted hover:text-primary hover:bg-surface-hover'
+ }`}
+              >
+                {categoryLabels[cat]}
+              </button>
+            ))}
+          </ScrollFade>
+
           <CyberSelect
             value={selectedTargetId}
             onChange={setSelectedTargetId}
@@ -831,6 +854,8 @@ export const EvidenceVaultPage: React.FC = () => {
                 {filteredItems.slice(0, shownLimit).map((item) => {
                   const isRevealed = Boolean(revealedIds[item.id] || allRevealed);
                   const isCopied = copiedId === item.id;
+                  const isOpen = Boolean(expandedRows[item.id]);
+                  const openOnly = isOpen ? '' : 'max-sm:hidden';
                   const hashCandidates = item.category === 'hash'
                     ? identifyHash(item.secret)
                     : [];
@@ -839,28 +864,33 @@ export const EvidenceVaultPage: React.FC = () => {
                     <tr
                       key={item.id}
                       role="row"
-                      className="group block sm:table-row max-sm:flex max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2 max-sm:gap-y-2 max-sm:p-3 max-sm:rounded-xl max-sm:border max-sm:border-subtle max-sm:bg-surface-card hover:bg-surface-hover transition-colors text-xs"
+                      className="group block sm:table-row max-sm:flex max-sm:flex-wrap max-sm:items-center max-sm:gap-x-2 max-sm:gap-y-1 max-sm:px-3 max-sm:py-1.5 max-sm:rounded-xl max-sm:border max-sm:border-subtle max-sm:bg-surface-card hover:bg-surface-hover transition-colors text-xs"
                     >
                       {/* Target */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 max-sm:w-full">
+                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 max-sm:relative max-sm:min-w-0 max-sm:flex-1 max-sm:py-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedRows((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                          aria-expanded={isOpen}
+                          aria-label={`${isOpen ? 'Collapse' : 'Expand'} evidence for ${item.targetName}`}
+                          className="absolute inset-0 z-0 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
+                        />
                         <div className="flex items-center gap-2">
                           <PlatformIcon platform={item.platform} className="w-3.5 h-3.5 flex-shrink-0" />
-                          <div className="min-w-0">
+                          <div className="min-w-0 max-sm:flex-1">
                             <div className="font-semibold text-primary flex items-center gap-1.5">
-                              <span>{item.targetName}</span>
+                              <span className="max-sm:truncate">{item.targetName}</span>
                               {item.isCustom && (
                                 <span title="Added by you"><CyberBadge variant="warning" size="xs">Logged</CyberBadge></span>
                               )}
                             </div>
-                            {isPlaceholderIp(item.targetIp) || item.targetIp === '0.0.0.0' ? (
-                              <span className="mt-0.5 block text-xs text-muted">Not set</span>
-                            ) : (
+                            {isPlaceholderIp(item.targetIp) || item.targetIp === '0.0.0.0' ? null : (
                               <button
                                 type="button"
                                 onClick={() => handleCopy(item.targetIp, `ip-${item.id}`)}
                                 aria-label={`Copy IP ${item.targetIp}`}
                                 title="Click to copy IP"
-                                className="mt-0.5 block cursor-pointer text-left font-mono text-xs tabular-nums text-muted hover:text-primary"
+                                className={`relative z-10 mt-0.5 inline-flex min-h-6 items-center cursor-pointer text-left font-mono text-xs tabular-nums text-muted hover:text-primary ${openOnly}`}
                               >
                                 {copiedId === `ip-${item.id}` ? 'Copied' : item.targetIp}
                               </button>
@@ -870,30 +900,43 @@ export const EvidenceVaultPage: React.FC = () => {
                       </td>
 
                       {/* Category */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-3">
+                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-3 max-sm:flex max-sm:items-center max-sm:gap-1 max-sm:py-0">
                         <CyberBadge variant={getCategoryVariant(item.category)} size="sm">
                           {item.typeLabel}
                         </CyberBadge>
+                        <button
+                          aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
+                          type="button"
+                          onClick={() => {
+                            handleToggleReveal(item.id);
+                            if (!isRevealed) setExpandedRows((prev) => ({ ...prev, [item.id]: true }));
+                          }}
+                          className="relative z-10 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-hover hover:text-primary active:scale-[0.97] sm:hidden"
+                          title={isRevealed ? 'Mask secret' : 'Reveal secret'}
+                        >
+                          {isRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <ChevronDown aria-hidden="true" className={`h-4 w-4 shrink-0 text-muted transition-transform duration-150 sm:hidden ${isOpen ? 'rotate-180' : ''}`} />
                       </td>
 
                       {/* Principal */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-3">
+                      <td role="cell" className={`block sm:table-cell py-2.5 sm:px-3 max-sm:w-full max-sm:py-0 ${openOnly}`}>
                         <span className="font-medium text-secondary bg-surface-sunken px-2 py-1 rounded border border-subtle text-xs">
                           {item.username || 'N/A'}
                         </span>
                       </td>
 
                       {/* Secret (masked by default) */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 max-sm:w-full">
+                      <td role="cell" className={`block sm:table-cell py-2.5 sm:px-4 max-sm:w-full max-sm:py-0 ${openOnly}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`flex-1 min-w-0 sm:max-w-md bg-surface-sunken border border-subtle rounded-lg px-2.5 py-1.5 font-mono text-xs text-secondary overflow-hidden text-ellipsis whitespace-nowrap tabular-nums ${isRevealed ? 'select-all' : 'select-none'}`}>
+                          <div className={`flex-1 min-w-0 sm:max-w-md bg-surface-sunken border border-subtle rounded-lg px-2.5 py-1.5 font-mono text-xs text-secondary overflow-hidden text-ellipsis whitespace-nowrap tabular-nums ${isRevealed ? 'select-text' : 'select-none'}`}>
                             {isRevealed ? item.secret : '••••••••••••••••••••••••'}
                           </div>
                           <button
                             aria-label={isRevealed ? 'Mask secret' : 'Reveal secret'}
                             type="button"
                             onClick={() => handleToggleReveal(item.id)}
-                            className="p-1.5 tap-target rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97]"
+                            className="p-1.5 tap-target rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-colors cursor-pointer active:scale-[0.97] max-sm:hidden"
                             title={isRevealed ? 'Mask secret' : 'Reveal secret'}
                           >
                             {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -918,7 +961,7 @@ export const EvidenceVaultPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleCopyCrackingCmd(cracking.hashcat!, `hc-${item.id}`, 'Hashcat')}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                                  className="inline-flex min-h-6 items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
                                   title={cracking.hashcat}
                                 >
                                   {isCopiedHc ? <Check className="w-2.5 h-2.5 text-callout-success-fg" /> : <Terminal className="w-2.5 h-2.5" />}
@@ -930,7 +973,7 @@ export const EvidenceVaultPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleCopyCrackingCmd(cracking.john!, `jtr-${item.id}`, 'John')}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
+                                  className="inline-flex min-h-6 items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-sunken hover:bg-surface-hover border border-subtle text-[10px] font-mono text-secondary hover:text-accent cursor-pointer transition-colors active:scale-[0.97]"
                                   title={cracking.john}
                                 >
                                   {isCopiedJtr ? <Check className="w-2.5 h-2.5 text-callout-success-fg" /> : <Terminal className="w-2.5 h-2.5" />}
@@ -943,13 +986,13 @@ export const EvidenceVaultPage: React.FC = () => {
                       </td>
 
                       {/* Discovered */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-3 text-xs font-mono text-muted whitespace-nowrap tabular-nums">
+                      <td role="cell" className={`block sm:table-cell py-2.5 sm:px-3 max-sm:py-0 text-xs font-mono text-muted whitespace-nowrap tabular-nums ${openOnly}`}>
                         {formatIsoTimestamp(item.discoveredAt)}
                       </td>
 
-                      {/* Actions: secondary until hover/focus, always visible on touch */}
-                      <td role="cell" className="block sm:table-cell py-2.5 sm:px-4 text-right sm:pr-6 max-sm:w-full">
-                        <div className="flex items-center justify-end gap-1.5 [@media(hover:hover)_and_(min-width:640px)]:opacity-0 [@media(hover:hover)_and_(min-width:640px)]:group-hover:opacity-100 [@media(hover:hover)_and_(min-width:640px)]:group-focus-within:opacity-100 transition-opacity">
+                      {/* Actions: persistent at rest so table rows stay discoverable */}
+                      <td role="cell" className={`block sm:table-cell py-2.5 sm:px-4 text-right sm:pr-6 max-sm:w-full max-sm:py-0 max-sm:pb-1 ${openOnly}`}>
+                        <div className="flex items-center justify-end gap-1.5 opacity-85 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           {(item.category === 'password' || item.category === 'hash' || item.category === 'token') && (
                             <button
                               aria-label="Use in HUD variables"
@@ -1011,6 +1054,7 @@ export const EvidenceVaultPage: React.FC = () => {
                     <td role="cell" colSpan={6} className="block sm:table-cell py-12 text-center text-muted">
                         <EmptyState
                           icon={Search}
+                          headingAs="h2"
                           title="No evidence matches these filters"
                           description="Try a different search or loosen the filters to see more of your vault."
                           action={{
@@ -1064,4 +1108,3 @@ export const EvidenceVaultPage: React.FC = () => {
   );
 };
 
-export default EvidenceVaultPage;

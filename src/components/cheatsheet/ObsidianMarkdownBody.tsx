@@ -233,7 +233,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
           key={`tag-${keyBase}-${tagStart}`}
           type="button"
           onClick={() => onTagClick(written.toLowerCase())}
-          className="text-[0.85em] px-1.5 py-px rounded bg-accent-muted border border-accent/40 text-accent cursor-pointer hover:bg-accent/20 transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          className="inline-flex min-h-6 items-center align-middle text-[0.85em] px-1.5 rounded bg-accent-muted border border-accent/40 text-accent cursor-pointer hover:bg-accent/20 transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
         >
           #{written}
         </button>
@@ -509,6 +509,8 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       const selectedText = codeSelection?.block === blockKey ? codeSelection.text : null;
       const codeBody = (
         <pre
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll container
+          tabIndex={0}
           data-code-block={blockKey}
           className={`p-3.5 ${sizeClasses.code} font-mono tabular-nums text-on-inverse overflow-x-auto select-text selection:bg-accent-muted selection:text-primary leading-relaxed`}
         >
@@ -531,7 +533,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
               // Keep the code selection alive: a mousedown would collapse it before the click lands.
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleCopyText(`code-${idx}`, selectedText ?? (isMermaid ? rawCode : interpCode))}
-              className="active:scale-[0.97] flex items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-interactive cursor-pointer text-[11px]"
+              className="active:scale-[0.97] flex min-h-6 items-center gap-1 px-2 py-0.5 rounded text-on-inverse-muted hover:bg-surface-inverse hover:text-on-inverse transition-interactive cursor-pointer text-[11px]"
               title={selectedText ? 'Copy the selected text' : 'Copy interpolated code'}
             >
               {isCopied ? (
@@ -570,7 +572,8 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
       const headers = headerRow.split('|').filter(c => c.trim()).map(c => c.trim());
 
       elements.push(
-        <div key={`table-${idx}`} className="my-4 overflow-x-auto rounded-xl border border-accent/40 bg-surface-sunken">
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll container for wide tables
+        <div key={`table-${idx}`} tabIndex={0} className="my-4 overflow-x-auto rounded-xl border border-accent/40 bg-surface-sunken">
           <table className={`w-full ${sizeClasses.table} text-left`}>
             <thead className="bg-accent-muted text-accent border-b border-accent/50">
               <tr>
@@ -721,8 +724,7 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
             id={`section-${headingSlug}`}
             className={`${sizeClasses.h2} font-semibold text-accent tracking-tight mt-5 mb-2 scroll-mt-6 flex items-center gap-1.5`}
           >
-            <span className="text-accent">#</span>
-            <span>{renderWithWikilinks(titleText, false)}</span>
+            {renderWithWikilinks(titleText, false)}
           </h2>
         );
         continue;
@@ -830,11 +832,12 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
               <input
                 type="checkbox"
                 checked={isChecked}
+                aria-label={itemText.trim() || 'Checklist item'}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => toggleChecklist(i, isChecked)}
                 className="mt-1 w-4 h-4 max-md:w-6 max-md:h-6 max-md:mt-0 rounded border-accent/50 bg-surface-sunken text-accent focus:ring-accent cursor-pointer flex-shrink-0"
               />
-              <span className={isChecked ? 'line-through text-muted opacity-70' : 'text-primary'}>
+              <span className={isChecked ? 'line-through text-muted' : 'text-primary'}>
                 {renderWithWikilinks(itemText)}
               </span>
             </div>
@@ -882,6 +885,8 @@ export const ObsidianMarkdownBody: React.FC<ObsidianMarkdownBodyProps> = ({
           elements.push(
             <div
               key={`svg-${i}`}
+              // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll container
+              tabIndex={0}
               className="my-3 overflow-x-auto rounded-lg border border-accent/30 p-2 bg-surface-sunken"
               dangerouslySetInnerHTML={{ __html: cleanSvg }}
             />

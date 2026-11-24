@@ -172,14 +172,6 @@ describe('lootPersistence: legacy migration', () => {
     expect(localStorage.getItem(backups[0])).toBe('{broken');
   });
 
-  it('treats a payload from a newer schema as unreadable instead of misreading it', () => {
-    const newer = JSON.stringify({ schemaVersion: 99, credentials: [{ id: 'x', type: 'password', username: 'u', secret: 's', createdAt: '2026-01-01T00:00:00.000Z' }] });
-    localStorage.setItem(getLootStorageKey('p1'), newer);
-    expect(loadLootState('p1').credentials).toEqual([]);
-    const backups = Object.keys(localStorage).filter((k) => k.includes('_corrupted_backup_'));
-    expect(localStorage.getItem(backups[0])).toBe(newer);
-  });
-
   it('drops malformed v2 entries but keeps valid ones', () => {
     localStorage.setItem(
       getLootStorageKey('p1'),

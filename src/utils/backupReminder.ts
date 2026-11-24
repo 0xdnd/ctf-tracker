@@ -5,10 +5,10 @@ export const BACKUP_REMINDER_KEY = 'zerobox_backup_v1';
 
 export const DAY_MS = 86_400_000;
 /** First reminder comes this long after the first real activity when no backup exists. */
-export const FIRST_BACKUP_GRACE_DAYS = 3;
+const FIRST_BACKUP_GRACE_DAYS = 3;
 /** A backup older than this counts as stale. */
-export const STALE_BACKUP_DAYS = 14;
-export const SNOOZE_DAYS = 7;
+const STALE_BACKUP_DAYS = 14;
+const SNOOZE_DAYS = 7;
 
 export interface BackupReminderState {
   lastBackupAt?: string;

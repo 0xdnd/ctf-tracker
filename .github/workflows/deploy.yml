@@ -61,6 +61,21 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
+      - name: Wait for Live Sitemap Propagation
+        if: success()
+        continue-on-error: true
+        run: |
+          EXPECTED=$(sha256sum dist/sitemap.xml | awk '{print $1}')
+          for i in 1 2 3 4 5 6; do
+            sleep 10
+            LIVE=$(curl -fsSL https://ctftracker.com/sitemap.xml 2>/dev/null | sha256sum | awk '{print $1}')
+            if [ "$LIVE" = "$EXPECTED" ]; then
+              echo "Live sitemap propagated on attempt $i."
+              exit 0
+            fi
+          done
+          echo "Proceeding to IndexNow after 60s propagation wait."
+
       - name: Notify IndexNow
         if: success()
         continue-on-error: true

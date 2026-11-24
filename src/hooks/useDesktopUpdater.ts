@@ -5,7 +5,7 @@ import { useToastStore } from '../store/useToastStore';
 import { APP_VERSION } from '../utils/appVersion';
 import type { ElectronUpdateInfo, ElectronProgressInfo } from '../vite-env';
 
-export type UpdateStatus = 
+type UpdateStatus = 
   | 'idle' 
   | 'checking' 
   | 'available' 
@@ -22,6 +22,7 @@ export interface DesktopUpdaterState {
   status: UpdateStatus;
   version: string | null;
   latestVersion: string | null;
+  releaseNotes: string | null;
   progressPercent: number;
   errorMessage: string | null;
   retryTimeoutSeconds: number | null;
@@ -55,6 +56,7 @@ export function useDesktopUpdater(): DesktopUpdaterState {
   const [status, setStatus] = useState<UpdateStatus>('idle');
   const [version, setVersion] = useState<string | null>(null);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [releaseNotes, setReleaseNotes] = useState<string | null>(null);
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryTimeoutSeconds, setRetryTimeoutSeconds] = useState<number | null>(null);
@@ -148,6 +150,7 @@ export function useDesktopUpdater(): DesktopUpdaterState {
         if (update) {
           pendingUpdateRef.current = update;
           setLatestVersion(update.version);
+          setReleaseNotes(typeof update.body === 'string' && update.body.trim() ? update.body : null);
           setStatus('available');
 
           // Download the update chunk-by-chunk and monitor progress
@@ -258,6 +261,7 @@ export function useDesktopUpdater(): DesktopUpdaterState {
     status,
     version,
     latestVersion,
+    releaseNotes,
     progressPercent,
     errorMessage,
     retryTimeoutSeconds,

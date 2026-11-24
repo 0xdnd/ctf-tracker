@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { GUIDE_META } from './guideMeta';
 import { guideTipAvailability } from './guideRegistry';
 import { EASE_OUT, PressButton, buttonStyles } from './guideMotion';
@@ -61,7 +61,7 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
   const titleId = `page-hint-${guide.id}-title`;
 
   return (
-    <motion.section
+    <m.section
       role="region"
       aria-labelledby={titleId}
       data-testid="page-hint"
@@ -86,6 +86,6 @@ export const PageHint: React.FC<PageHintProps> = ({ guideId, pathname }) => {
           Show me
         </PressButton>
       </div>
-    </motion.section>
+    </m.section>
   );
 };

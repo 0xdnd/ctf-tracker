@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect } from 'react';
-import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
+import { animate, m, useMotionValue, useReducedMotion } from 'framer-motion';
 import { Check, ChevronRight, Lock, X } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useCtfStore } from '../store/useCtfStore';
@@ -23,7 +23,7 @@ interface GuideCenterProps {
 }
 
 /** Every guide in one list, with done checks and overall progress. Tapping a row takes you there and starts it. */
-export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, handoff = false }) => {
+const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, handoff = false }) => {
   const isPhone = useIsPhone();
   const reduced = Boolean(useReducedMotion());
   const completed = useOnboardingStore((s) => s.completedGuides);
@@ -74,7 +74,7 @@ export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, hando
 
   return (
     <div className={`fixed inset-0 z-critical flex font-sans ${isPhone ? 'items-end justify-center' : 'items-center justify-center'} ${closing ? 'pointer-events-none' : ''}`}>
-      <motion.div
+      <m.div
         aria-hidden="true"
         className="absolute inset-0"
         style={{ background: DIM }}
@@ -84,7 +84,7 @@ export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, hando
         onClick={close}
         data-testid="guide-center-backdrop"
       />
-      <motion.div
+      <m.div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
@@ -160,7 +160,7 @@ export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, hando
                     const i = GUIDE_ORDER.indexOf(id);
                     const stagger = i < STAGGERED_ROWS && !reduced;
                     return (
-                      <motion.li
+                      <m.li
                         key={id}
                         initial={stagger ? { opacity: 0, y: 6 } : false}
                         animate={{ opacity: 1, y: 0 }}
@@ -206,7 +206,7 @@ export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, hando
                             <ChevronRight aria-hidden="true" className="h-4 w-4 flex-shrink-0 text-muted" />
                           )}
                         </button>
-                      </motion.li>
+                      </m.li>
                     );
                   })}
                 </ul>
@@ -214,7 +214,7 @@ export const GuideCenter: React.FC<GuideCenterProps> = ({ closing = false, hando
             );
           })}
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

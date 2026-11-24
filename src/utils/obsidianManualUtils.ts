@@ -120,21 +120,24 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
     }
   } catch { /* store unavailable; fall back to the empty wikilink map */ }
 
+  // Own keys only: a title such as [[constructor]] or [[toString]] must not resolve to an Object.prototype member.
+  const own = (key: string): string | undefined => (Object.prototype.hasOwnProperty.call(activeMap, key) ? activeMap[key] : undefined);
+
   // 1. Direct check in precomputed wikilinkMap
-  if (activeMap[lower]) {
-    return { targetNoteId: activeMap[lower], label: target, exists: true };
+  if (own(lower)) {
+    return { targetNoteId: own(lower), label: target, exists: true };
   }
-  if (stripped && activeMap[stripped]) {
-    return { targetNoteId: activeMap[stripped], label: target, exists: true };
+  if (stripped && own(stripped)) {
+    return { targetNoteId: own(stripped), label: target, exists: true };
   }
 
   // 2. Slug check
   const slug = lower.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  if (activeMap[slug]) {
-    return { targetNoteId: activeMap[slug], label: target, exists: true };
+  if (own(slug)) {
+    return { targetNoteId: own(slug), label: target, exists: true };
   }
-  if (activeMap[`cpts-${slug}`]) {
-    return { targetNoteId: activeMap[`cpts-${slug}`], label: target, exists: true };
+  if (own(`cpts-${slug}`)) {
+    return { targetNoteId: own(`cpts-${slug}`), label: target, exists: true };
   }
 
   // 3. Linear search in active notes pool
@@ -161,11 +164,11 @@ export function resolveWikilink(rawTarget: string, notes?: CptsNoteEntry[]): { t
   const strippedBeforeEmoji = lowerBeforeEmoji.replace(/^\d+[\s_.-]*/, '').trim();
 
   if (titleBeforeEmoji && titleBeforeEmoji !== target) {
-    if (activeMap[lowerBeforeEmoji]) {
-      return { targetNoteId: activeMap[lowerBeforeEmoji], label: target, exists: true };
+    if (own(lowerBeforeEmoji)) {
+      return { targetNoteId: own(lowerBeforeEmoji), label: target, exists: true };
     }
-    if (strippedBeforeEmoji && activeMap[strippedBeforeEmoji]) {
-      return { targetNoteId: activeMap[strippedBeforeEmoji], label: target, exists: true };
+    if (strippedBeforeEmoji && own(strippedBeforeEmoji)) {
+      return { targetNoteId: own(strippedBeforeEmoji), label: target, exists: true };
     }
     const foundByEmoji = pool.find(n =>
       (n.filename && n.filename.toLowerCase() === lowerBeforeEmoji) ||
@@ -342,18 +345,6 @@ export function parseObsidianNote(rawMarkdown: string): ParsedObsidianNote {
   };
 }
 
-
-const CANONICAL_CATEGORY_RANKS: Record<string, number> = {
-  'Methodology & Exam Playbooks': 0,
-  'Information Gathering & Recon': 1,
-  'Pre-Exploitation & Vuln Analysis': 2,
-  'Offensive Exploitation': 3,
-  'Post-Exploitation & PrivEsc': 4,
-  'Lateral Movement & Pivoting': 5,
-  'NetExec Arsenal': 6,
-  'General Methodology': 7,
-};
-
 export interface CptsTreeNode {
   id: string;
   name: string;
@@ -476,47 +467,6 @@ export function buildCptsFileTree(notes: CptsNoteEntry[] = getAllCptsNotes()): C
 
   const convertedRoot = convertTempToNode(root);
   return convertedRoot.children;
-}
-
-/**
- * Recursively collect all notes within a tree node and all its nested children
- */
-export function getAllNotesInTreeNode(node: CptsTreeNode): CptsNoteEntry[] {
-  if (!node.isFolder && node.note) {
-    return [node.note];
-  }
-  const result: CptsNoteEntry[] = [];
-  for (const child of node.children) {
-    result.push(...getAllNotesInTreeNode(child));
-  }
-  return result;
-}
-
-/**
- * Get aggregated category counts across the field manual notes,
- * sorted in canonical offensive lifecycle order (00 Methodology -> 01 Recon -> ... -> 06 NetExec)
- */
-export function getCptsCategories(notes: CptsNoteEntry[] = getAllCptsNotes()): { category: string; count: number }[] {
-  const counts: Record<string, number> = {};
-  for (const n of notes) {
-    counts[n.category] = (counts[n.category] || 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => {
-      const orderA = CANONICAL_CATEGORY_RANKS[a.category] ?? 99;
-      const orderB = CANONICAL_CATEGORY_RANKS[b.category] ?? 99;
-      if (orderA !== orderB) return orderA - orderB;
-      return b.count - a.count;
-    });
-}
-
-/**
- * Filter notes by primary category
- */
-export function getNotesByCategory(category: string, notes: CptsNoteEntry[] = getAllCptsNotes()): CptsNoteEntry[] {
-  if (!category || category === 'ALL') return notes;
-  return notes.filter((n) => n.category === category);
 }
 
 interface CptsTopicLeaf {

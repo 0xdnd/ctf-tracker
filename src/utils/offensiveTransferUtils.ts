@@ -13,8 +13,6 @@ export const COMMON_TRANSFER_TOOLS = [
   'SharpHound.exe',
 ] as const;
 
-export type CommonTransferTool = (typeof COMMON_TRANSFER_TOOLS)[number];
-
 export interface FileTransferMethod {
   id: string;
   os: 'windows' | 'linux' | 'universal' | 'server';

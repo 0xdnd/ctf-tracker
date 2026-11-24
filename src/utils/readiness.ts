@@ -4,7 +4,7 @@ import { isDueForReview } from './spacedRepetition';
 export type ReadinessMachine = Pick<Machine, 'id' | 'name' | 'status' | 'tags' | 'difficulty'> &
   Partial<Pick<Machine, 'nextReviewAt' | 'isActive' | 'solveIndependence'>>;
 
-export interface WeakTag {
+interface WeakTag {
   tag: string;
   solved: number;
   attempted: number;

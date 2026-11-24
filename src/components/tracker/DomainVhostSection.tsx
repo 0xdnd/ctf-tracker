@@ -104,7 +104,7 @@ export const DomainVhostSection: React.FC<DomainVhostSectionProps> = ({ machine,
           <span className="text-xs font-medium text-secondary block">/etc/hosts snippet</span>
           <div className="h-8 px-3 rounded-lg border border-subtle bg-surface-sunken flex items-center font-mono text-xs text-muted truncate">
             {hostsLine || (
-              <span className="text-muted/60 italic">Enter IP and domain to generate entry</span>
+              <span className="text-muted italic">Enter IP and domain to generate entry</span>
             )}
           </div>
         </div>

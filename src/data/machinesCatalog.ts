@@ -3,8 +3,9 @@
 // Solved roster counts are derived from the data (see countOwnerSolved in catalogStats.ts)
 // Enriched with official synopses & writeup links (no third-party walkthrough text)
 import { Machine } from '../types';
+import { appendRetiredHtbMachines } from './retiredHtb';
 
-export const INITIAL_MACHINES: Machine[] = [
+export const STATIC_INITIAL_MACHINES: Machine[] = [
   {
     "id": "thm-rootme",
     "name": "RootMe",
@@ -25030,3 +25031,5 @@ export const INITIAL_MACHINES: Machine[] = [
     "timeToRootSeconds": 3600
   }
 ];
+
+export const INITIAL_MACHINES: Machine[] = appendRetiredHtbMachines(STATIC_INITIAL_MACHINES);

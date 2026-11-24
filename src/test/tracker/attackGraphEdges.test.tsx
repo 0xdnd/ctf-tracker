@@ -475,6 +475,75 @@ describe('Milestones 3 & 4: Attack Graph Edges, Dynamic Pivot Vectors & Exporter
       expect(createdEdge?.type).toBe('pivot-ssh');
     });
 
+    it('real mouse pointerdown+pointerup+click sequence in Add link mode creates edge once and keeps inspector drawer open', () => {
+      render(
+        <MemoryRouter>
+          <GraphView filteredMachines={mockMachines} />
+        </MemoryRouter>
+      );
+
+      const pivotLinkBtn = screen.getByTestId('graph-connect-vector');
+      act(() => {
+        fireEvent.click(pivotLinkBtn);
+      });
+
+      const jumpNode = screen.getByTestId('attack-node-box-jump-host');
+      const dbNode = screen.getByTestId('attack-node-box-db-server');
+
+      // Simulate real Chromium sequence: pointerDown -> pointerUp -> trailing click on source node
+      act(() => {
+        fireEvent.pointerDown(jumpNode, { clientX: 200, clientY: 300, button: 0, pointerId: 1 });
+        fireEvent.pointerUp(jumpNode, { clientX: 200, clientY: 300, button: 0, pointerId: 1 });
+        fireEvent.click(jumpNode);
+      });
+      // Source must remain selected (not deselected by double-fire)
+      expect(screen.getByText(/Click the machine to link to/i)).toBeInTheDocument();
+
+      // Simulate real Chromium sequence on destination node
+      act(() => {
+        fireEvent.pointerDown(dbNode, { clientX: 600, clientY: 500, button: 0, pointerId: 1 });
+        fireEvent.pointerUp(dbNode, { clientX: 600, clientY: 500, button: 0, pointerId: 1 });
+        fireEvent.click(dbNode);
+      });
+
+      const edges = useCtfStore.getState().graphEdges;
+      expect(edges.find((e) => e.sourceId === 'box-jump-host' && e.targetId === 'box-db-server')).toBeDefined();
+      // Inspector drawer must stay open (not immediately closed by trailing click selecting target node)
+      expect(screen.getByRole('dialog', { name: 'Attack Vector Inspector' })).toBeInTheDocument();
+      // AttackNodeCard places SVG <text> outside the role="button" group so label-in-name never mismatches
+      expect(jumpNode.querySelectorAll('text').length).toBe(0);
+    });
+
+    it('dragging a node followed by trailing click commits position without opening flyout or selecting connect source', () => {
+      render(
+        <MemoryRouter>
+          <GraphView filteredMachines={mockMachines} />
+        </MemoryRouter>
+      );
+
+      const jumpNode = screen.getByTestId('attack-node-box-jump-host');
+      act(() => {
+        fireEvent.pointerDown(jumpNode, { clientX: 200, clientY: 300, button: 0, pointerId: 1 });
+        fireEvent.pointerMove(jumpNode, { clientX: 260, clientY: 340, button: 0, pointerId: 1 });
+        fireEvent.pointerUp(jumpNode, { clientX: 260, clientY: 340, button: 0, pointerId: 1 });
+        fireEvent.click(jumpNode);
+      });
+      expect(screen.queryByTestId('flyout-close-btn')).toBeNull();
+
+      // Also verify dragging in connect mode does not accidentally select source
+      act(() => {
+        fireEvent.click(screen.getByTestId('graph-connect-vector'));
+      });
+      expect(screen.getByText(/Click the machine to link from/i)).toBeInTheDocument();
+      act(() => {
+        fireEvent.pointerDown(jumpNode, { clientX: 260, clientY: 340, button: 0, pointerId: 2 });
+        fireEvent.pointerMove(jumpNode, { clientX: 310, clientY: 380, button: 0, pointerId: 2 });
+        fireEvent.pointerUp(jumpNode, { clientX: 310, clientY: 380, button: 0, pointerId: 2 });
+        fireEvent.click(jumpNode);
+      });
+      expect(screen.getByText(/Click the machine to link from/i)).toBeInTheDocument();
+    });
+
     it('clicking an edge selects it and opens the inspector drawer', () => {
       render(
         <MemoryRouter>

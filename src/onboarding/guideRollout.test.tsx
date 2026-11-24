@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { domAnimation, LazyMotion } from 'framer-motion';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GUIDE_META, TOUR_STEPS, guideSteps, resolveStep, type TourStep } from './content';
@@ -58,10 +59,12 @@ const Hotkeys: React.FC = () => {
 
 const renderAt = (path: string, extra?: React.ReactNode) =>
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <OnboardingLayer />
-      {extra}
-    </MemoryRouter>,
+    <LazyMotion features={domAnimation}>
+      <MemoryRouter initialEntries={[path]}>
+        <OnboardingLayer />
+        {extra}
+      </MemoryRouter>
+    </LazyMotion>,
   );
 
 const setPhone = (phone: boolean) => {

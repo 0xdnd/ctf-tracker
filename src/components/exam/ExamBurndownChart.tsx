@@ -271,5 +271,3 @@ export const ExamBurndownChart: React.FC<ExamBurndownChartProps> = ({
     </div>
   );
 };
-
-export default ExamBurndownChart;

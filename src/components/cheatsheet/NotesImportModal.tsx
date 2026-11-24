@@ -23,6 +23,8 @@ import { playCyberSound } from '../../utils/helpers';
 import { confirmAction } from '../../store/useConfirmStore';
 import { loadVaultFromIndexedDb, loadLastImportSnapshot } from '../../utils/indexedDbVault';
 import { parseObsidianVaultZip, VaultZipImportProgress } from '../../utils/zipVaultImporter';
+import { ImportLimitError, assertJsonFileWithinLimit } from '../../utils/importLimits';
+import { toast } from '../../store/useToastStore';
 import { parseObsidianVaultDirectory, extractFilesFromDataTransfer } from '../../utils/directoryVaultImporter';
 import { TemplatizeNotesModal } from './TemplatizeNotesModal';
 import { IpTemplatePreview, countSelectedReplacements } from './IpTemplatePreview';
@@ -222,6 +224,16 @@ export const NotesImportModal: React.FC = () => {
     }
   };
 
+  /** A file over an import limit gets a toast; any other failure stays in the modal's inline feedback. */
+  const reportImportError = (err: unknown, fallback: string) => {
+    if (soundEnabled) playCyberSound('toggle');
+    if (err instanceof ImportLimitError) {
+      toast.error(err.message, 'File too large to import');
+      return;
+    }
+    setFeedback({ type: 'error', message: (err as Error)?.message || fallback });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -249,6 +261,7 @@ export const NotesImportModal: React.FC = () => {
       }  
       // CASE 2: JSON Backup / Export
       else {
+        assertJsonFileWithinLimit(file);
         if (!(await confirmReplaceNotes())) return;
         const text = await file.text();
         await stageJsonImport(
@@ -257,8 +270,7 @@ export const NotesImportModal: React.FC = () => {
         );
       }
     } catch (err) {
-      if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: (err as Error)?.message || 'Error processing notes archive.' });
+      reportImportError(err, 'Error processing notes archive.');
     } finally {
       setIsProcessing(false);
       setZipProgress(null);
@@ -326,6 +338,7 @@ export const NotesImportModal: React.FC = () => {
 
       // Check if a single JSON file was dropped
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.json')) {
+        assertJsonFileWithinLimit(files[0]);
         if (!(await confirmReplaceNotes())) return;
         const text = await files[0].text();
         await stageJsonImport(text, (count) => `Successfully imported ${count} notes from JSON!`);
@@ -347,8 +360,7 @@ export const NotesImportModal: React.FC = () => {
         throw new Error('No markdown (.md or .markdown) notes were found in the dropped items.');
       }
     } catch (err) {
-      if (soundEnabled) playCyberSound('toggle');
-      setFeedback({ type: 'error', message: (err as Error)?.message || 'Error importing dropped items.' });
+      reportImportError(err, 'Error importing dropped items.');
     } finally {
       setIsProcessing(false);
       setZipProgress(null);
@@ -358,6 +370,14 @@ export const NotesImportModal: React.FC = () => {
   const handlePasteImport = async () => {
     if (!pastedJson.trim()) {
       setFeedback({ type: 'error', message: 'Please paste valid JSON notes content.' });
+      return;
+    }
+
+    // Same limit as a JSON file, measured in bytes of the pasted text; checked before asking to replace notes.
+    try {
+      assertJsonFileWithinLimit({ size: new Blob([pastedJson]).size });
+    } catch (err) {
+      reportImportError(err, 'The pasted JSON is too large.');
       return;
     }
 
@@ -469,7 +489,7 @@ export const NotesImportModal: React.FC = () => {
           </div>
 
           {/* Vault Status Card */}
-          <div data-tour="notes-import-status" className="px-6 py-3.5 bg-black/40 border-b border-subtle flex items-center justify-between">
+          <div data-tour="notes-import-status" className="px-6 py-3.5 bg-surface-sunken border-b border-subtle flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${userNotes.length > 0 ? 'bg-callout-success-fg' : 'bg-callout-warn-fg'}`} />
               <div>
@@ -561,7 +581,7 @@ export const NotesImportModal: React.FC = () => {
           <div className="p-6 overflow-y-auto space-y-4 flex-1">
             {/* Live ZIP Unpacking Progress */}
             {isProcessing && zipProgress && (
-              <div className="p-4 rounded-xl bg-black/60 border border-subtle space-y-2">
+              <div className="p-4 rounded-xl bg-surface-sunken border border-subtle space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-secondary font-semibold flex items-center gap-2">
                     <RefreshCw size={14} className="animate-spin text-muted" />
@@ -574,9 +594,9 @@ export const NotesImportModal: React.FC = () => {
                   </span>
                 </div>
                 {/* Progress Bar */}
-                <div className="w-full h-2 bg-black/50 rounded-full overflow-hidden border border-subtle">
+                <div className="w-full h-2 bg-surface-card rounded-full overflow-hidden border border-subtle">
                   <div
-                    className="h-full transition-colors duration-150"
+                    className="h-full bg-accent transition-[width] duration-150"
                     style={{
                       width: zipProgress.total > 0 ? `${(zipProgress.current / zipProgress.total) * 100}%` : '20%',
                     }}
@@ -773,7 +793,7 @@ export const NotesImportModal: React.FC = () => {
                   onChange={(e) => setPastedJson(e.target.value)}
                   placeholder='{\n  "notes": [...],\n  "wikilinkMap": {...}\n}'
                   rows={8}
-                  className="w-full p-3 bg-black/60 border border-subtle focus:border-accent rounded-lg text-xs font-mono text-primary outline-none resize-none transition-colors"
+                  className="w-full p-3 bg-surface-sunken border border-subtle focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 rounded-lg text-xs font-mono text-primary outline-none resize-none transition-colors"
                 />
                 <div className="flex justify-end">
                   <button
@@ -816,7 +836,7 @@ export const NotesImportModal: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-subtle bg-black/40 flex items-center justify-between">
+          <div className="px-6 py-3 border-t border-subtle bg-surface-sunken flex items-center justify-between">
             <span className="text-[11px] text-muted">
               ZeroBox privacy architecture
             </span>

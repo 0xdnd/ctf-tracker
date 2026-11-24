@@ -362,12 +362,12 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] border shadow-xs ${
                 activeCategory === cat.id
-                  ? 'bg-accent-muted border-accent text-callout-info-fg font-semibold'
+                  ? 'bg-accent-muted border-accent text-accent font-semibold'
                   : 'bg-surface-sunken border border-subtle text-muted hover:text-primary'
               }`}
             >
               <span>{cat.label}</span>
-              <span className="text-xs ml-1 opacity-70">({cat.count})</span>
+              <span className="text-xs ml-1 tabular-nums">({cat.count})</span>
             </button>
           ))}
         </div>
@@ -414,7 +414,7 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] shadow-xs ${
                       isCopied
                         ? 'bg-callout-success-fg text-surface-base font-semibold'
-                        : 'bg-surface-sunken hover:bg-accent hover:text-on-accent text-muted hover:text-primary border border-subtle'
+                        : 'bg-surface-sunken hover:bg-accent hover:text-on-accent text-muted border border-subtle'
                     }`}
                     title="1-Click Copy Command to Clipboard"
                   >
@@ -437,7 +437,11 @@ export const QuickCommandsTab: React.FC<QuickCommandsTabProps> = ({ machine }) =
                 </p>
 
                 <div className="relative">
-                  <pre className="p-2.5 rounded-lg bg-surface-inverse/60 border border-subtle/80 text-xs font-mono text-callout-success-fg overflow-x-auto select-all scrollbar-thin">
+                  <pre
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable (WCAG 2.1.1)
+                    tabIndex={0}
+                    className="p-2.5 rounded-lg bg-surface-inverse/60 border border-subtle/80 text-xs font-mono text-callout-success-fg overflow-x-auto select-text scrollbar-thin focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
                     <code>{cmd.command}</code>
                   </pre>
                 </div>

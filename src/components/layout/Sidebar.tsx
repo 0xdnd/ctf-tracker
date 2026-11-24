@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { AnalyticsMonitorIcon } from '../common/icons/AnalyticsMonitorIcon';
 import { stripTrailingSlash } from '../../utils/pathUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CoffeeLink } from '../common/CoffeeLink';
 import {
   Crosshair,
@@ -41,6 +41,8 @@ export const Sidebar: React.FC = () => {
   const notesHref = isTauriTarget() ? '#/field-manual' : '/field-manual';
   const location = useLocation();
   const isNotesPage = location.pathname.startsWith('/field-manual') || location.pathname.startsWith('/notes');
+  // The Layout switcher picks the board view; a target dossier is not a board, so it shows no selection there.
+  const isTargetPage = location.pathname.startsWith('/target');
 
   // Track ids are already short (OSCP, CPTS, CRTO...), so the badge shows the track the setup screen is on
   const examTrack = useExamStore((s) => s.track);
@@ -155,7 +157,7 @@ export const Sidebar: React.FC = () => {
   const layoutModes = [
     { id: 'kanban', label: 'Kanban', title: 'Kanban Board View', Icon: Kanban },
     { id: 'table', label: 'Table', title: 'Data Table View', Icon: Table },
-    { id: 'grid', label: 'Cards', title: 'Grid Cards View', Icon: LayoutGrid },
+    { id: 'grid', label: 'Cards', title: 'Cards view', Icon: LayoutGrid },
     { id: 'graph', label: 'Graph', title: 'Attack Topology Network Graph', Icon: Radio },
   ] as const;
 
@@ -190,7 +192,7 @@ export const Sidebar: React.FC = () => {
             (item.id === 'cheatsheet' && (location.pathname.startsWith('/cheatsheet') || location.pathname.startsWith('/cpts'))) ||
             (item.id === 'vault' && (location.pathname.startsWith('/vault') || location.pathname.startsWith('/evidence') || location.pathname.startsWith('/loot')));
           return (
-            <motion.button
+            <m.button
               key={item.id}
               whileTap={{ scale: 0.97 }}
               onClick={() => handleTabClick(item)}
@@ -234,13 +236,13 @@ export const Sidebar: React.FC = () => {
                   <span className="sr-only">{item.dueBadge} {item.dueBadge === 1 ? 'review' : 'reviews'} due</span>
                 </span>
               )}
-            </motion.button>
+            </m.button>
           );
         })}
 
         {/* Notes: a real link, so a plain click opens the full Notes page and Ctrl/Cmd+click or middle-click open a new tab */}
         <div className="relative">
-          <motion.a
+          <m.a
             whileTap={{ scale: 0.97 }}
             href={notesHref}
             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -279,7 +281,7 @@ export const Sidebar: React.FC = () => {
                 <span className="truncate mr-2">Notes</span>
               </div>
             )}
-          </motion.a>
+          </m.a>
           {!collapsed && (
             <button
               type="button"
@@ -294,7 +296,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* View switcher when in Tracker view */}
-        {activeTab === 'tracker' && (
+        {activeTab === 'tracker' && !isTargetPage && (
           <div className="mt-3 pt-2.5 border-t border-subtle">
             {!collapsed && <div className="px-2 text-[11px] font-medium text-muted mb-1.5">Layout</div>}
             <div data-tour="layout-switcher" className={`grid ${collapsed ? 'grid-cols-1' : 'grid-cols-4'} gap-1 bg-surface-sunken p-1 rounded-lg border border-subtle`}>
@@ -335,9 +337,9 @@ export const Sidebar: React.FC = () => {
         <div className="flex-shrink-0 border-t border-subtle p-3 text-xs overflow-hidden space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1.5 px-0.5">
-              <span className="text-xs font-medium text-secondary">Pwn progress</span>
+              <span className="text-xs font-medium text-secondary">Catalog solved</span>
               <span className="text-sm font-semibold text-primary font-mono tabular-nums">
-                {pwnPercentage}%
+                {rootedMachines > 0 && pwnPercentage < 1 ? '<1' : pwnPercentage}%
               </span>
             </div>
 
@@ -390,7 +392,7 @@ export const Sidebar: React.FC = () => {
               href={isTauriTarget() ? 'https://ctftracker.com/privacy/' : '/privacy/'}
               target={isTauriTarget() ? '_blank' : undefined}
               rel={isTauriTarget() ? 'noopener noreferrer' : undefined}
-              className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+              className="inline-flex min-h-6 items-center hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
             >
               Privacy
             </a>
@@ -398,7 +400,7 @@ export const Sidebar: React.FC = () => {
               href={isTauriTarget() ? 'https://ctftracker.com/terms/' : '/terms/'}
               target={isTauriTarget() ? '_blank' : undefined}
               rel={isTauriTarget() ? 'noopener noreferrer' : undefined}
-              className="hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+              className="inline-flex min-h-6 items-center hover:text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
             >
               Terms
             </a>

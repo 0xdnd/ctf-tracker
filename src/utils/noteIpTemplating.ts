@@ -23,8 +23,6 @@ import { isSchemaWriteGated } from './schemaWriteGate';
 import { UNDO_BATCHES_KEY as BATCHES_KEY, UNDO_STORE_NAME as STORE_NAME, openUndoDatabase as openDatabase } from './undoBatchDb';
 import { useCtfStore } from '../store/useCtfStore';
 
-export { clearUndoBatchesForProfile } from './undoBatchDb';
-
 export interface NoteTemplatePlan {
   noteId: string;
   title: string;
@@ -62,12 +60,12 @@ export function defaultPlanSelections(plans: readonly NoteTemplatePlan[]): Recor
 }
 
 /** Commands are always re-derived from the markdown, never patched separately. */
-export function deriveCommands(rawMarkdown: string): string[] {
+function deriveCommands(rawMarkdown: string): string[] {
   return extractCommands(parseFrontmatterAndBody(rawMarkdown).body);
 }
 
 /** New markdown for one plan + selection, or `null` when nothing is selected. */
-export function templatedMarkdown(plan: NoteTemplatePlan, selection: IpSelection | undefined): string | null {
+function templatedMarkdown(plan: NoteTemplatePlan, selection: IpSelection | undefined): string | null {
   if (!selection || !Object.values(selection).some(Boolean)) return null;
   const replaced = applyIpTemplatize(plan.rawMarkdown, plan.analysis, selection);
   if (replaced === plan.rawMarkdown) return null;
@@ -121,7 +119,7 @@ export function hashContent(text: string): string {
 // Undo batches (local IndexedDB only, never synced)
 // ---------------------------------------------------------------------------
 
-export interface TemplateUndoEntry {
+interface TemplateUndoEntry {
   noteId: string;
   title: string;
   /** Markdown before the batch. */

@@ -3,7 +3,18 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { INITIAL_MACHINES } from '../../data/machinesCatalog';
 import { ACTIVE_MACHINES, appendActiveMachines } from '../../data/activeMachines';
-import { CATALOG_TOTAL, countOwnerSolved } from '../../data/catalogStats';
+import {
+  CATALOG_TOTAL,
+  EXAM_TRACK_COUNT,
+  EXAM_TRACKS_LIST,
+  PHASE_COUNT,
+  PHASE_COUNT_WORD,
+  SHELL_COUNT,
+  countOwnerSolved,
+} from '../../data/catalogStats';
+import { MASTER_METHODOLOGY_FRAMEWORK } from '../../data/methodologyFramework';
+import { EXAM_TRACK_CONFIGS } from '../../utils/examComplianceUtils';
+import { availableShellItems } from '../../data/revshellsData';
 import { OWN_WRITEUPS } from '../../data/ownWriteups';
 import pg from '../../data/catalogSources/pg.json';
 import vulnhub from '../../data/catalogSources/vulnhub.json';
@@ -44,6 +55,16 @@ describe('hard-coded catalog counts', () => {
 
   it('CATALOG_TOTAL equals the HTB+THM rows plus the PG and VulnHub source files', () => {
     expect(CATALOG_TOTAL).toBe(HTB_THM_TOTAL + pg.length + vulnhub.length);
+  });
+
+  it('auto-synced site stats match methodology phases, exam tracks and available reverse shells', () => {
+    const tracks = Object.values(EXAM_TRACK_CONFIGS).map((t) => t.id);
+    const tracksList = `${tracks.slice(0, -1).join(', ')} and ${tracks[tracks.length - 1]}`;
+    expect(PHASE_COUNT).toBe(MASTER_METHODOLOGY_FRAMEWORK.length);
+    expect(PHASE_COUNT_WORD.length).toBeGreaterThan(0);
+    expect(EXAM_TRACK_COUNT).toBe(tracks.length);
+    expect(EXAM_TRACKS_LIST).toBe(tracksList);
+    expect(SHELL_COUNT).toBe(availableShellItems.length);
   });
 
   it.each(UI_FILES)('%s uses CATALOG_TOTAL and has no raw catalog count', (file) => {
@@ -91,7 +112,10 @@ describe('hard-coded catalog counts', () => {
     expect(all(readme, /\b(\d+) retired (?:HTB|Hack The Box) machines/g)).toEqual([RETIRED_HTB, RETIRED_HTB]);
     expect(all(readme, /\b(\d+) active (?:HTB|Hack The Box) machines/g)).toEqual([ACTIVE]);
     expect(all(readme, /\b(\d+) (?:THM CTF rooms|TryHackMe CTF rooms)/g)).toEqual([THM]);
+    expect(all(readme, /\b(\d+) OffSec Proving Grounds boxes/g)).toEqual([pg.length]);
+    expect(all(readme, /\b(\d+) VulnHub boxes/g)).toEqual([vulnhub.length]);
     expect(all(readme, /; (\d+) of them \(mostly retired since 2024\)/g)).toEqual([METADATA_ONLY_RETIRED]);
+    expect(readme).toContain(EXAM_TRACKS_LIST);
   });
 });
 
@@ -122,7 +146,7 @@ describe('landing page copy uses computed values', () => {
     expect(src).not.toContain('1,000+');
     expect(src).toContain('const EXAM_TRACKS = model.examTracks;');
     expect(src).not.toContain('EXAM_TRACKS = [');
-    expect(src).toContain("proofItem(nf.format(CTF_MACHINES), 'machines catalogued')");
+    expect(src).toContain("proofItem(nf.format(CTF_MACHINES), 'machines cataloged')");
     expect(src).not.toContain('TOTAL_MACHINES');
   });
 });

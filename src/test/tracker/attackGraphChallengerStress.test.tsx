@@ -84,8 +84,8 @@ describe('Challenger 2 Empirical Stress Harness: GraphView & Attack Canvas', () 
       expect(viewport.getAttribute('transform')).toBe('translate(0, 0) scale(1)');
 
       // Central Operator Node (Kali) is rendered even with zero targets
-      expect(screen.getByText('OPERATOR // KALI')).toBeInTheDocument();
-      expect(screen.getByText('10.10.14.x [ATTACK RIG]')).toBeInTheDocument();
+      expect(screen.getByText('YOUR MACHINE')).toBeInTheDocument();
+      expect(screen.getByText('10.10.14.x (your IP)')).toBeInTheDocument();
     });
 
     it('Fit to Screen handles empty machine list gracefully without NaN or division by zero', () => {

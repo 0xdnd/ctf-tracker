@@ -60,7 +60,12 @@ export const WelcomeCard: React.FC<WelcomeCardProps> = ({ onStart, onSkip, start
         </PressButton>
       }
     >
-      <PressButton ref={startRef} onClick={onStart} className={buttonStyles.primary}>
+      <PressButton
+        ref={startRef}
+        onClick={onStart}
+        // One clean ring: the offset gap on a filled button read as a stuck double ring.
+        className={`${buttonStyles.primary} focus-visible:!ring-offset-0 focus-visible:!ring-[rgb(var(--text-primary))]`}
+      >
         Start tour
       </PressButton>
     </CardActions>

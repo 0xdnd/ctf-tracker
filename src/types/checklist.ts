@@ -8,7 +8,7 @@ export interface ChecklistItem {
   serviceBranch?: ServiceBranchType;
 }
 
-export interface ChecklistSubcategory {
+interface ChecklistSubcategory {
   id: string;
   title: string;
   serviceBranch?: ServiceBranchType;

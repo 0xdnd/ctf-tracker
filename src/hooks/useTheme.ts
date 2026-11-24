@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface RippleCoordinates {
   x: number;
   y: number;
 }
 
-export interface RippleState {
+interface RippleState {
   active: boolean;
   x: number;
   y: number;
@@ -37,7 +37,7 @@ function persistThemeMode(mode: ThemeMode, effective: 'light' | 'dark') {
   }
 }
 
-export function getSystemTheme(): 'light' | 'dark' {
+function getSystemTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark';
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
@@ -134,7 +134,7 @@ export function applyThemeToDOM(effective: 'light' | 'dark', animate = true) {
   }
 }
 
-export function useThemeEngine(active = true): ThemeContextValue {
+function useThemeEngine(active = true): ThemeContextValue {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'dark';
     try {
@@ -333,7 +333,7 @@ export function useThemeEngine(active = true): ThemeContextValue {
   };
 }
 
-export const ThemeContext = createContext<ThemeContextValue | null>(null);
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const value = useThemeEngine();

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { domAnimation, LazyMotion } from 'framer-motion';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { OnboardingLayer } from './OnboardingLayer';
@@ -52,10 +53,12 @@ const Where: React.FC = () => {
 
 const renderAt = (path: string) =>
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <OnboardingLayer />
-      <Where />
-    </MemoryRouter>,
+    <LazyMotion features={domAnimation}>
+      <MemoryRouter initialEntries={[path]}>
+        <OnboardingLayer />
+        <Where />
+      </MemoryRouter>
+    </LazyMotion>,
   );
 
 const anchors: HTMLElement[] = [];

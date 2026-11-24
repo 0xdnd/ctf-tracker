@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, CheckCircle2, Compass, Copy, PlayCircle } from 'lucide-react';
 import { CyberButton } from '../common/CyberButton';
 
-export interface NextUpItem {
+interface NextUpItem {
   id: string;
   title: string;
   description?: string;
@@ -61,7 +61,7 @@ export const NextUpCard: React.FC<NextUpCardProps> = ({
 
       {interpolatedCommand && (
         <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] font-mono">
-          <span className="truncate text-primary select-all">{interpolatedCommand}</span>
+          <span className="truncate text-primary select-text">{interpolatedCommand}</span>
           <button
             type="button"
             onClick={() => item.commandSnippet && onCopy(item.commandSnippet, item.id)}
@@ -104,5 +104,3 @@ export const NextUpCard: React.FC<NextUpCardProps> = ({
     </div>
   );
 };
-
-export default NextUpCard;

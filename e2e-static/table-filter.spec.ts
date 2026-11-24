@@ -17,6 +17,7 @@ const PAGES = [
   '/oswe-like-machines/',
   '/htb-starting-point-machines/',
   '/crto-like-machines/',
+  '/tj-null-list/',
 ];
 
 const rows = (page: Page) => page.locator('table.list tbody tr');
@@ -24,7 +25,15 @@ const visibleRows = (page: Page) => page.locator('table.list tbody tr:not([hidde
 const countLine = (page: Page) => page.locator('.tf-count');
 const names = (page: Page) => page.locator('table.list tbody tr:not([hidden]) td:first-child').allInnerTexts();
 
-async function open(page: Page, url: string) {
+// /machines/all/ ships its first rows and keeps the rest in a <template> until first use; this moves them into the page.
+async function showAll(page: Page) {
+  const more = page.getByRole('button', { name: /^Show all/ });
+  // Idle loading may finish (and remove the button) between the check and the click.
+  if (await more.count()) await more.click({ timeout: 2000 }).catch(() => {});
+  await expect(more).toHaveCount(0);
+}
+
+async function open(page: Page, url: string, opts: { noIdle?: boolean } = {}) {
   const problems: string[] = [];
   // Only localhost is reached: the pages' own analytics beacon is aborted, and its failure is not a finding about the toolbar.
   const external = (u: string) => !/^http:\/\/localhost[:/]/.test(u);
@@ -40,6 +49,8 @@ async function open(page: Page, url: string) {
   await page.addInitScript(() => {
     document.addEventListener('securitypolicyviolation', (e) => console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI));
   });
+  // The deferred rows join the page in idle time; a stub that never runs the callback keeps the first-paint state for inspection.
+  if (opts.noIdle) await page.addInitScript(() => { (window as unknown as { requestIdleCallback: () => number }).requestIdleCallback = () => 0; });
   const requests: string[] = [];
   page.on('request', (r) => requests.push(r.url()));
   await page.goto(url, { waitUntil: 'load' });
@@ -50,6 +61,7 @@ async function open(page: Page, url: string) {
 for (const url of PAGES) {
   test(`toolbar on ${url}: Y equals the row count, controls are labelled, nothing is logged`, async ({ page }) => {
     const { problems } = await open(page, url);
+    await showAll(page);
     const total = await rows(page).count();
     await expect(countLine(page)).toHaveText(`Showing ${total} of ${total} machines`);
     for (const label of ['Search', 'OS', 'Sort']) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
@@ -58,10 +70,35 @@ for (const url of PAGES) {
   });
 }
 
+test('/machines/all/ starts with a small DOM; search reaches the deferred rows without Show all', async ({ page }) => {
+  const { problems } = await open(page, '/machines/all/', { noIdle: true });
+  const first = await rows(page).count();
+  expect(first).toBeGreaterThan(50);
+  expect(first).toBeLessThan(400);
+  await expect(countLine(page)).toHaveText(new RegExp(`^Showing ${first} of [0-9]{4} machines$`));
+  await expect(page.getByRole('button', { name: /^Show all [0-9]/ })).toBeVisible();
+  await page.getByLabel('Search', { exact: true }).fill('kioptrix');
+  await expect(page.getByRole('button', { name: /^Show all/ })).toHaveCount(0);
+  expect(await rows(page).count()).toBeGreaterThan(first);
+  expect((await names(page)).some((t) => /kioptrix/i.test(t))).toBe(true);
+  expect(problems).toEqual([]);
+});
+
+test('/machines/all/ moves the deferred rows into the page in idle time (find-in-page reaches every machine)', async ({ page }) => {
+  const { problems } = await open(page, '/machines/all/');
+  await expect(page.locator('template[data-tf-rest]')).toHaveCount(0, { timeout: 15000 });
+  await expect(page.getByRole('button', { name: /^Show all/ })).toHaveCount(0);
+  const total = await rows(page).count();
+  expect(total).toBeGreaterThan(1000);
+  await expect(countLine(page)).toHaveText(`Showing ${total} of ${total} machines`);
+  expect(problems).toEqual([]);
+});
+
 test('/machines/all/: search, filters, sort, empty state and reset', async ({ page }) => {
   const { problems, requests } = await open(page, '/machines/all/');
   const url0 = page.url();
   const loaded = requests.length;
+  await showAll(page);
   const total = await rows(page).count();
   expect(total).toBeGreaterThan(1000);
 
@@ -142,7 +179,7 @@ test('/oscp-like-machines/: tag filter, empty state and sort inside the difficul
 
 test('at 375px the pages do not scroll sideways and the toolbar fits', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const url of ['/machines/all/', '/oscp-like-machines/']) {
+  for (const url of ['/machines/all/', '/oscp-like-machines/', '/tj-null-list/']) {
     await open(page, url);
     const w = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(w.scroll, url).toBeLessThanOrEqual(w.client);
@@ -165,7 +202,7 @@ test.describe('without JavaScript', () => {
 });
 
 test('other pages do not load the script', async ({ request }) => {
-  for (const url of ['/', '/machines/', '/machines/page/2/', '/techniques/', '/techniques/active-directory/', '/machines/htb-archetype/', '/tj-null-list/']) {
+  for (const url of ['/', '/machines/', '/machines/page/2/', '/techniques/', '/techniques/active-directory/', '/machines/htb-archetype/']) {
     const res = await request.get(url);
     expect(res.status(), url).toBe(200);
     expect(await res.text(), url).not.toContain('table-filter.js');

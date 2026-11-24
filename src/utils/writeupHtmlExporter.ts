@@ -28,7 +28,8 @@ export function parseInlineMarkdown(text: string): string {
     escaped = escaped.replace(/!\[([^[\]\n]*)\]\(([^)\n]+)\)/g, (_match, alt, src) => {
       // eslint-disable-next-line no-control-regex -- intentionally strips ASCII control characters from the URL
       const cleanSrc = src.trim().replace(/[\0\x00-\x1f]/g, '');
-      if (/^(\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,)/i.test(cleanSrc)) {
+      // A leading "//" (or "/\") is protocol-relative and resolves to another host, so only "/x" and "./x" pass.
+      if (/^(\/(?![/\\])|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,)/i.test(cleanSrc)) {
         return `<img src="${cleanSrc}" alt="${alt}" class="writeup-img" loading="lazy" />`;
       }
       return `[Image: ${alt}]`;

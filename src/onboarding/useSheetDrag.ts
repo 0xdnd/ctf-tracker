@@ -2,11 +2,11 @@ import { useCallback, useRef } from 'react';
 import { animate, type MotionValue } from 'framer-motion';
 
 /** Movement before a press counts as a drag, so button taps still reach their button. */
-export const DRAG_SLOP_PX = 6;
+const DRAG_SLOP_PX = 6;
 /** A flick this fast dismisses from any distance (px per ms). */
 export const DISMISS_VELOCITY = 0.45;
 /** Without a flick, this share of the sheet's height has to travel. */
-export const DISMISS_FRACTION = 0.35;
+const DISMISS_FRACTION = 0.35;
 /** How far the sheet gives when pulled the wrong way. */
 export const DAMP_LIMIT_PX = 28;
 const VELOCITY_WINDOW_MS = 90;
@@ -42,7 +42,7 @@ export interface SheetDrag {
   handlers: SheetDragHandlers;
 }
 
-export interface SheetDragHandlers {
+interface SheetDragHandlers {
   onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
   onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
   onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;

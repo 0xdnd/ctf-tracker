@@ -23,6 +23,10 @@ const DIST = path.resolve(__dirname, '..', di >= 0 ? argv[di + 1] : 'dist');
 const VERBOSE = argv.includes('--verbose');
 const MAX_TITLE = 60;
 const MAX_DESC = 155;
+// The owner froze the home page `/` title until 2026-12-01, so its length issue is ignored only until then.
+// After that date the offender reappears and the title must be shortened (or this entry removed on purpose).
+const FROZEN_HOME_TITLE_UNTIL = '2026-12-01';
+const isFrozenHomeTitle = (name) => name === '/' && new Date().toISOString().slice(0, 10) < FROZEN_HOME_TITLE_UNTIL;
 
 const decode = (s) =>
   s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
@@ -78,7 +82,7 @@ for (const file of walk(DIST)) {
   const bad = (what) => offenders.push(`${name}  ${what}`);
 
   if (!title.trim()) bad('title empty');
-  else if (title.length > MAX_TITLE) bad(`title ${title.length} > ${MAX_TITLE}: ${title}`);
+  else if (title.length > MAX_TITLE && !isFrozenHomeTitle(name)) bad(`title ${title.length} > ${MAX_TITLE}: ${title}`);
   const noindex = /<meta name="robots" content="[^"]*noindex/.test(html);
   if (desc === null || !desc.trim()) {
     if (!noindex) bad('description missing'); // redirect stubs marked noindex need none

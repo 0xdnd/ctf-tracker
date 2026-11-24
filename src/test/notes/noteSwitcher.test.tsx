@@ -106,6 +106,13 @@ describe('NoteSwitcherModal', () => {
     expect(screen.queryByRole('dialog', { name: 'Open note' })).toBeNull();
   });
 
+  it('renders empty state outside role="listbox" so aria-required-children stays valid', () => {
+    useNotesWorkspaceStore.setState({ recentNoteIds: [], isNoteSwitcherOpen: true } as never);
+    mount();
+    expect(screen.getByRole('status')).toHaveTextContent(/No recent notes/i);
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
   it('lists live recents in order when the query is empty, skipping deleted/unknown ids', () => {
     useNotesWorkspaceStore.setState({ recentNoteIds: ['b', 'c', 'zzz', 'a'], isNoteSwitcherOpen: true } as never);
     mount();

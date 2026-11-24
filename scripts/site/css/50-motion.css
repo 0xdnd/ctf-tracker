@@ -11,8 +11,10 @@
 .proof li:nth-child(3){animation-delay:100ms}
 .proof li:nth-child(4){animation-delay:150ms}
 @supports (animation-timeline:view()){
-.sec-head,.feat,.feat-nmap,.exam-grid>*,.privacy-grid>*,.mods,.guides,.faq,.closing-inner{animation:rise linear forwards;animation-timeline:view();animation-range:entry 0% entry 30%}
+.sec-head,.feat-nmap,.privacy-grid>*,.mods,.guides,.closing-inner{animation:rise linear forwards;animation-timeline:view();animation-range:entry 0% entry 24%}
+.feat,.exam-grid>*{animation:rise-soft linear forwards;animation-timeline:view();animation-range:entry 0% entry 18%}
 }
+@keyframes rise-soft{from{opacity:.85;transform:translateY(10px)}}
 @keyframes rise-lg{from{opacity:0;transform:translateY(18px)}}
 @keyframes bar{to{transform:scaleX(1)}}
 @keyframes drift-pace{to{translate:0 -34px}}

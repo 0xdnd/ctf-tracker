@@ -40,5 +40,3 @@ export const useConfirmStore = create<ConfirmStore>((set, get) => ({
 
 export const confirmAction = (options: ConfirmOptions): Promise<boolean> =>
   useConfirmStore.getState().open(options);
-
-export const useConfirm = () => confirmAction;

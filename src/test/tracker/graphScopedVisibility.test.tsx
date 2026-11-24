@@ -10,6 +10,7 @@ import {
 } from '../../components/tracker/graphScopedVisibility';
 import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../store/useCtfStore';
 import { Machine } from '../../types';
+import { expandHubContaining, hubDotIds } from './graphHubTestUtils';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -86,7 +87,12 @@ describe('GraphView scoped overflow', () => {
   it('draws only the clustered machines past the cap and offers Show all', () => {
     useCtfStore.setState({ machines: Array.from({ length: 200 }, (_, i) => plain(i)) });
     renderGraph();
-    expect(screen.queryByTestId(`attack-node-m${SCOPED_CLUSTER_CAP - 1}`)).not.toBeNull();
+    // Collapsed hubs hold exactly the clustered machines (one status dot each); nothing past the cap
+    expect(hubDotIds()).toHaveLength(SCOPED_CLUSTER_CAP);
+    expect(hubDotIds()).toContain(`m${SCOPED_CLUSTER_CAP - 1}`);
+    expect(hubDotIds()).not.toContain(`m${SCOPED_CLUSTER_CAP}`);
+    expect(screen.queryByTestId(`attack-node-m${SCOPED_CLUSTER_CAP - 1}`)).toBeNull();
+    expandHubContaining(`m${SCOPED_CLUSTER_CAP - 1}`);
     expect(screen.queryByTestId(`attack-node-m${SCOPED_CLUSTER_CAP}`)).toBeNull();
     expect(screen.queryByTestId('attack-node-m199')).toBeNull();
     const control = screen.getByTestId('graph-grid-overflow');
@@ -123,7 +129,10 @@ describe('GraphView scoped overflow', () => {
   it('counts only matching machines left out, labelled as matches', () => {
     useCtfStore.setState({ machines: Array.from({ length: 300 }, (_, i) => plain(i)) });
     renderFiltered((m) => Number(m.id.slice(1)) >= 100);
-    expect(screen.queryByTestId('attack-node-m100')).not.toBeNull();
+    // The matches spread over several hubs, so none auto-opens; they are all in the dot rings
+    expect(hubDotIds()).toContain('m100');
+    expect(hubDotIds()).not.toContain('m0');
+    expandHubContaining('m100');
     expect(screen.queryByTestId('attack-node-m0')).toBeNull();
     expect(screen.getByTestId('graph-grid-overflow')).toHaveTextContent(`+${200 - SCOPED_CLUSTER_CAP} more matches · Show all`);
   });

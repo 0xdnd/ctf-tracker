@@ -1,4 +1,5 @@
 import { isTauriTarget } from '../../utils/runtimeTarget';
+import { ScrollFade } from '../common/ScrollFade';
 import { clearLegacyViewerPrefs } from '../../utils/notesViewerPrefs';
 import React, { useState, useMemo, useEffect, useDeferredValue, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -30,6 +31,7 @@ import {
 import { ObsidianNoteViewer } from './ObsidianNoteViewer';
 import { FieldManualShell } from '../notes/FieldManualShell';
 import { NotesRibbon, type NotesRibbonPanel } from '../notes/NotesRibbon';
+import { NotesAppBar } from '../notes/NotesAppBar';
 import { NotesLeftPanel } from '../notes/NotesLeftPanel';
 import { NotesRightPanel } from '../notes/NotesRightPanel';
 import { NotesStatusBar } from '../notes/NotesStatusBar';
@@ -55,8 +57,6 @@ import { useWorkspaceTabState, useWorkspaceTabs, useWorkspaceSplitPanes } from '
 import { useActiveNotesPool, useNotesTree } from './workspace/useNotesPool';
 import { useFieldManualRouteSync } from './workspace/useFieldManualRouteSync';
 import { useNotesPanels } from './workspace/useNotesPanels';
-
-export type { CptsLanguageMode, CptsDisplayLayout };
 
 interface CheatsheetViewProps {
   defaultMode?: 'tactical' | 'cpts-manual';
@@ -113,6 +113,10 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
   const [viewModeState, setViewMode] = useState<'tactical' | 'cpts-manual'>(isManualRoute ? 'cpts-manual' : 'tactical');
   const viewMode: 'tactical' | 'cpts-manual' = isFullscreen ? 'cpts-manual' : viewModeState;
   const [cptsLangMode, setCptsLangMode] = useState<CptsLanguageMode>('en');
+  // /field-manual is an alias of /notes with no route-meta entry, so give it a title of its own.
+  useEffect(() => {
+    if (location.pathname.replace(/[/]+$/, '').toLowerCase() === '/field-manual') document.title = 'Field Manual: Your Notes and Commands | ZeroBox';
+  }, [location.pathname]);
   // The modal and maximize viewer modes are gone: drop their stored values once.
   useEffect(() => {
     clearLegacyViewerPrefs();
@@ -682,6 +686,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
         setSearchQuery('');
         navigate('/cheatsheets');
       }}
+      onBackToTracker={() => navigate('/tracker')}
     />
   );
 
@@ -773,6 +778,23 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
     );
   };
 
+  const goBackToApp = () => {
+    exitingFromPathRef.current = location.pathname;
+    navigate(getLastAppRoute() ?? '/tracker');
+  };
+  // Full-screen notes: Back lives in the app bar, and on phones the ribbon moves there too.
+  const ribbonInBar = isFullscreen && isNarrow;
+  const ribbonEl = (
+    <NotesRibbon
+      activePanel={hasNotes ? ribbonActivePanel : null}
+      onSelectPanel={handleRibbonSelectPanel}
+      onOpenSwitcher={() => useNotesWorkspaceStore.getState().openNoteSwitcher()}
+      onBack={goBackToApp}
+      horizontal={ribbonInBar}
+      footer={isFullscreen ? null : undefined}
+    />
+  );
+
   const switchBase =
     'inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-[transform,background-color,color] active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11';
   const catBase =
@@ -782,20 +804,14 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
 
   return (
     <div className={`w-full ${viewMode === 'cpts-manual' ? 'h-full' : 'space-y-6 pb-12'} text-sm`}>
+      {viewMode === 'cpts-manual' && <h1 className="sr-only">Field Manual</h1>}
       {viewMode === 'cpts-manual' ? (
+        <div className="flex h-full flex-col">
+        {isFullscreen && <NotesAppBar onBack={goBackToApp} ribbon={ribbonInBar ? ribbonEl : undefined} />}
+        <div className="min-h-0 flex-1">
         <FieldManualShell
           resizeStorageKey="zerobox.notes.leftWidth.page"
-          ribbon={
-            <NotesRibbon
-              activePanel={hasNotes ? ribbonActivePanel : null}
-              onSelectPanel={handleRibbonSelectPanel}
-              onOpenSwitcher={() => useNotesWorkspaceStore.getState().openNoteSwitcher()}
-              onBack={() => {
-                exitingFromPathRef.current = location.pathname;
-                navigate(getLastAppRoute() ?? '/tracker');
-              }}
-            />
-          }
+          ribbon={isFullscreen ? (ribbonInBar ? null : ribbonEl) : ribbonEl}
           left={hasNotes ? renderNotesLeft() : null}
           right={
             hasNotes ? (
@@ -839,6 +855,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 <EmptyState
                   icon={BookOpen}
                   title="No notes yet"
+                  headingAs="h2"
                   description="It shows your own Markdown notes, for example an Obsidian vault. You need to import them first."
                   action={{
                     label: 'Import your notes',
@@ -857,6 +874,9 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     },
                   }}
                 />
+                <p className="border-t border-subtle px-6 py-3 text-center text-xs text-muted">
+                  Stored locally in your browser with wikilinks, multi-tab reading, and live <code className="font-mono text-secondary">{'{TARGET_IP}'}</code> substitution.
+                </p>
                 {restorableCount > 0 && (
                   <div className="flex justify-center pb-6">
                     <button
@@ -872,6 +892,8 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
             </div>
           )}
         </FieldManualShell>
+        </div>
+        </div>
       ) : (
         <>
           <PageHeader
@@ -902,7 +924,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
               },
             ]}
           >
-            <div className="-mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+            <ScrollFade fadeSize="3.5rem" className="-mx-4 px-4 sm:mx-0 sm:px-0 max-sm:pr-14">
               <div className="flex min-w-max items-center gap-3 sm:min-w-0 sm:flex-wrap">
                 <div
                   role="group"
@@ -934,11 +956,11 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                   </button>
                 </div>
               </div>
-            </div>
+            </ScrollFade>
           </PageHeader>
 
           {/* LHOST / LPORT / target, shared with the Reverse shells page */}
-          <YourDetailsCard tourAnchor="snippets-params" />
+          <YourDetailsCard tourAnchor="snippets-params" headingLevel="h2" />
 
           {/* Main workspace: categories + commands panel */}
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-4">
@@ -950,7 +972,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                 <span className="tabular-nums">{cheatsheets.length}</span>
               </div>
 
-              <div className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 max-lg:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-lg:pr-14 lg:[mask-image:none]">
+              <ScrollFade unstyled fadeSize="3.5rem" className="-mx-4 flex gap-1.5 overflow-x-auto no-scrollbar px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 max-lg:pr-14">
                 {CHEATSHEET_CATEGORIES.filter((cat) => cat.id !== 'revshell').map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
@@ -975,7 +997,7 @@ const CheatsheetViewContent: React.FC<CheatsheetViewProps> = ({ defaultMode }) =
                     <span>Starred Snippets</span>
                   </button>
                 </div>
-              </div>
+              </ScrollFade>
             </div>
 
             {/* Right column: commands panel */}

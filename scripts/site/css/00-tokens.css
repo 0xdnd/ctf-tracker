@@ -1,6 +1,6 @@
 /* 00-tokens: fonts and site-only tokens (dark default; 60-light.css overrides under [data-theme=light]) */
-@font-face{font-family:"Inter Variable";font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter-latin-var.woff2) format("woff2")}
-@font-face{font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800;font-display:swap;src:url(/fonts/jetbrains-mono-latin-var.woff2) format("woff2")}
+@font-face{font-family:"Inter Variable";font-style:normal;font-weight:100 900;font-display:optional;src:url(/fonts/inter-latin-var.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono Variable";font-style:normal;font-weight:100 800;font-display:optional;src:url(/fonts/jetbrains-mono-latin-var.woff2) format("woff2")}
 @font-face{font-family:"Inter Fallback";src:local(Arial),local("Helvetica Neue"),local(Helvetica);size-adjust:107.64%;ascent-override:90.49%;descent-override:22.56%;line-gap-override:0%}
 :root{
 color-scheme:dark;
@@ -10,7 +10,7 @@ color-scheme:dark;
 --focus:#38bdf8;--link:var(--accent);
 --r-pill:999px;--shadow-lift:0 8px 20px -8px rgb(0 0 0/.55);
 --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;--s9:96px;
---section-y:64px;--gutter:16px;--wrap:1120px;--prose:68ch;--header-h:64px;
+--section-y:64px;--gutter:16px;--wrap:1120px;--prose:45rem;--header-h:64px;
 --font-sans:"Inter Variable","Inter Fallback",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 --font-mono:"JetBrains Mono Variable",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
 --fs-display:clamp(2.25rem,1.6rem + 2.6vw,3.5rem);

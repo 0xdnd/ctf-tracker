@@ -116,12 +116,17 @@ describe('header target picker and detail modal engage navigation', () => {
     expect(screen.getByTestId('where').textContent).toBe('/target/box-1');
   });
 
-  it('detail modal engage sets the target, closes the modal and opens its page', () => {
+  it('detail modal engage sets the target, closes the modal and opens its page', async () => {
     useCtfStore.setState({ selectedMachineId: 'box-1' });
     mountWith(<MachineDetailModal />);
+    expect(screen.getByRole('dialog', { name: /Machine details for Lame/i })).toBeInTheDocument();
     fireEvent.click(screen.getByText(/Set Active Target/).closest('button')!);
     expect(useCtfStore.getState().activeTargetId).toBe('box-1');
     expect(useCtfStore.getState().selectedMachineId).toBeNull();
     expect(screen.getByTestId('where').textContent).toBe('/target/box-1');
+    // Closing inside MachineDetailModal's own portaled AnimatePresence removes the dialog from DOM
+    await vi.waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /Machine details for Lame/i })).toBeNull();
+    });
   });
 });

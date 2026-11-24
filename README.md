@@ -2,9 +2,9 @@
 
 <img src="public/logo-zerobox.webp" alt="ZeroBox logo" width="120" />
 
-# ⚡ ZeroBox — Free OSCP & CTF Tracker for HackTheBox and TryHackMe
+# ⚡ ZeroBox — Free OSCP & CTF Tracker for HTB, TryHackMe, Proving Grounds & VulnHub
 
-### Track every HTB & TryHackMe box, from recon to root, in one free, offline, keyboard-driven dashboard.
+### Track every HTB, TryHackMe, Proving Grounds & VulnHub box, from recon to root, in one free, offline, keyboard-driven dashboard.
 
 **Use it free at [ctftracker.com](https://ctftracker.com/)**
 
@@ -15,8 +15,8 @@
 [![Launch ZeroBox](https://img.shields.io/badge/%E2%96%B6%20%20LAUNCH%20ZEROBOX%20%E2%80%94%20FREE%20IN%20YOUR%20BROWSER-10B981?style=for-the-badge&labelColor=0B0F19)](https://ctftracker.com/)
 
 [![GitHub Stars](https://img.shields.io/github/stars/0xdnd/ctf-tracker?style=for-the-badge&logo=github&color=F59E0B&labelColor=0B0F19)](https://github.com/0xdnd/ctf-tracker/stargazers)
-[![Machines](https://img.shields.io/badge/Machines-2186-10B981?style=for-the-badge)](https://ctftracker.com/)
-[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-131-EF4444?style=for-the-badge)](https://ctftracker.com/)
+[![Machines](https://img.shields.io/badge/Machines-2186-10B981?style=for-the-badge)](https://ctftracker.com/machines/)
+[![Reverse Shells](https://img.shields.io/badge/Reverse_Shells-131-EF4444?style=for-the-badge)](https://ctftracker.com/revshells/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/0xdnd/ctf-tracker/ci.yml?branch=main&label=CI&style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/0xdnd/ctf-tracker/actions)
 [![Live at ctftracker.com](https://img.shields.io/badge/Live_at-ctftracker.com-10B981?style=flat-square&logo=cloudflare)](https://ctftracker.com/)
 [![Creator](https://img.shields.io/badge/Creator-Daniel%20Dayan%20(@0xdnd)-10B981?style=flat-square&logo=github)](https://0xdnd.github.io/)
@@ -26,7 +26,7 @@
 
 <a href="https://ctftracker.com/"><img src=".github/assets/screenshot.png" alt="ZeroBox Kanban board tracking HTB and THM machines" width="900" /></a>
 
-**[🚀 Try it live](https://ctftracker.com/)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)**
+**[🚀 Try it live](https://ctftracker.com/)** · **[💻 Desktop App (Releases)](https://github.com/0xdnd/ctf-tracker/releases/latest)** · **[🧭 Practice Tracks](#-direct-links-practice-tracks-tools--guides)** · **[✨ Features](#-core-modules)** · **[🛠️ Run locally](#️-local-development--build)**
 
 </div>
 
@@ -43,13 +43,13 @@ Captured from the built-in demo data.
 
 ---
 
-**ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/), [TryHackMe](https://tryhackme.com/), OffSec Proving Grounds and VulnHub. Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS and CRTO. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
+**ZeroBox is a free, source-available CTF tracker** for [Hack The Box](https://www.hackthebox.com/), [TryHackMe](https://tryhackme.com/), OffSec Proving Grounds and VulnHub. Use it to track your capture the flag (CTF) progress, plan which HTB machines and THM rooms to do next, keep your pentest notes and loot in one place, and prepare for OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE. It runs in your browser at **[ctftracker.com](https://ctftracker.com/)** or as a desktop app.
 
 ---
 
 ## 🤔 Why ZeroBox?
 
-Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place:
+Grinding for **OSCP, CPTS, CRTO, OSEP, CRTP, PNPT or OSWE**? Your progress is probably scattered across browser tabs, a Notion page, a text file of creds and a cheatsheet you keep re-typing IPs into. ZeroBox puts it all in one place:
 
 | Instead of… | ZeroBox gives you… |
 |:---|:---|
@@ -57,11 +57,21 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 | 🔁 Editing `10.10.x.x` in every command | A **dynamic cheatsheet** — set `LHOST`/`LPORT`/`TARGET_IP` once, every command updates |
 | 🐚 Googling "python reverse shell" again | **131 reverse shells** with matching listeners, one click to copy |
 | 🔑 Creds lost in random notes | A **loot vault** for every hash, key, flag and password you find |
-| 😰 Wondering if you're exam-ready | A **24h exam simulator** with OSCP/CPTS/CRTO-style scoring |
+| 😰 Wondering if you're exam-ready | A **24h exam simulator** with 7 tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE) |
 
 > 🔒 **100% private:** everything lives in your browser (LocalStorage + IndexedDB). Nothing is ever sent anywhere.
 
 > ⭐ **If ZeroBox saves you time, please [star the repo](https://github.com/0xdnd/ctf-tracker/stargazers)** — it's the best way to help more hackers find it!
+
+---
+
+## 🧭 Direct Links: Practice Tracks, Tools & Guides
+
+| Category | Direct Links on ctftracker.com |
+| :--- | :--- |
+| **Practice Tracks** | [TJ Null OSCP List](https://ctftracker.com/tj-null-list/) · [OSCP-Like](https://ctftracker.com/oscp-like-machines/) · [CPTS-Like](https://ctftracker.com/cpts-like-machines/) · [IppSec CPTS](https://ctftracker.com/ippsec-cpts-machines/) · [Active Directory](https://ctftracker.com/active-directory-machines/) · [CRTO-Like](https://ctftracker.com/crto-like-machines/) · [OSEP-Like](https://ctftracker.com/osep-like-machines/) · [OSWE-Like](https://ctftracker.com/oswe-like-machines/) · [CWEE-Like](https://ctftracker.com/cwee-like-machines/) · [HTB Starting Point](https://ctftracker.com/htb-starting-point-machines/) · [HTB Pro Labs](https://ctftracker.com/htb-pro-labs-guide/) |
+| **Interactive Tools** | [Machine Catalog](https://ctftracker.com/machines/) · [OSCP Points Calculator](https://ctftracker.com/oscp-points-calculator/) · [OSCP Exam Simulator](https://ctftracker.com/oscp-exam-simulator/) · [Reverse Shell Cheat Sheet](https://ctftracker.com/revshells/) · [Pentest Methodology](https://ctftracker.com/methodology-guide/) · [Cheatsheet Library](https://ctftracker.com/cheatsheet-library/) |
+| **Exam Guides & Skills** | [OSCP+ Scoring & 24h Time Budget](https://ctftracker.com/oscp-exam-scoring-and-time-budget/) · [OSCP vs CPTS](https://ctftracker.com/oscp-vs-cpts/) · [HTB CPTS Exam Guide](https://ctftracker.com/cpts-exam-guide/) · [HTB vs TryHackMe](https://ctftracker.com/htb-vs-tryhackme/) · [OSCP Report Template](https://ctftracker.com/oscp-report-template/) · [Active Directory Techniques](https://ctftracker.com/techniques/active-directory/) · [SQL Injection Techniques](https://ctftracker.com/techniques/sql-injection/) |
 
 ---
 
@@ -71,7 +81,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 - **2186-machine catalog:** Active & retired HTB machines and Starting Point labs, THM CTF rooms, OffSec Proving Grounds and VulnHub boxes, plus custom targets, Pro Labs and exams.
 - **Unified Tactical HUD:** Streamlined `UnifiedHeader` with instant Day/Night theme toggles, slide-out `FilterDrawer` with MITRE ATT&CK tagging, and `SnippetsDrawer` for lightning-fast command lookups.
 - **5-stage attack lifecycle:** `Target Backlog` → `Active Recon` → `Foothold Obtained` → `System Pwned` → `Completed & Logged`.
-- **Four views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO).
+- **Four views & pathways:** Kanban board, dense sortable table, card grid, attack **graph view** with edge pivot inspector, and a practice-track chip row with progress and a next-machine shortcut for structured cert journeys (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE).
 - **Target dossier:** Per-machine detail page with multi-host Nmap/scan import, methodology checklist, flags, and user/root timers.
 - **Fast search:** `/` or `Ctrl+K` / `Cmd+K`, plus syntax DSL search (`syntaxSearchUtils`) and a global command palette.
 
@@ -93,7 +103,7 @@ Grinding for **OSCP, CPTS or CRTO**? Your progress is probably scattered across 
 
 ### 5. 📊 Analytics & ⏱️ Exam Simulator
 - **Skill radar & readiness analytics:** Real-time telemetry (`readinessAnalytics`) across Web, AD, Linux/Windows PrivEsc, Pivoting, and a **90-day activity heatmap**.
-- **24h exam simulator:** OSCP, CPTS and CRTO-style rulesets, scoring, breaks, evidence proofs, and a live burn-down chart.
+- **24h exam simulator:** 7 exam tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE), scoring, breaks, evidence proofs, and a live burn-down chart.
 
 ---
 
@@ -181,7 +191,7 @@ Everything is stored locally in your browser (LocalStorage + IndexedDB). There i
 560 retired Hack The Box machines, 20 active Hack The Box machines (name, OS, difficulty and link only), 559 TryHackMe CTF rooms, 339 OffSec Proving Grounds boxes and 708 VulnHub boxes. You can also add custom targets from any other platform or your own lab, and track your own exams as personal targets.
 
 **Can I use it to prepare for OSCP or CPTS?**
-Yes. It includes a 24-hour exam simulator with OSCP, CPTS and CRTO-style scoring, a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
+Yes. It includes a 24-hour exam simulator across 7 exam tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE), a methodology checklist, and a cheatsheet that fills in your IPs and ports for you.
 
 ---
 

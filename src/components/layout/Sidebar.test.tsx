@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useCtfStore } from '../../store/useCtfStore';
 
@@ -48,12 +48,23 @@ describe('Sidebar component', () => {
     );
     expect(screen.getByTestId('view-grid')).toHaveTextContent('Cards');
     fireEvent.click(screen.getByRole('button', { name: /Collapse Sidebar/i }));
-    const grid = screen.getByRole('button', { name: 'Grid Cards View' });
+    const grid = screen.getByRole('button', { name: 'Cards view' });
     expect(grid).toHaveAttribute('data-testid', 'view-grid');
     expect(grid).not.toHaveTextContent('Cards');
     expect(screen.getByTestId('view-kanban')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(grid);
     expect(useCtfStore.getState().viewMode).toBe('grid');
+  });
+
+  it('hides the layout switch on a target dossier, which is not a board', () => {
+    useCtfStore.setState({ activeTab: 'tracker', viewMode: 'kanban' } as never);
+    render(
+      <MemoryRouter initialEntries={['/target/abc']}>
+        <Sidebar />
+      </MemoryRouter>
+    );
+    expect(screen.queryByTestId('view-kanban')).toBeNull();
+    expect(screen.queryByText('Layout')).toBeNull();
   });
 
   it('renders Vault navigation link', () => {

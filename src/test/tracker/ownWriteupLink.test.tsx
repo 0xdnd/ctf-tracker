@@ -88,3 +88,33 @@ describe('machine panel own-writeup link', () => {
     expect(screen.queryByText(WITH_OWN.officialPdf)).not.toBeInTheDocument();
   });
 });
+
+describe('machine panel phone overflow menu', () => {
+  const original = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('max-width: 639px'),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+    useCtfStore.setState({
+      machines: [{ ...WITHOUT_OWN, id: 'box-phone', ip: '10.10.x.x', roomUrl: 'https://tryhackme.com/room/none' }],
+    } as never);
+  });
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+
+  it('keeps Assign IP, Official room and the community writeup reachable from More actions', async () => {
+    open('box-phone');
+    fireEvent.click((await screen.findAllByRole('button', { name: 'More actions' }))[0]);
+    for (const name of [/Assign IP/, /Official room/, /Writeup/]) {
+      expect(await screen.findByRole('menuitem', { name })).toBeInTheDocument();
+    }
+  });
+});

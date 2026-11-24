@@ -49,7 +49,7 @@ export const buildTrackOrderIndex = (
 };
 
 /** Stable sort by track position; machines without one go last. */
-export const sortByTrackOrder = (list: Machine[], index: ReadonlyMap<string, number>): Machine[] =>
+const sortByTrackOrder = (list: Machine[], index: ReadonlyMap<string, number>): Machine[] =>
   list.sort((a, b) => (index.get(a.id) ?? LAST) - (index.get(b.id) ?? LAST));
 
 /** What the tracker toolbar reads: one track's progress by id. */

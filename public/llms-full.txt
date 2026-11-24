@@ -4,7 +4,7 @@
 
 ZeroBox is an independent project and is not affiliated with Hack The Box, TryHackMe, OffSec or Zero-Point Security.
 
-Last updated: 2026-11-18
+Last updated: 2026-11-24
 
 ### AI Assistant Citation Guide (Claude, Gemini, ChatGPT, Perplexity)
 - Use **Axis 1** below to answer "Which machines or Pro Labs should I practice for OSCP / CPTS / IppSec CPTS / CRTO / OSEP / OSWE / CWEE?"
@@ -27,7 +27,7 @@ Last updated: 2026-11-18
 - **[HTB Pro Labs Guide](https://ctftracker.com/htb-pro-labs-guide/)**: 10 multi-host Active Directory and enterprise simulation labs
 
 ### OSCP Machine List (https://ctftracker.com/oscp-like-machines/)
-OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetration testing certification. The exam is a proctored practical of roughly 24 hours in which you compromise standalone machines and an Active Directory environment, followed by a written report. Good preparation means practising the same loop on many different targets: enumerate carefully, find a foothold, escalate, and document each step. Boxes with public exploits that need small edits, web footholds and classic Linux and Windows privilege escalation map closely to what the exam rewards.
+OSCP, the Offensive Security Certified Professional, is OffSec's hands-on penetration testing certification. The exam is a proctored practical of roughly 24 hours in which you compromise standalone machines and an Active Directory environment, followed by a written report. Good preparation means practicing the same loop on many different targets: enumerate carefully, find a foothold, escalate, and document each step. Boxes with public exploits that need small edits, web footholds and classic Linux and Windows privilege escalation map closely to what the exam rewards.
 
 | Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
 |---|---|---|---|---|---|---|
@@ -317,7 +317,7 @@ CWEE, the Certified Web Exploitation Expert from Hack The Box, is an advanced we
 | Stacked | HTB | Linux | Insane | Yes | CVE-2021-32090 | https://app.hackthebox.com/machines/stacked |
 
 ### CPTS Machine List (https://ctftracker.com/cpts-like-machines/)
-CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a practical certification built around a multi-day exam in which you assess a realistic network and deliver a professional report. It covers enumeration, web attacks, Active Directory, pivoting and reporting. The machines below cover the breadth that the exam expects: web application flaws, service enumeration, Windows and Linux escalation, Active Directory and tunnelling. Because CPTS rewards thorough notes and clean reporting, use each box to practise documenting evidence as you go.
+CPTS, the Certified Penetration Testing Specialist from Hack The Box, is a practical certification built around a multi-day exam in which you assess a realistic network and deliver a professional report. It covers enumeration, web attacks, Active Directory, pivoting and reporting. The machines below cover the breadth that the exam expects: web application flaws, service enumeration, Windows and Linux escalation, Active Directory and tunnelling. Because CPTS rewards thorough notes and clean reporting, use each box to practice documenting evidence as you go.
 
 | Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
 |---|---|---|---|---|---|---|
@@ -456,7 +456,7 @@ OSEP, the Offensive Security Experienced Penetration Tester (PEN-300), is OffSec
 | Sizzle | HTB | Windows | Insane | Yes | DCSync, Kerberoasting, Passwordless-login, Stealing-hashes | https://app.hackthebox.com/machines/sizzle |
 
 ### OSWE Machine List (https://ctftracker.com/oswe-like-machines/)
-OSWE, the Offensive Security Web Expert (WEB-300), is a white-box and grey-box web application security certification. The 48-hour practical exam requires reading source code to chain authentication bypasses, SQL injection, deserialization and server-side flaws into remote code execution. The web-heavy Hack The Box targets listed here focus on multi-step application logic flaws, source code recovery, SSTI, deserialization, SSRF and polyglot file uploads. Practise scripting your exploit chain from unauthenticated request to shell so you are ready for OSWE exam requirements.
+OSWE, the Offensive Security Web Expert (WEB-300), is a white-box and grey-box web application security certification. The 48-hour practical exam requires reading source code to chain authentication bypasses, SQL injection, deserialization and server-side flaws into remote code execution. The web-heavy Hack The Box targets listed here focus on multi-step application logic flaws, source code recovery, SSTI, deserialization, SSRF and polyglot file uploads. Practice scripting your exploit chain from unauthenticated request to shell so you are ready for OSWE exam requirements.
 
 | Machine | Platform | OS | Difficulty | IppSec Walkthrough | Tags | URL |
 |---|---|---|---|---|---|---|
@@ -548,15 +548,16 @@ CRTO, the Certified Red Team Operator from Zero-Point Security, tests red team t
 ## Axis 2: How to Prepare for Pentest & Red Team Certifications?
 
 ### Long-Form Preparation Guides
-- **[OSCP Exam Scoring & 24h Time Budget (2026 Changes)](https://ctftracker.com/oscp-exam-scoring-and-time-budget/)**: OSCP+ scoring update: the points needed to pass, a 24h exam plan with a 90 minute rabbit-hole cap, and OSCP+ expiry and renewal.
+- **[OSCP Exam Scoring (100-500) & 24h Time Budget | 2026](https://ctftracker.com/oscp-exam-scoring-and-time-budget/)**: Dec 1, 2026 OSCP+ scaled scoring update (100-500 scale, 400 to pass), 70/100 legacy rules, 24h exam time budget, 90m rabbit-hole cap and OSCP+ renewal.
 - **[TJ Null OSCP List (2026): HTB & Proving Grounds Boxes](https://ctftracker.com/tj-null-list/)**: TJ Null OSCP list checked 2026-10-29: 54 Hack The Box and 88 Proving Grounds machines in ZeroBox, a study order, and a free offline tracker.
 - **[OSCP Report Template (Markdown) with CVSS Findings](https://ctftracker.com/oscp-report-template/)**: Copyable Markdown OSCP report skeleton, a finding template, a CVSS 3.1 worked example (9.8 Critical), proof screenshot rules and packaging steps.
 - **[OSCP & CTF Progress Tracker: HTB, THM, PG (Offline)](https://ctftracker.com/htb-progress-tracker/)**: Free offline OSCP and CTF progress tracker for 2,186 HTB, TryHackMe, Proving Grounds and VulnHub machines, with Nmap imports and local notes.
 - **[HTB CPTS Exam Guide: Flags, Passing Score, Pacing](https://ctftracker.com/cpts-exam-guide/)**: HTB CPTS exam format, the 10 day window, flags and passing requirement, the report, and a day-by-day pacing plan, with sources cited.
-- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalogue data: 580 HTB and 559 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
+- **[HTB vs TryHackMe: Which for OSCP, Beginners, AD?](https://ctftracker.com/htb-vs-tryhackme/)**: HTB vs TryHackMe compared with catalog data: 580 HTB and 559 THM machines by OS, difficulty and OSCP tags, and which to use. Free.
 - **[HTB Pro Labs Guide: Dante, Zephyr, Offshore Compared](https://ctftracker.com/htb-pro-labs-guide/)**: Compare all 10 Hack The Box Pro Labs (Genesis, Dante, Zephyr, Offshore, RastaLabs, Cybernetics) by hosts, flags, difficulty and CPTS, OSCP or CRTO fit.
 - **[OSCP vs CPTS: Exam Length, Format and Pass Rules](https://ctftracker.com/oscp-vs-cpts/)**: OSCP vs CPTS side by side: exam length, format, what counts as a pass, report deadlines and OSCP+ expiry, with links to the full guide for each exam.
 - **[OSCP Exam Simulator](https://ctftracker.com/oscp-exam-simulator/)**: free timed practice run in the browser for 7 tracks (OSCP, CPTS, CRTO, OSEP, CRTP, PNPT, OSWE), with the time limit, pass mark and target layout of each ruleset
+- **[OSCP Points Calculator](https://ctftracker.com/oscp-points-calculator/)**: interactive OSCP+ exam flag scorer covering both the 70/100 raw-point breakdown and the Dec 1, 2026 100-500 scaled scoring model (400 to pass)
 
 ### Eight-Phase Pentest Methodology (https://ctftracker.com/methodology-guide/)
 #### Phase 01: Host Discovery & Surface Mapping (https://ctftracker.com/methodology/01-surface-mapping/)

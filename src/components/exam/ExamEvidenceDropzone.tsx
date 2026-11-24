@@ -594,12 +594,12 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                         type="text"
                         value={captionText}
                         onChange={(e) => setCaptionText(e.target.value)}
-                        className="flex-1 bg-surface-card border border-accent rounded px-2 py-0.5 text-[11px] text-primary focus:outline-none"
+                        className="flex-1 bg-surface-card border border-accent rounded px-2 py-0.5 text-[11px] text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                       />
                       <button
                         type="button"
                         onClick={() => handleSaveCaption(sc.id)}
-                        className="p-1 rounded bg-accent text-on-accent hover:bg-accent-hover"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center p-1 rounded bg-accent text-on-accent hover:bg-accent-hover cursor-pointer"
                         title="Save caption"
                         aria-label="Save caption"
                       >
@@ -614,7 +614,7 @@ export const ExamEvidenceDropzone: React.FC<ExamEvidenceDropzoneProps> = ({
                       <button
                         type="button"
                         onClick={() => handleStartCaptionEdit(sc)}
-                        className="text-muted hover:text-accent p-0.5"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center rounded text-muted hover:text-accent hover:bg-surface-hover cursor-pointer"
                         title="Edit caption"
                         aria-label="Edit caption"
                       >

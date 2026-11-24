@@ -9,20 +9,38 @@ const { injectBeacon, analyticsNote } = require('./lib/site.cjs');
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const ORIGIN = 'https://ctftracker.com';
-const routes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
-const { getModel, getGuides } = require('./lib/content-model.cjs');
+const rawRoutes = require(path.join(rootDir, 'src', 'seo', 'routeMeta.json'));
+const { getModel, getGuides, getTechSlugs, listAnd } = require('./lib/content-model.cjs');
 const { injectWelcome } = require('./lib/welcome-static.cjs');
 const model = getModel();
 const ROUTE_SUMMARIES = require('./lib/route-summaries.cjs');
-const listAnd = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
-const NUM_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
-// routeMeta.json bullets carry {{tokens}} for counts that change with the data; only this script renders them.
+const nf = new Intl.NumberFormat('en-US');
+// routeMeta.json fields and bullets carry {{tokens}} for counts/lists that change with the data.
 const ROUTE_TOKENS = {
   shellCount: String(model.shellAvailableCount),
-  examTrackCountWord: NUM_WORDS[model.examTracks.length] || String(model.examTracks.length),
+  catalogTotal: nf.format(model.catalogCounts.ctf),
+  htbThmTotal: nf.format(model.catalogCounts.htbThm),
+  phaseCount: String(model.phaseCount),
+  phaseCountWord: model.phaseCountWord,
+  phaseCountWordLower: model.phaseCountWordLower,
+  examTrackCount: String(model.examTrackCount),
+  examTrackCountWord: model.examTrackCountWord,
+  examTrackCountWordLower: model.examTrackCountWordLower,
+  examTracksList: model.examTracksList,
   examTrackDurations: listAnd(model.examTrackDurations),
+  proLabCount: String(model.proLabs.length),
+  topicCount: String(model.topics.length),
+  noteCount: String(model.notes.length),
 };
 const fillTokens = (s) => String(s).replace(/\{\{(\w+)\}\}/g, (m, k) => { if (!(k in ROUTE_TOKENS)) throw new Error(`prerender: unknown token ${m}`); return ROUTE_TOKENS[k]; });
+const routes = rawRoutes.map((r) => ({
+  ...r,
+  title: fillTokens(r.title),
+  description: fillTokens(r.description),
+  h1: fillTokens(r.h1),
+  intro: fillTokens(r.intro),
+  bullets: r.bullets.map(fillTokens),
+}));
 
 const shellSrc = path.join(distDir, 'index.html');
 if (!fs.existsSync(shellSrc)) {
@@ -37,17 +55,30 @@ if (shell.includes('data-zerobox-landing')) {
 // Recovered shells may already carry the app-shell-only noindex; route pages must not inherit it.
 shell = shell.replace(/\s*<meta name="robots" content="noindex">/g, '');
 if (!/<link rel="canonical"/.test(shell)) shell = shell.replace('</head>', '<link rel="canonical" href="https://ctftracker.com/" />\n</head>');
-// app-shell.html is only the offline SPA fallback: noindex and no canonical.
+// app-shell.html is only the offline SPA fallback: noindex and no canonical. Its title is a short brand line (the home page keeps the long one).
+const SHELL_TITLE = 'ZeroBox: CTF Tracker and OSCP Exam Simulator';
 fs.writeFileSync(
   path.join(distDir, 'app-shell.html'),
-  shell.replace(/\s*<link rel="canonical"[^>]*>/, '').replace('</head>', '    <meta name="robots" content="noindex">\n  </head>'),
+  shell
+    .replace(/\s*<link rel="canonical"[^>]*>/, '')
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${SHELL_TITLE}</title>`)
+    .replace(/(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*(")/g, `$1${SHELL_TITLE}$2`)
+    .replace('</head>', '    <meta name="robots" content="noindex">\n  </head>'),
   'utf8'
 );
 
-// /field-manual is an SPA-only route (public/404.js rewrites it into the app). Give it a real 200 file that is the same noindex shell,
-// so a direct GET works. It is deliberately not in routeMeta.json, the sitemap or 404-paths.json.
+// /field-manual is an SPA-only route (public/404.js rewrites it into the app). Give it a real 200 file with its own title,
+// so a direct GET works without falling back to the generic shell title. Deliberately not in routeMeta.json or sitemap.
+const FIELD_MANUAL_TITLE = 'Field Manual: Your Notes and Commands | ZeroBox';
+const appShellHtml = fs.readFileSync(path.join(distDir, 'app-shell.html'), 'utf8');
 fs.mkdirSync(path.join(distDir, 'field-manual'), { recursive: true });
-fs.copyFileSync(path.join(distDir, 'app-shell.html'), path.join(distDir, 'field-manual', 'index.html'));
+fs.writeFileSync(
+  path.join(distDir, 'field-manual', 'index.html'),
+  appShellHtml
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${FIELD_MANUAL_TITLE}</title>`)
+    .replace(/(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*(")/g, `$1${FIELD_MANUAL_TITLE}$2`),
+  'utf8'
+);
 
 // Precache the shell's hashed JS/CSS so the app works offline after the first visit.
 // The static landing page and content pages share a hashed stylesheet and self-hosted fonts; precache them so an offline `/` stays styled.
@@ -67,10 +98,11 @@ const gitDateOf = (...rels) => {
 };
 // Indexable app routes that get a JSON-LD dateModified (no visible byline: the static block is replaced when React mounts).
 // Each date is the last commit of the page's own source, not the shared routeMeta.json date. /exam/ is noindex and is skipped.
+const CALC_FAQ = require('../src/seo/oscpCalculatorFaq.json');
 const ROUTE_DATE_SRC = {
-  '/tracker/': ['src/components/tracker/TrackerView.tsx'],
-  '/methodology/': ['src/pages/MethodologyPage.tsx'],
-  '/oscp-points-calculator/': ['src/pages/OscpPointsCalculatorPage.tsx'],
+  '/tracker/': ['src/components/tracker/TrackerView.tsx', 'scripts/prerender.cjs'],
+  '/methodology/': ['src/pages/MethodologyPage.tsx', 'scripts/prerender.cjs'],
+  '/oscp-points-calculator/': ['src/pages/OscpPointsCalculatorPage.tsx', 'src/seo/oscpCalculatorFaq.json', 'scripts/prerender.cjs'],
 };
 // The two hero images (window + pacing card) are part of the first paint, so every width of them is precached too.
 let heroShots = [];
@@ -126,6 +158,19 @@ const NAV_LABEL = {
 const linkList = (items) =>
   `<ul style="color:#f4f4f5;padding-left:20px;columns:2">${items.map(([h, l]) => `<li><a href="${esc(h)}" style="color:#0ea5e9">${esc(l)}</a></li>`).join('')}</ul>`;
 
+function calcStaticSection() {
+  const faqHtml = CALC_FAQ.map(
+    (item, idx) =>
+      `<details${idx === 0 ? ' open' : ''} style="margin:8px 0;padding:10px 14px;border:1px solid #27272a;border-radius:8px"><summary style="cursor:pointer;font-weight:600;color:#f4f4f5">${esc(item.q)}</summary><p style="color:#d4d4d8;margin:8px 0 0">${esc(item.a)}</p></details>`
+  ).join('');
+  return (
+    `<h2 style="font-size:20px;margin-top:24px">How OSCP+ scoring works (70/100 and 100-500 scaled)</h2>` +
+    `<p style="color:#d4d4d8">Exams starting before 1 December 2026 at 08:00 GMT require 70 of 100 raw points (40 for Active Directory in 10/10/20 steps plus three 20-point standalones). Exams starting on or after 1 December 2026 use an equated 100 to 500 scaled score with 400 required to pass.</p>` +
+    `<h2 style="font-size:20px;margin-top:24px">Frequently asked questions</h2>${faqHtml}` +
+    `<p style="color:#a1a1aa;margin-top:16px">Read the <a href="/oscp-exam-scoring-and-time-budget/" style="color:#0ea5e9">OSCP scoring and 24h time budget guide</a>, compare <a href="/oscp-vs-cpts/" style="color:#0ea5e9">OSCP vs CPTS</a>, or practice on the <a href="/tj-null-list/" style="color:#0ea5e9">TJ Null OSCP list</a> and <a href="/oscp-like-machines/" style="color:#0ea5e9">OSCP-like machines</a>.</p>`
+  );
+}
+
 function exploreBlock(route) {
   const hubs = [
     ['/machines/', 'HTB and TryHackMe machine writeups and attack paths'],
@@ -134,11 +179,24 @@ function exploreBlock(route) {
     ['/revshells/', 'Reverse shell cheat sheet'],
     ['/pentest-notes/', 'Pentest methodology notes'],
   ];
+  const practiceTracks = [
+    ['/tj-null-list/', 'TJ Null OSCP list'],
+    ['/oscp-like-machines/', 'OSCP-like machines'],
+    ['/cpts-like-machines/', 'CPTS-like machines'],
+    ['/active-directory-machines/', 'Active Directory machines'],
+    ['/oscp-vs-cpts/', 'OSCP vs CPTS'],
+    ['/techniques/active-directory/', 'Active Directory'],
+    ['/techniques/sql-injection/', 'SQL Injection'],
+  ];
   let extra = '';
   if (route.path === '/methodology/') extra = `<p style="color:#a1a1aa">Want to read the phases without the app? See the <a href="/methodology-guide/" style="color:#0ea5e9">pentest methodology guide</a>.</p><h2 style="font-size:20px">Methodology phases</h2>${linkList(model.phases.map((p) => [`/methodology/${p.slug}/`, p.title]))}`;
   if (route.path === '/cheatsheets/') extra = `<h2 style="font-size:20px">Cheatsheet topics</h2>${linkList(model.topics.map((t) => [`/cheatsheets/${t.slug}/`, `${t.name} cheatsheet`]))}`;
-  if (route.path === '/oscp-points-calculator/') extra = `<p style="color:#a1a1aa">You can also <a href="/tracker/" style="color:#0ea5e9">track your practice machines in ZeroBox</a>.</p>`;
-  return `<h2 style="font-size:20px;margin-top:28px">Guides and references</h2>${linkList(hubs)}${extra}`;
+  if (route.path === '/oscp-points-calculator/') extra = calcStaticSection();
+  const tracksHtml =
+    route.path === '/tracker/' || route.path === '/methodology/' || route.path === '/oscp-points-calculator/'
+      ? `<h2 style="font-size:20px;margin-top:24px">Practice tracks</h2>${linkList(practiceTracks)}`
+      : '';
+  return `<h2 style="font-size:20px;margin-top:28px">Guides and references</h2>${linkList(hubs)}${tracksHtml}${extra}`;
 }
 
 function staticBlock(route) {
@@ -209,7 +267,21 @@ for (const route of routes) {
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       isPartOf: { '@id': ORIGIN + '/#website' },
     };
-    html = setTag(html, /<\/head>/, `  <script type="application/ld+json">${jsonLd(calcLd)}</script>\n</head>`, '</head>');
+    const calcFaqLd = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: CALC_FAQ.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    };
+    html = setTag(
+      html,
+      /<\/head>/,
+      `  <script type="application/ld+json">${jsonLd(calcLd)}</script>\n  <script type="application/ld+json">${jsonLd(calcFaqLd)}</script>\n</head>`,
+      '</head>'
+    );
   }
 
   // App surfaces (user data UIs, and the thin /exam/ and /cheatsheets/ shells) stay out of the index; the content hubs are indexable.
@@ -228,9 +300,9 @@ for (const route of routes) {
 // One description for <meta name="description">, og:description and twitter:description (kept at 155 chars or fewer).
 const META_DESC = 'Free offline CTF tracker for Hack The Box, TryHackMe, Proving Grounds and VulnHub, with an OSCP exam simulator, cheatsheets and a report template.';
 if (META_DESC.length > 155) throw new Error(`prerender: landing description is ${META_DESC.length} chars (max 155)`);
-const nf = new Intl.NumberFormat('en-US');
 const { ctf: CTF_MACHINES, guided: GUIDED_LABS } = model.catalogCounts;
 const EXAM_TRACKS = model.examTracks;
+const OTHER_TRACKS = EXAM_TRACKS.filter((t) => t !== 'OSCP');
 const FAQ = [
   ['Is ZeroBox free?', 'Yes. ZeroBox is free to use in your browser with no signup. The source is public on GitHub under the ZeroBox Source-Available Non-Commercial License (ZNSL 1.0).'],
   ['Does ZeroBox work offline?', 'Yes. After your first visit a service worker caches the app, so it keeps working completely offline. There is no backend, the app has no telemetry, and your data stays on your device.'],
@@ -244,11 +316,11 @@ const FAQ = [
 
 const CARD_DESC = {
   '/tracker/': 'CTF progress tracker: Kanban, table, grid and attack graph board for Hack The Box, TryHackMe, Proving Grounds and VulnHub machines.',
-  '/methodology/': 'Eight-phase attack lifecycle with copyable commands.',
+  '/methodology/': `${model.phaseCountWord}-phase attack lifecycle with copyable commands.`,
   '/reverse-shell/': 'Reverse shell generator that fills in your LHOST and LPORT.',
   '/cheatsheets/': 'Interactive pentest cheatsheets with dynamic LHOST, LPORT and IP substitution.',
   '/notes/': 'Notes app for your own Obsidian vault, with wikilinks and a private local vault.',
-  '/exam/': 'OSCP exam simulator with CPTS, CRTO, OSEP, CRTP, PNPT and OSWE tracks and scoring.',
+  '/exam/': `OSCP exam simulator with ${listAnd(OTHER_TRACKS)} tracks and scoring.`,
   '/writeup/': 'CTF writeup and report editor with templates, live preview and export.',
   '/analytics/': 'Skill radar, activity heatmap and benchmarks.',
   '/vault/': 'Credentials, flags and hashes from every target.',
@@ -297,7 +369,7 @@ const webAppLd = {
       keywords: 'CTF tracker, HTB tracker, Hack The Box tracker, TryHackMe tracker, OSCP tracker, OSCP exam simulator, CTF progress tracker, pentest notes, CPTS',
       featureList: [
         'Kanban, table, grid and attack graph CTF tracker for Hack The Box, TryHackMe, Proving Grounds and VulnHub machines',
-        'OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exam simulator with scoring and pacing',
+        `${model.examTracksList} exam simulator with scoring and pacing`,
         'Attack graph of hosts, services and credentials',
         'Multi-host nmap XML import',
         'Evidence vault for credentials, hashes and flags',
@@ -350,9 +422,9 @@ try {
 }
 const shotByName = Object.fromEntries((Array.isArray(shotList) ? shotList : []).map((s) => [s.name, s]));
 const hasShot = (s) => s && Array.isArray(s.srcset) && s.srcset.length > 0;
-// Rendered width of the hero window: 480px column >=1100, 400px >=900, 320px >=640, then the full width (max 420px) stacked.
+// Rendered width of the hero window: 55% of >=1320px wrap >=1440 (~720px), 480px >=1100, 400px >=900, 320px >=640, then the full width (max 420px) stacked.
 // Under 640px the image is shown zoomed inside a fixed-ratio crop (.crop-hero, 40-landing.css, zoom 1.25), so the phone slot asks for 1.25x the column width.
-const HERO_SIZES = '(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:640px) 320px,calc((100vw - 32px) * 1.25)';
+const HERO_SIZES = '(min-width:1440px) 720px,(min-width:1100px) 480px,(min-width:900px) 400px,(min-width:640px) 320px,calc((100vw - 32px) * 1.25)';
 const srcsetOf = (s) => s.srcset.map((x) => `${x.src} ${x.w}w`).join(', ');
 const srcOf = (s) => s.srcset.reduce((a, b) => (b.w > a.w ? b : a)).src;
 
@@ -396,8 +468,8 @@ function heroPreload() {
 }
 
 // Pacing card image (decorative, eager but not high priority so it never competes with the LCP image), else the exam shot.
-// Card width: 280px >=1100, 240px >=900, 200px >=640, then 62% of the (max 420px) media column, capped at 230px.
-const HUD_SIZES = '(min-width:1100px) 280px,(min-width:900px) 240px,(min-width:640px) 200px,min(calc((100vw - 32px) * .62),230px)';
+// Card width: 320px+ >=1440, 280px >=1100, 240px >=900, 200px >=640, then 62% of the (max 420px) media column, capped at 230px.
+const HUD_SIZES = '(min-width:1440px) 360px,(min-width:1100px) 280px,(min-width:900px) 240px,(min-width:640px) 200px,min(calc((100vw - 32px) * .62),230px)';
 const heroHud = () =>
   hasShot(shotByName['burn-chart'])
     ? shotImg('burn-chart', { sizes: HUD_SIZES, alt: 'Exam pacing card: burn-down of points left against the time remaining', eager: 'low' })
@@ -409,32 +481,53 @@ const DESKTOP_HREF = REPO + '/releases/latest';
 
 const proofItem = (value, label) => `          <li><span class="num">${esc(value)}</span><span class="lbl">${esc(label)}</span></li>`;
 const proofStrip = [
-  proofItem(nf.format(CTF_MACHINES), 'machines catalogued'),
+  proofItem(nf.format(CTF_MACHINES), 'machines cataloged'),
   proofItem(nf.format(model.shellAvailableCount), 'reverse shells'),
   proofItem(String(EXAM_TRACKS.length), 'exam tracks'),
-  `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="${REPO}" rel="noopener">Source available on GitHub${ICON.ext}</a></li>`,
+  `          <li class="proof-text"><span class="num">No account</span><a class="link-arrow" href="/privacy/">Runs offline in your browser${ICON.arrow}</a></li>`,
 ].join('\n');
+
+const TECH_HUB_COUNT = getTechSlugs().size;
 
 // [href, title, description, count]; count is optional (mono figure after the title, with its unit).
 const GUIDES = [
-  ['/machines/', 'Hack The Box and TryHackMe machine list', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of every HTB and THM box.`, `${nf.format(model.catalogCounts.htbThm)} boxes`],
+  ['/machines/', 'HTB, TryHackMe, PG & VulnHub machine catalog', `${model.machines.filter((m) => m.hasPage).length} solved attack paths, plus a directory of HTB, THM, PG and VulnHub boxes.`, `${nf.format(CTF_MACHINES)} boxes`],
   ['/revshells/', 'Reverse shell cheat sheet', 'One-liners for Bash, Python, PHP, PowerShell and more.', `${nf.format(model.shellAvailableCount)} shells`],
   ['/methodology-guide/', 'Pentest methodology', 'From host discovery to post-exploitation.', `${model.phases.length} phases`],
   ['/cheatsheet-library/', 'OSCP and CTF cheatsheets', 'Recon, web, privesc, Active Directory, pivoting.', `${model.topics.length} topics`],
   ['/oscp-like-machines/', 'OSCP-like machines', 'HTB and THM boxes for OSCP prep, grouped by difficulty.', `${model.machines.filter((m) => (m.certifications || []).includes('OSCP')).length} boxes`],
-  ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', ''],
+  ['/techniques/', 'Pentest techniques', 'Active Directory, SQL injection, privilege escalation and pivoting, with commands and practice machines.', `${TECH_HUB_COUNT} hubs`],
   ['/pentest-notes/', 'Pentest methodology notes', 'Short general notes with commands.', `${model.notes.length} notes`],
   ['/oscp-points-calculator/', 'OSCP points calculator', 'Tick your flags and see your total against the pass mark.', ''],
 ];
 // Long-form guides from scripts/lib/guides.cjs (none when the file is absent). Short card copy per path; the
 // guide's own description is the fallback for any guide added later.
 const GUIDE_CARD = {
-  '/oscp-exam-scoring-and-time-budget/': ['OSCP exam scoring and time budget', 'Point structure, passing combinations and an hour-by-hour 24h plan.'],
+  '/oscp-exam-scoring-and-time-budget/': ['OSCP exam scoring and time budget', 'Dec 1 scaled scoring (100-500, 400 to pass), 70/100 legacy rules and a 24h plan.'],
   '/tj-null-list/': ['TJ Null OSCP list tracker', 'What the list is, how to work it, and the HTB and Proving Grounds boxes from it you can track.'],
   '/oscp-report-template/': ['OSCP report template', 'A Markdown report skeleton with a finding template and a CVSS 3.1 example.'],
   '/htb-progress-tracker/': ['CTF and OSCP progress tracker', 'What the platforms do not track across HTB, THM, PG and VulnHub, and an offline workflow that fills the gap.'],
   '/cpts-exam-guide/': ['HTB CPTS exam guide', 'Exam format, flags, passing requirement and a day-by-day pacing plan.'],
+  '/htb-vs-tryhackme/': ['HTB vs TryHackMe comparison', 'Catalog numbers by OS, difficulty and OSCP tags to choose the right platform.'],
+  '/htb-pro-labs-guide/': ['HTB Pro Labs comparison guide', 'Compare all official multi-host Pro Labs by hosts, flags, difficulty and exam fit.'],
+  '/oscp-vs-cpts/': ['OSCP vs CPTS comparison', 'Exam length, 100-500 scaled scoring vs CPTS flags, report deadlines and renewal rules.'],
 };
+const certCount = (cert) => model.machines.filter((m) => (m.certifications || []).includes(cert)).length;
+const TRACK_CHIPS = [
+  ['/tj-null-list/', 'TJ Null OSCP list'],
+  ['/oscp-like-machines/', `OSCP-like (${certCount('OSCP')})`],
+  ['/cpts-like-machines/', `CPTS-like (${certCount('CPTS')})`],
+  ['/ippsec-cpts-machines/', `IppSec CPTS (${certCount('IppSec-CPTS')})`],
+  ['/active-directory-machines/', `Active Directory (${certCount('Active-Directory')})`],
+  ['/cwee-like-machines/', `CWEE-like (${certCount('CWEE')})`],
+  ['/osep-like-machines/', `OSEP-like (${certCount('OSEP')})`],
+  ['/oswe-like-machines/', `OSWE-like (${certCount('OSWE')})`],
+  ['/crto-like-machines/', `CRTO-like (${certCount('CRTO')})`],
+  ['/htb-starting-point-machines/', `HTB Starting Point (${certCount('HTB-Starting-Point')})`],
+  ['/htb-pro-labs-guide/', `HTB Pro Labs (${(model.proLabs || []).length})`],
+]
+  .map(([href, label]) => `        <a href="${href}">${esc(label)}</a>`)
+  .join('\n');
 const guidePages = getGuides();
 for (const g of guidePages) {
   const [t, d] = GUIDE_CARD[g.path] || [g.title, g.description];
@@ -461,10 +554,11 @@ const subs = {
   '{{SITE_FOOTER}}': siteFooter({ analyticsNote: analyticsNote() }),
   '{{IMG_HERO}}': heroPicture(),
   '{{IMG_HUD}}': heroHud(),
-  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1152px) 1120px,calc((100vw - 32px) * 2.8)' }),
-  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1152px) 643px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
-  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1152px) 453px,(min-width:900px) 41vw,calc((100vw - 32px) * 1.4)' }),
-  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1152px) 625px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
+  '{{IMG_GRAPH}}': shotImg('graph', { sizes: '(min-width:1440px) 1320px,(min-width:1152px) 1120px,calc((100vw - 32px) * 2.8)' }),
+  '{{IMG_TABLE}}': shotImg('table', { sizes: '(min-width:1440px) 760px,(min-width:1152px) 643px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
+  '{{IMG_VAULT}}': shotImg('vault', { sizes: '(min-width:1440px) 536px,(min-width:1152px) 453px,(min-width:900px) 41vw,calc((100vw - 32px) * 1.4)' }),
+  '{{IMG_EXAM}}': shotImg('exam', { sizes: '(min-width:1440px) 742px,(min-width:1152px) 625px,(min-width:900px) 58vw,calc((100vw - 32px) * 1.5)' }),
+  '{{EXAM_TRACKS_LIST}}': esc(model.examTracksList),
   '{{ICON_ARROW}}': ICON.arrow,
   '{{ICON_GITHUB}}': ICON.github,
   '{{ICON_LINKEDIN}}': ICON.linkedin,
@@ -475,6 +569,7 @@ const subs = {
   '{{PROOF_STRIP}}': proofStrip,
   '{{TRACK_PILLS}}': EXAM_TRACKS.map((t) => `<li>${esc(t)}</li>`).join(''),
   '{{FEATURE_CARDS}}': cards,
+  '{{TRACK_CHIPS}}': TRACK_CHIPS,
   '{{BROWSE_CARDS}}': guideList,
   '{{META_DESC}}': esc(META_DESC),
   '{{EXAM_GUIDES}}': examGuides,

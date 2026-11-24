@@ -10,7 +10,7 @@ import { isDueForReview } from './spacedRepetition';
 export const isCompleted = (m: Pick<Machine, 'status'>): boolean => m.status === 'root' || m.status === 'completed';
 
 /** The independent filter dimensions; a caller can skip one to count the options of that dimension. */
-export type FilterDimension =
+type FilterDimension =
   | 'search'
   | 'platform'
   | 'difficulty'

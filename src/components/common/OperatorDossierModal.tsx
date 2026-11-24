@@ -11,10 +11,12 @@ import {
   Scale,
   Copy,
   Check,
-  Coffee
+  Coffee,
+  Sparkles
 } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
-import { countOwnerSolved } from '../../data/catalogStats';
+import { openManualWhatsNew } from '../../hooks/usePostUpdateWhatsNew';
+import { PHASE_COUNT, countOwnerSolved } from '../../data/catalogStats';
 import { getLoadedMachinesCatalog, loadMachinesCatalog } from '../../data/loadMachinesCatalog';
 import { playCyberSound, safeCopyToClipboard, CREATOR_PROFILE_LINKS } from '../../utils/helpers';
 import { Modal } from './Modal';
@@ -354,7 +356,7 @@ export const OperatorDossierModal: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-surface-card border border-subtle space-y-0.5">
-                <div className="text-primary font-semibold text-base font-mono tabular-nums">8 phases</div>
+                <div className="text-primary font-semibold text-base font-mono tabular-nums">{PHASE_COUNT} phases</div>
                 <div className="text-primary font-medium text-xs">Offensive methodology</div>
                 <div className="text-[11px] text-muted">End-to-end framework from reconnaissance to exfiltration.</div>
               </div>
@@ -419,6 +421,18 @@ export const OperatorDossierModal: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             <UpdateControl />
+            <button
+              type="button"
+              onClick={() => {
+                setOperatorModalOpen(false);
+                void openManualWhatsNew(machines);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className="px-3 py-1.5 max-sm:py-3 rounded-lg text-xs font-medium bg-surface-card hover:bg-surface-hover text-secondary border border-subtle transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
+              <span>What&apos;s new</span>
+            </button>
             <button
               onClick={() => {
                 setOperatorModalOpen(false);

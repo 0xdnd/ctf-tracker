@@ -82,6 +82,25 @@ function isMermaidChunk(moduleIds: readonly string[], mermaidPkgs: Set<string>):
   );
 }
 
+// Strip prerender-only prose (h1, intro, bullets) from src/seo/routeMeta.json when bundled into the app;
+// useRouteMeta only reads path, title and description. Keeps routeMeta.json as the single source of truth.
+function stripRouteMetaForRuntime(): Plugin {
+  return {
+    name: 'strip-route-meta-for-runtime',
+    enforce: 'pre',
+    load(id) {
+      if (!/[\\/]src[\\/]seo[\\/]routeMeta\.json$/.test(id.split('?')[0])) return null;
+      const raw = JSON.parse(readFileSync(id.split('?')[0], 'utf-8')) as Array<{
+        path: string;
+        title: string;
+        description: string;
+      }>;
+      const slim = raw.map(({ path: p, title, description }) => ({ path: p, title, description }));
+      return JSON.stringify(slim);
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Tauri desktop builds (`--mode tauri`) use hash routing + relative assets; web uses clean URLs at '/'.
@@ -89,6 +108,7 @@ export default defineConfig(({ mode }) => {
   const mermaidPkgs = mermaidOnlyPackages();
   return {
   plugins: [
+    stripRouteMetaForRuntime(),
     react(),
     ...(isTauri
       ? [
@@ -170,7 +190,7 @@ export default defineConfig(({ mode }) => {
             : 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         manualChunks(id) {
-          if (id.includes('machinesCatalog.ts')) {
+          if (id.includes('machinesCatalog.ts') || id.includes('retiredHtb.ts') || id.includes('retiredHtb.json')) {
             return 'catalog-data';
           }
           if (id.includes('methodologyFramework.ts')) {

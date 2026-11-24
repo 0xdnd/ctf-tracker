@@ -87,7 +87,7 @@ export async function buildBackupFile(options?: { redactSecrets?: boolean }): Pr
   return JSON.stringify(payload, null, 2);
 }
 
-export type BackupImportFailure = 'malformed' | 'invalid' | 'checksum' | 'unverifiable' | 'gated' | 'catalog';
+type BackupImportFailure = 'malformed' | 'invalid' | 'checksum' | 'unverifiable' | 'gated' | 'catalog';
 
 export type BackupImportResult =
   | { ok: true; verified: boolean; warnings: string[] }

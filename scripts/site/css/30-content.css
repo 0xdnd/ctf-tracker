@@ -10,10 +10,12 @@ main>h1+*,main>.lead+h2{margin-top:var(--s5)}
 main li{margin-bottom:var(--s2)}
 main li>ul,main li>ol{margin:var(--s2) 0 0}
 main a{overflow-wrap:anywhere}
-.lead{max-width:62ch;font-size:1.1875rem;line-height:1.6;color:var(--text-2);margin-bottom:var(--s5)}
+.lead{max-width:44rem;font-size:1.1875rem;line-height:1.6;color:var(--text-2);margin-bottom:var(--s5)}
 .note{color:var(--muted);font-size:var(--fs-small);line-height:1.6}
 blockquote{margin:var(--s5) 0;padding:var(--s2) var(--s4);border-left:3px solid var(--line-strong);color:var(--muted)}
 blockquote>:last-child{margin-bottom:0}
+.quote-cite{margin-top:var(--s2);font-size:var(--fs-small);color:var(--text-2)}
+.quote-cite cite{font-style:normal}
 hr{margin:var(--s7) 0}
 code{padding:.12em .4em;border:1px solid var(--line);border-radius:6px;background:var(--elev);color:var(--text-2);font-size:.875em;overflow-wrap:anywhere}
 pre{margin:var(--s4) 0 var(--s5);padding:var(--s4);max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md);background:var(--code);color:#e4e4e7;font-size:var(--fs-code);line-height:1.6;tab-size:2;-webkit-overflow-scrolling:touch}
@@ -33,12 +35,17 @@ a.tag{color:var(--text-2)}
 main>.cta-box:last-child{margin-bottom:0}
 .cta-box:not(:has(.cta-text)){padding:0;border:0;background:none}
 .cta-text{flex:1 1 300px;min-width:0}
-.cta-text p{margin:0;max-width:60ch;color:var(--text-2)}
+.cta-text p{margin:0;max-width:40rem;color:var(--text-2)}
 .cta-text p+p{margin-top:var(--s1);color:var(--muted)}
 .cta-text strong{color:var(--text)}
 .cta-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s5)}
 .cta-box .btn{white-space:normal;text-align:center}
 .cta-box a:not(.btn):not(.link-arrow){font-weight:600}
+/* The shared next-step strip (ctaStrip in scripts/lib/layout.cjs): the same box, tighter, one primary button and an optional in-site link. */
+.cta-strip{margin:var(--s5) 0;padding:var(--s4) var(--s5);gap:var(--s2) var(--s5)}
+.cta-strip .cta-text{flex:1 1 280px}
+.cta-strip .cta-text p{font-size:var(--fs-body);line-height:1.5}
+.cta-strip .cta-actions{gap:var(--s1) var(--s5)}
 table{width:100%;margin:var(--s4) 0 var(--s6);border-collapse:collapse;font-size:.9375rem;font-variant-numeric:tabular-nums}
 th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 thead th{color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-bottom-color:var(--line-strong);white-space:nowrap}
@@ -49,11 +56,15 @@ table.list td:first-child>a:not(.ext){display:block;margin:calc(var(--cy)*-1) ca
 table.list thead th{position:sticky;top:var(--header-h);z-index:2;background:var(--bg);box-shadow:inset 0 -1px 0 var(--line-strong)}
 .facts{max-width:var(--prose)}
 .facts th{width:11rem;color:var(--muted);font-size:.8125rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.tbl-scroll{margin:var(--s4) 0 var(--s6);max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll{margin:var(--s4) 0 var(--s6);max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(to right,var(--bg) 30%,transparent) 0 0/28px 100% no-repeat local,linear-gradient(to left,var(--bg) 30%,transparent) 100% 0/28px 100% no-repeat local,linear-gradient(to right,var(--scroll-fade,rgb(0 0 0/.38)),transparent) 0 0/12px 100% no-repeat scroll,linear-gradient(to left,var(--scroll-fade,rgb(0 0 0/.38)),transparent) 100% 0/12px 100% no-repeat scroll}
 .tbl-scroll table{margin:0}
+.tbl-scroll thead th{position:sticky;top:0;z-index:1;background:var(--bg);box-shadow:inset 0 -1px 0 var(--line-strong)}
+/* Sideways-scrolling regions are keyboard-focusable (layout.cjs adds tabindex, role and a label to every .tbl-scroll and pre). */
+.tbl-scroll:focus-visible,pre:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .tbl-scroll td{min-width:8rem}
 @media(max-width:639px){
 table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll table{display:table;overflow:visible}
 table.list{display:table;overflow:visible}
 table.list{--cy:10px;--cx:10px}
 table.list td:first-child{overflow-wrap:anywhere}
@@ -120,7 +131,7 @@ tbody tr:hover>:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 @media(min-width:640px){.nf{padding-top:var(--s7)}}
 .nf .nf-num{margin:0 0 var(--s1);color:var(--faint);font:500 clamp(4rem,2.5rem + 7vw,6rem)/1 var(--font-sans);letter-spacing:-.04em;font-variant-numeric:tabular-nums;user-select:none}
 .nf h1{margin:0 0 var(--s3);font-size:clamp(1.625rem,1.2rem + 1.6vw,2.25rem);line-height:1.15}
-.nf .lead{max-width:44ch;margin:0 auto var(--s5);font-size:var(--fs-body);text-wrap:balance}
+.nf .lead{max-width:30rem;margin:0 auto var(--s5);font-size:var(--fs-body);text-wrap:balance}
 .nf-drop{max-width:26rem;margin:0 auto var(--s5);perspective:900px;text-align:left}
 .nf-card{padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);box-shadow:0 1px 2px rgb(0 0 0/.22),0 14px 28px -18px rgb(0 0 0/.5);transition:transform 200ms var(--ease)}
 .nf-head{display:flex;align-items:flex-start;gap:var(--s2)}
@@ -145,7 +156,7 @@ tbody tr:hover>:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   .nf .cta-actions .btn{width:100%;min-height:44px;padding:0 10px;font-size:0.8125rem;justify-content:center;text-align:center}
 }
 .nf .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s2);margin:0}
-.nf .chips a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;font-size:0.8125rem}
+.nf .chips a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:var(--r-md);font-size:0.8125rem}
 @media(prefers-reduced-motion:no-preference){.nf-drop{animation:nf-drop 420ms var(--ease) 60ms backwards}}
 @media(prefers-reduced-motion:reduce){.nf-drop{animation:fade 200ms ease-out backwards}}
 @keyframes nf-drop{from{opacity:0;transform:translateY(-16px) rotate(-3deg)}}
@@ -157,6 +168,8 @@ main [hidden]{display:none!important}
 @media(max-width:639px){.tags-sm{display:block;margin-top:var(--s1)}}
 /* Tag links in the Tags column: a 24px+ hit area with the padding cancelled by the negative margin, so row height and density stay the same. */
 table.list td.hide-sm a,table.list td>a.ext{display:inline-block;min-width:24px;padding:3px 0;margin:-3px 0}
+/* Any table cell that holds one link (long lists such as /tj-null-list/ and the Pro Labs table): the same 24px+ hit area, padding cancelled by the negative margin so text size and row height stay put. */
+main td>a:only-child,main th[scope="row"]>a:first-child{display:inline-block;min-width:24px;padding:4px 0;margin:-4px 0}
 .pl-s{display:none}
 @media(max-width:479px){.pl-f{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.pl-s{display:inline}}
 .tags-sm .tag{margin:0 var(--s1) 0 0;padding:0 8px;font-size:.75rem}
@@ -186,12 +199,20 @@ table tr[data-local-solved="true"] td:first-child,table tr[data-local-solved="tr
 .guide-toc{margin:var(--s4) 0 var(--s5);padding:var(--s3) var(--s4);border:1px solid var(--line);border-radius:var(--r-md);background:var(--card)}
 .guide-toc-label{display:block;margin:0 0 var(--s2);color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .guide-toc .chips{margin:0}
+.stat-row{list-style:none;margin:var(--s4) 0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--s2)}
+.stat-row li{margin:0;padding:var(--s2) var(--s3);display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card)}
+.stat-row strong{font-size:1.25rem;line-height:1.2;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.stat-row span{color:var(--text-2);font-size:.75rem;line-height:1.3;overflow-wrap:anywhere}
+@media(max-width:639px){.stat-row{gap:6px;margin:var(--s3) 0}.stat-row li{padding:var(--s2)}.stat-row strong{font-size:1.125rem}}
 .tf{margin:var(--s5) 0 var(--s4);padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-md);background:var(--card)}
 .tf-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:var(--s3);align-items:end}
 .tf-search{grid-column:1/-1}
+.tf-panel{display:contents}
+.tf-toggle{display:none}
+.tf-badge{font-variant-numeric:tabular-nums}
 .tf-field{display:flex;flex-direction:column;gap:var(--s1);min-width:0}
 .tf-field label{color:var(--text-2);font-size:.8125rem;font-weight:600}
-.tf-field input,.tf-field select{width:100%;min-width:0;min-height:44px;padding:0 var(--s3);border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--elev);color:var(--text);font:inherit;font-size:1rem}
+.tf-field input,.tf-field select{width:100%;min-width:0;min-height:44px;padding:0 var(--s3);border:1px solid var(--faint);border-radius:var(--r-md);background:var(--elev);color:var(--text);font:inherit;font-size:1rem}
 .tf .btn{min-height:44px}
 .tf-count{margin:var(--s3) 0 0;color:var(--text-2);font-size:var(--fs-small)}
 .tf-empty{margin-top:var(--s3);padding:var(--s4);border:1px dashed var(--line-strong);border-radius:var(--r-md)}
@@ -214,12 +235,12 @@ table tr[data-local-solved="true"] td:first-child,table tr[data-local-solved="tr
 /* /revshells/ control bar: public/revshells-filter.js adds search, language, the count and Reset to the LHOST / LPORT box (without JS none of this exists).
    Two columns on a phone (LHOST + LPORT, then search + language), one row from 768px. */
 .tf.rs-fill{margin:var(--s4) 0 var(--s3);padding:var(--s3)}
-.rs-fill .tf-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+.rs-fill .tf-controls{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
 .rs-fill .tf-field input,.rs-fill .tf-field select{min-height:40px}
-@media(min-width:768px){.rs-fill .tf-controls{grid-template-columns:minmax(0,1fr) minmax(0,.7fr) minmax(0,1.3fr) minmax(0,1fr)}}
+.rs-fill .tf-reset{min-height:40px;grid-column:1/-1;justify-self:start}
+@media(min-width:768px){.rs-fill .tf-controls{grid-template-columns:minmax(0,1fr) minmax(0,.65fr) minmax(0,1.25fr) minmax(0,1fr) auto}.rs-fill .tf-reset{grid-column:auto;justify-self:auto}}
 .rs-meta{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-top:var(--s2)}
 .rs-meta .tf-count{margin:0}
-.tf.rs-fill .rs-meta .btn{min-height:36px}
 /* /revshells/ paging (public/revshells-filter.js adds the pagers and the list heading; without JS none of this exists). The heading is screen-reader only; it just receives focus. */
 .rs-list-head:focus{outline:none}
 .rs-pager{display:flex;align-items:center;justify-content:center;gap:var(--s4);margin:var(--s4) 0}
@@ -229,7 +250,11 @@ table tr[data-local-solved="true"] td:first-child,table tr[data-local-solved="tr
 /* The first language heading sits right under the top pager, so it drops its divider and top gap: the first command stays on the first screen even with a shared listener printed above it. */
 .rs-pager+.rs-lang>h2{margin-top:0;border-top:0}
 /* Phone: shell commands wrap instead of scrolling sideways. The Copy button is absolutely positioned in .cc-wrap, so it is unaffected. */
-@media(max-width:599px){.rs-lang pre,.rs-lang pre code{white-space:pre-wrap;overflow-wrap:anywhere}}
+@media(max-width:599px){.rs-lang pre,.rs-lang pre code{white-space:pre-wrap;overflow-wrap:anywhere}
+/* Tighter stack above the first command: smaller gaps around the fill-in box and the top pager, so the first shell starts higher on a phone. */
+.tf.rs-fill{margin-top:var(--s3);padding:var(--s3)}
+.rs-pager{margin:var(--s2) 0}
+.rs-pager+.rs-lang>h2{padding-top:0}}
 /* OSCP exam simulator page: intro beside the app screenshot (the shot keeps the home page's phone crop), and a ruleset table that stacks into labelled rows on phones. */
 .sim-intro{display:grid;gap:var(--s5);align-items:start;margin:var(--s3) 0 var(--s6)}
 .sim-intro .lead{margin-bottom:var(--s5)}
@@ -248,4 +273,77 @@ table.rules th[scope="row"]{padding-bottom:var(--s2)}
 table.rules td{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:var(--s3)}
 table.rules td::before{content:attr(data-label);color:var(--muted);font-size:.8125rem}
 table.rules .sub{margin:0;grid-column:2}
+}
+/* Pentest notes: long commands wrap instead of scrolling sideways (the Copy button still copies the whole line). */
+pre.wrap,pre.wrap code{white-space:pre-wrap;overflow-wrap:anywhere}
+/* F3: first-screen density, form fields, jump-nav disclosure, CTA link wrapping. */
+/* Phone: slightly smaller body and lead type so the first screen holds more than the lead. */
+@media(max-width:639px){
+main>p,main>ul,main>ol{font-size:1rem;line-height:1.65}
+main>h1{font-size:clamp(1.625rem,1.2rem + 2.2vw,2rem);line-height:1.14}
+.lead{font-size:1.0625rem;line-height:1.55;margin-bottom:var(--s4)}
+main>h1+*,main>.lead+h2{margin-top:var(--s4)}
+.cta-strip{margin:var(--s4) 0}
+}
+/* The in-text secondary link of a CTA box: the arrow stays inline after the last word instead of floating at the right edge of a wrapped label. */
+.cta-box .link-arrow{display:inline-block;min-height:0;padding:10px 0;line-height:1.5;text-wrap:balance}
+.cta-box .link-arrow .ico{display:inline;vertical-align:-3px;margin-left:6px}
+@media(max-width:479px){.cta-actions .link-arrow{text-align:center}}
+/* Jump nav: every section as a chip from 640px up, a closed disclosure on phones. */
+.guide-toc-fold{display:none}
+.guide-toc-fold summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:44px;margin:calc(var(--s3)*-1) 0;color:var(--text);font-size:.9375rem;font-weight:600;cursor:pointer;list-style:none}
+.guide-toc-fold summary::-webkit-details-marker,.intro-more>summary::-webkit-details-marker{display:none}
+.guide-toc-fold summary::after,.intro-more>summary::after{content:"";flex:none;width:8px;height:8px;margin-right:4px;border:solid var(--faint);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform 200ms var(--ease)}
+.guide-toc-fold[open] summary::after,.intro-more[open]>summary::after{transform:translateY(2px) rotate(-135deg)}
+.guide-toc-fold[open] summary{margin-bottom:0}
+.guide-toc-fold .chips{margin:var(--s2) 0 0}
+@media(max-width:639px){.guide-toc-full{display:none}.guide-toc-fold{display:block;margin:var(--s3) 0 var(--s4)}}
+/* Certification list intro: the how-to-use bullets sit in a closed disclosure so the table starts higher. */
+.intro-more{max-width:var(--prose);margin:var(--s3) 0 var(--s4)}
+.intro-more>summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:44px;color:var(--text);font-weight:600;cursor:pointer;list-style:none}
+.intro-more>ul{margin-top:var(--s2)}
+/* Form fields: an inset, bordered field (page-dark in the dark theme, white in the light one) with a placeholder that clears 4.5:1, so it no longer reads as disabled. */
+.tf-field input,.tf-field select{border-color:var(--muted);background:var(--bg)}
+:root[data-theme="light"] .tf-field input,:root[data-theme="light"] .tf-field select{background:#fff}
+.tf-field input::placeholder{color:var(--muted);opacity:1}
+.tf-field input:focus-visible,.tf-field select:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+/* Phone: two controls per row (search spans both), so the filter form is about half as tall. */
+@media(max-width:639px){
+.tf-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2) var(--s3)}
+.tf{padding:var(--s3)}
+/* Compact toolbar: search and a Filters button share one row; the filter panel opens on demand (public/table-filter.js toggles .tf-open). */
+.tf-controls{grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.tf-search{grid-column:auto}
+.tf-search label{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tf-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 var(--s4)}
+.tf-panel{display:none;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2) var(--s3);align-items:end}
+.tf-open .tf-panel{display:grid}
+.tf-count{margin-top:var(--s2)}
+.vars-bar .tf-toggle{display:none}
+.vars-bar .tf-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* Exam simulator page: on a phone the whole screenshot shows (no right-edge crop) with its caption below. */
+.sim-shot{margin:0}
+.sim-shot figcaption{margin-top:var(--s2);color:var(--muted);font-size:.8125rem;line-height:1.5}
+@media(max-width:899px){.sim-shot .crop-exam{--ar:auto;--z:1;aspect-ratio:auto}}
+.tf-more{margin:var(--s4) 0 var(--s6)}
+/* Balanced desktop measure on prose/article pages (machine pages, guides, phases, notes, about, legal) so prose and CTAs center cleanly instead of pinning far left beside a wide void. */
+@media(min-width:1024px){
+.wrap:has(>main:not(.nf)){--prose:52rem;max-width:calc(52rem + var(--gutter)*2)}
+.wrap:has(>main:not(.nf)) .lead{max-width:48rem}
+.wrap:has(>main):has(table.list,table.rules,.hub-grid,.hub-path,.sim-intro,.wu-layout,.grid,.rs-lang){--prose:45rem;max-width:var(--wrap)}
+.wrap:has(>main):has(table.list,table.rules,.hub-grid,.hub-path,.sim-intro,.wu-layout,.grid,.rs-lang) .lead{max-width:44rem}
+}
+/* Compact difficulty jump strip on cert hubs and single-row desktop table filter so machine tables appear above the fold. */
+.diff-jump{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin:var(--s3) 0 var(--s2)}
+.diff-jump-label{color:var(--muted);font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-right:var(--s1)}
+.diff-jump .chips{margin:0}
+@media(min-width:1024px){
+.tf:not(.rs-fill):not(.vars-bar){margin:var(--s3) 0;padding:var(--s3) var(--s4)}
+.tf:not(.rs-fill):not(.vars-bar) .tf-controls{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:flex-end}
+.tf:not(.rs-fill):not(.vars-bar) .tf-search{flex:1.5 1 190px;grid-column:auto}
+.tf:not(.rs-fill):not(.vars-bar) .tf-field:not(.tf-search){flex:1 1 115px}
+.tf:not(.rs-fill):not(.vars-bar) .tf-reset{flex:0 0 auto}
+.tf:not(.rs-fill):not(.vars-bar) .tf-count{margin-top:var(--s2)}
+.tf+h2{margin-top:var(--s4);padding-top:0;border-top:0}
 }

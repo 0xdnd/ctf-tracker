@@ -6,9 +6,9 @@ import { isPhoneWidth } from './guideMotion';
 import { FIRST_RUN_STEP_IDS, FULL_TOUR_STEP_IDS, type HandsOn, type TourKind } from './guideMeta';
 import { useCtfStore } from '../store/useCtfStore';
 
-export type BackupTab = 'backup' | 'bulk_pwn';
+type BackupTab = 'backup' | 'bulk_pwn';
 
-export interface ActiveGuide {
+interface ActiveGuide {
   id: string;
   stepIndex: number;
 }

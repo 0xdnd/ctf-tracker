@@ -25,11 +25,11 @@ const base64ToBlob = (data: string, mime: string): Blob => {
 };
 
 /** Restore/export DoS guards: bounded count and payload size, no backup format change. */
-export const MAX_BACKUP_IMAGES = 50;
+const MAX_BACKUP_IMAGES = 50;
 /** Max base64 chars per image on restore (~7.5 MB of raw bytes). */
-export const MAX_BACKUP_IMAGE_DATA_CHARS = 10 * 1024 * 1024;
+const MAX_BACKUP_IMAGE_DATA_CHARS = 10 * 1024 * 1024;
 /** Max total raw bytes exported into a backup file. */
-export const MAX_BACKUP_EXPORT_TOTAL_BYTES = 50 * 1024 * 1024;
+const MAX_BACKUP_EXPORT_TOTAL_BYTES = 50 * 1024 * 1024;
 const ALLOWED_BACKUP_MIMES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
 
 const isBase64Like = (data: string): boolean => {

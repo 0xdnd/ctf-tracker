@@ -1,8 +1,9 @@
 import React, { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { motion, useMotionValue, useReducedMotion } from 'framer-motion';
+import { m, useMotionValue, useReducedMotion } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { NARROW_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
 import { useSheetDrag } from '../../onboarding/useSheetDrag';
 import { 
   X, 
@@ -22,6 +23,7 @@ import { DockBody } from './DockBody';
 import { DockResizeHandle } from './DockResizeHandle';
 import { ObsidianTabContent } from '../cheatsheet/ObsidianTabContent';
 import { interpolateCommand, playCyberSound, safeCopyToClipboard } from '../../utils/helpers';
+import { OverflowMenu } from '../common/OverflowMenu';
 import { TemplatizeNotesModal } from '../cheatsheet/TemplatizeNotesModal';
 import { NewCptsNoteModal } from '../cheatsheet/NewCptsNoteModal';
 import { NotesWorkspaceTargetBar } from './NotesWorkspaceTargetBar';
@@ -214,17 +216,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
     if (soundEnabled) playCyberSound('click');
   }, [fontSize, setFontSize, soundEnabled]);
 
-  const [isMobileSheet, setIsMobileSheet] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth < 768
-  );
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia('(max-width: 767px)');
-    const sync = () => setIsMobileSheet(mq.matches);
-    sync();
-    mq.addEventListener?.('change', sync);
-    return () => mq.removeEventListener?.('change', sync);
-  }, []);
+  const isMobileSheet = useMediaQuery(NARROW_QUERY);
 
   const reducedMotion = Boolean(useReducedMotion());
   const sheetDragY = useMotionValue(0);
@@ -297,7 +289,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
               aria-hidden="true"
             />
 
-            <motion.div
+            <m.div
               ref={mobileSheetRef}
               role={isMobileSheet ? 'dialog' : undefined}
               aria-modal={isMobileSheet ? true : undefined}
@@ -335,14 +327,14 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <PanelLeft className="w-3.5 h-3.5" />
             </button>
             {/* View Mode Switcher (Read | Raw) */}
-            <div data-tour="notes-views" className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[10px]">
+            <div data-tour="notes-views" className="flex items-center p-0.5 rounded-md bg-surface-hover border border-subtle text-[11px]">
               <button
                 type="button"
                 onClick={() => setViewMode('reading')}
-                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
+                className={`active:scale-[0.97] inline-flex min-h-6 items-center px-2 rounded transition-interactive cursor-pointer ${
                   viewMode === 'reading'
-                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
-                    : 'text-muted hover:text-primary'
+                    ? 'bg-accent-muted text-primary font-semibold border border-accent'
+                    : 'text-secondary hover:text-primary'
                 }`}
                 title="Rich Reading View"
               >
@@ -351,10 +343,10 @@ export const PersistentNotesWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('raw')}
-                className={`active:scale-[0.97] px-1.5 py-0.5 rounded transition-interactive cursor-pointer ${
+                className={`active:scale-[0.97] inline-flex min-h-6 items-center px-2 rounded transition-interactive cursor-pointer ${
                   viewMode === 'raw' || viewMode === 'split'
-                    ? 'bg-accent-muted text-accent font-semibold border border-accent'
-                    : 'text-muted hover:text-primary'
+                    ? 'bg-accent-muted text-primary font-semibold border border-accent'
+                    : 'text-secondary hover:text-primary'
                 }`}
                 title="Raw Markdown Editor"
               >
@@ -362,47 +354,17 @@ export const PersistentNotesWorkspace: React.FC = () => {
               </button>
             </div>
 
-            {/* Height Expand/Collapse */}
-            <button
-              type="button"
-              onClick={toggleDockSize}
-              className="transition-transform active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-secondary cursor-pointer"
-              title="Toggle Height"
-            >
-              {dockSize === 'expanded' ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-
-            {/* Replace hard-coded IPs with {TARGET}/{LHOST} */}
-            <button
-              type="button"
-              onClick={() => setTemplatizeOpen(true)}
-              disabled={!activeNote}
-              aria-label="Replace IPs with placeholders"
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer disabled:opacity-40"
-              title="Replace hard-coded IPs in this note with {TARGET} / {LHOST}"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Font Size Toggle */}
-            <button
-              type="button"
-              onClick={cycleFontSize}
-              className="active:scale-[0.97] p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-interactive cursor-pointer"
-              title={`Cycle font size (Current: ${fontSize.toUpperCase()})`}
-            >
-              <Type className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Language Switch */}
-            <button
-              type="button"
-              onClick={() => setLanguage(language === 'en' ? 'he' : 'en')}
-              className="transition-transform active:scale-[0.97] px-2 py-1 rounded-md text-[10px] font-semibold bg-surface-hover text-primary cursor-pointer"
-              title="Toggle English / Hebrew"
-            >
-              {language === 'en' ? 'EN' : 'עב'}
-            </button>
+            {/* Secondary tools live in one menu so the header stays a single row. */}
+            <OverflowMenu
+              portal
+              label="More workspace tools"
+              items={[
+                { id: 'height', label: dockSize === 'expanded' ? 'Shrink height' : 'Expand height', icon: dockSize === 'expanded' ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />, onSelect: toggleDockSize },
+                { id: 'ips', label: 'Replace IPs with placeholders', icon: <Wand2 className="h-3.5 w-3.5" />, disabled: !activeNote, onSelect: () => setTemplatizeOpen(true) },
+                { id: 'font', label: `Font size (${fontSize.toUpperCase()})`, icon: <Type className="h-3.5 w-3.5" />, onSelect: cycleFontSize },
+                { id: 'lang', label: language === 'en' ? 'Switch to Hebrew' : 'Switch to English', onSelect: () => setLanguage(language === 'en' ? 'he' : 'en') },
+              ]}
+            />
 
             {/* Close */}
             <button
@@ -445,6 +407,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
                 >
                   {tab.kind === 'note' ? (
                     <ObsidianTabContent
+                      variant="shell"
                       note={tab.note}
                       isActive={isActive}
                       globalVars={globalVars}
@@ -469,7 +432,7 @@ export const PersistentNotesWorkspace: React.FC = () => {
             </div>
           )}
         </div>
-            </motion.div>
+            </m.div>
           </>,
           document.body
         )}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { 
   Zap, 
   Copy, 
@@ -179,7 +179,7 @@ export const FloatingPayloadBar: React.FC = () => {
       <AnimatePresence initial={false}>
         {!isExpanded ? (
           /* Collapsed pill: small, one line, never wider than its content */
-          <motion.div
+          <m.div
             key="minimized-chip"
             initial={{ opacity: 0, scale: 0.95, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -191,7 +191,7 @@ export const FloatingPayloadBar: React.FC = () => {
             {/* Quick copy menu popover */}
             <AnimatePresence>
               {showCopyMenu && (
-                <motion.div
+                <m.div
                   ref={copyMenuRef}
                   initial={{ opacity: 0, y: 8, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -313,7 +313,7 @@ export const FloatingPayloadBar: React.FC = () => {
                       <Copy className={menuIconCls} />
                     )}
                   </button>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
@@ -374,10 +374,10 @@ export const FloatingPayloadBar: React.FC = () => {
             </button>
 
             <ChevronUp className="w-3.5 h-3.5 text-muted group-hover:text-primary transition-colors mr-1" aria-hidden="true" />
-          </motion.div>
+          </m.div>
         ) : (
           /* Expanded payload controller */
-          <motion.div
+          <m.div
             key="expanded-bar"
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -528,7 +528,7 @@ export const FloatingPayloadBar: React.FC = () => {
 
                 <AnimatePresence>
                   {showShellDrawer && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}
@@ -574,15 +574,14 @@ export const FloatingPayloadBar: React.FC = () => {
                           </button>
                         );
                       })}
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </aside>
   );
 };
-export default FloatingPayloadBar;

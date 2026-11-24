@@ -1,5 +1,6 @@
+import { ScrollFade } from '../components/common/ScrollFade';
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Compass, 
@@ -23,7 +24,8 @@ import {
   ListChecks,
   Plus,
   Terminal,
-  Code
+  Code,
+  Filter
 } from 'lucide-react';
 import { useCtfStore } from '../store/useCtfStore';
 import { useActiveTargetIp, withActiveTargetIp } from '../hooks/useActiveTargetIp';
@@ -32,6 +34,8 @@ import {
   SERVICE_BRANCHES, 
   generateApplicablePhases 
 } from '../data/methodologyFramework';
+import { PHASE_COUNT, PHASE_COUNT_WORD } from '../data/catalogStats';
+import { isPlaceholderIp } from '../utils/ipInput';
 import { hiddenItemsMessage } from '../utils/hiddenItems';
 import { ServiceBranchType } from '../types/checklist';
 import { playCyberSound, safeCopyToClipboard } from '../utils/helpers';
@@ -48,11 +52,26 @@ import { FileTransferCheatsheet } from '../components/methodology/FileTransferCh
 import { TtyStabilizationCheatsheet } from '../components/methodology/TtyStabilizationCheatsheet';
 import { PowerShellEncoderTool } from '../components/methodology/PowerShellEncoderTool';
 import { PhaseNav, phaseSectionId } from '../components/methodology/PhaseNav';
+import { EmptyState } from '../components/common/EmptyState';
 import { useShallow } from 'zustand/react/shallow';
 import { TACTICAL_SPRING } from '../utils/motionTokens';
 import { SyntaxHighlightedCommand } from '../components/common/SyntaxHighlightedCommand';
 import { splitBranchTitle, shortenBranchLabel } from '../utils/methodologyDisplay';
 import { computeChecklistProgress } from '../utils/checklistProgress';
+
+const SHORT_PHASE_RAIL_LABELS: Record<string, string> = {
+  'phase-01-surface-mapping': 'Recon & Port Sweep',
+  'phase-02-service-enumeration': 'Service Inspection',
+  'phase-03-threat-modeling': 'Vuln & CVE Mapping',
+  'phase-04-initial-access': 'Initial Access',
+  'phase-05-shell-stabilization': 'Shell & TTY Audit',
+  'phase-06-internal-recon': 'Internal Recon',
+  'phase-07-privilege-escalation': 'Privilege Escalation',
+  'phase-08-post-exploitation': 'Post-Exploitation',
+};
+
+const shortPhaseNavLabel = (phase: { id: string; subtitle: string }): string =>
+  SHORT_PHASE_RAIL_LABELS[phase.id] ?? phase.subtitle;
 
 export const MethodologyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -79,14 +98,34 @@ export const MethodologyPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'playbook' | 'checklist' | 'transfers' | 'tty' | 'encoder'>('playbook');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Active engaged target's IP takes priority over the global RHOST.
+  const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | 'all'>('all');
+  const [selectedBranch, setSelectedBranch] = useState<ServiceBranchType | 'all'>('all');
+  const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>({
+    'phase-01-surface-mapping': true,
+    'phase-02-service-enumeration': true,
+  });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedPsId, setCopiedPsId] = useState<string | null>(null);
+  const [copiedAllMd, setCopiedAllMd] = useState(false);
+  const [targetContextId, setTargetContextId] = useState<string | 'universal'>('universal');
+
+  // Selected Target for context-aware highlighting
+  const contextMachine = useMemo(() => {
+    if (targetContextId === 'universal') return null;
+    return machines.find(m => m.id === targetContextId) || null;
+  }, [targetContextId, machines]);
+
+  // Selected context machine's IP (if configured) takes priority over the engaged target IP and global RHOST.
   const activeTargetIp = useActiveTargetIp();
+  const contextIp = contextMachine?.ip?.trim();
+  const resolvedTargetIp = contextIp && !isPlaceholderIp(contextIp) ? contextIp : activeTargetIp;
   const substitutionContext = useMemo(
-    () => contextFromGlobalVars(globalVars, { activeTargetIp }),
-    [globalVars, activeTargetIp]
+    () => contextFromGlobalVars(globalVars, { activeTargetIp: resolvedTargetIp }),
+    [globalVars, resolvedTargetIp]
   );
 
-  const effectiveGlobalVars = useMemo(() => withActiveTargetIp(globalVars, activeTargetIp), [globalVars, activeTargetIp]);
+  const effectiveGlobalVars = useMemo(() => withActiveTargetIp(globalVars, resolvedTargetIp), [globalVars, resolvedTargetIp]);
 
   const isNtHashCred = Boolean(globalVars.cred && isNtHash(globalVars.cred));
 
@@ -103,22 +142,6 @@ export const MethodologyPage: React.FC = () => {
     }
     return finalCmd;
   };
-  const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | 'all'>('all');
-  const [selectedBranch, setSelectedBranch] = useState<ServiceBranchType | 'all'>('all');
-  const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>({
-    'phase-01-surface-mapping': true,
-    'phase-02-service-enumeration': true,
-  });
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [copiedPsId, setCopiedPsId] = useState<string | null>(null);
-  const [copiedAllMd, setCopiedAllMd] = useState(false);
-  const [targetContextId, setTargetContextId] = useState<string | 'universal'>('universal');
-
-  // Selected Target for context-aware highlighting
-  const contextMachine = useMemo(() => {
-    if (targetContextId === 'universal') return null;
-    return machines.find(m => m.id === targetContextId) || null;
-  }, [targetContextId, machines]);
 
   // Active target resolution for live checklist execution.
   // No silent default: with nothing explicitly chosen, the checklist renders an empty state.
@@ -251,9 +274,12 @@ export const MethodologyPage: React.FC = () => {
     setTimeout(() => setCopiedPsId(null), 2000);
   };
 
+  const phaseCount = MASTER_METHODOLOGY_FRAMEWORK.length;
+  const phaseCountWord = phaseCount === PHASE_COUNT ? PHASE_COUNT_WORD : String(phaseCount);
+
   // Export Full Methodology as Obsidian/GitBook Markdown
   const handleExportFullMarkdown = () => {
-    let md = `# ZEROBOX // UNIVERSAL 8-PHASE PENETRATION TESTING PLAYBOOK\n\n`;
+    let md = `# ZEROBOX // UNIVERSAL ${phaseCount}-PHASE PENETRATION TESTING PLAYBOOK\n\n`;
     md += `*Standardized Offensive Methodology & Service Branch Execution Framework*\n\n`;
     md += `**Target IP:** \`${effectiveGlobalVars.targetIp || '10.10.10.X'}\` | **Attacker Host:** \`${effectiveGlobalVars.lhost || '10.10.14.X'}\` | **LPORT:** \`${effectiveGlobalVars.lport || '4444'}\`\n\n`;
     md += `---\n\n`;
@@ -309,20 +335,20 @@ export const MethodologyPage: React.FC = () => {
   const chipOff = 'border-subtle bg-surface-card text-secondary hover:border-strong hover:text-primary';
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={TACTICAL_SPRING}
-      className="mx-auto max-w-6xl space-y-6 pb-20 text-sm"
+      className="mx-auto max-w-6xl space-y-4 pb-20 text-sm"
     >
       <PageHeader
         title="Attack Methodology"
-        description="Eight-phase playbook with copyable commands that fill in your target and attacker values."
+        description={`${phaseCountWord}-phase playbook with copyable commands that fill in your target and attacker values.`}
         primaryAction={
           <CyberButton
             variant="secondary"
             size="md"
-            title="Copy entire 8-Phase Playbook to Obsidian / GitBook Markdown"
+            title={`Copy entire ${phaseCount}-Phase Playbook to Obsidian / GitBook Markdown`}
             onClick={handleExportFullMarkdown}
             iconLeft={copiedAllMd ? <Check className="h-3.5 w-3.5 text-callout-success-fg" /> : <Download className="h-3.5 w-3.5" />}
             className="[@media(pointer:coarse)]:h-11"
@@ -339,7 +365,7 @@ export const MethodologyPage: React.FC = () => {
           </div>
         )}
         {/* View mode: reference playbook vs live target checklist vs transfers vs tty vs encoder */}
-        <div data-tour="methodology-tabs" className="-mx-4 overflow-x-auto no-scrollbar border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+        <ScrollFade data-tour="methodology-tabs" fadeSize="3.5rem" className="-mx-4 border-b border-subtle px-4 sm:mx-0 sm:px-0 max-sm:pr-14">
           <div className="flex min-w-max items-center gap-1">
             {([
               { id: 'playbook', label: 'Playbook', icon: <BookOpen className="h-3.5 w-3.5" /> },
@@ -372,7 +398,7 @@ export const MethodologyPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </ScrollFade>
       </PageHeader>
 
       {/* Your details (global variables) */}
@@ -388,7 +414,12 @@ export const MethodologyPage: React.FC = () => {
         activeTargetMachine ? (
           <div className="lg:flex lg:gap-6 lg:items-start">
             <PhaseNav
-              phases={checklistApplicablePhases.map((p) => ({ id: p.id, phaseNumber: p.phaseNumber, title: p.subtitle }))}
+              phases={checklistApplicablePhases.map((p) => ({
+                id: p.id,
+                phaseNumber: p.phaseNumber,
+                title: shortPhaseNavLabel(p),
+                tooltip: p.subtitle,
+              }))}
               mode="checklist"
               selected="all"
               onSelectPhase={setChecklistSelectedPhase}
@@ -512,75 +543,94 @@ export const MethodologyPage: React.FC = () => {
         )
       ) : (
         <>
-          {/* Target context and injected variables */}
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <div data-tour="methodology-target" className="flex min-w-0 flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-secondary">Target context</span>
+          {/* Target context + Search (combined row on desktop so Phase 01 starts higher) */}
+          <div className="space-y-2.5">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+              <div data-tour="methodology-target" className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-shrink-0">
+                <span className="text-xs font-medium text-secondary">Target context</span>
 
-              <CyberSelect
-                value={targetContextId}
-                onChange={setTargetContextId}
-                options={[
-                  { value: 'universal', label: 'Universal reference', icon: <Globe className="w-3.5 h-3.5 text-muted" /> },
-                  ...machines.map((m) => ({
-                    value: m.id,
-                    label: `${m.name} (${m.platform})`,
-                    icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
-                    description: `${m.os} · ${m.difficulty}`,
-                  })),
-                ]}
-                searchable
-                searchPlaceholder="Search target box..."
-                variant="card"
-                size="sm"
-                soundEnabled={soundEnabled}
-              />
+                <CyberSelect
+                  value={targetContextId}
+                  onChange={setTargetContextId}
+                  options={[
+                    { value: 'universal', label: 'Universal reference', icon: <Globe className="w-3.5 h-3.5 text-muted" /> },
+                    ...machines.map((m) => ({
+                      value: m.id,
+                      label: `${m.name} (${m.platform})`,
+                      icon: <PlatformIcon platform={m.platform} className="w-3.5 h-3.5" />,
+                      description: `${m.os} · ${m.difficulty}`,
+                    })),
+                  ]}
+                  searchable
+                  searchPlaceholder="Search target box..."
+                  variant="card"
+                  size="sm"
+                  soundEnabled={soundEnabled}
+                />
 
-              {contextMachine && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted">{contextMachine.os}</span>
+                {contextMachine && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">{contextMachine.os}</span>
+                    <button
+                      onClick={() => navigate(`/target/${contextMachine.id}`)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline cursor-pointer"
+                    >
+                      <span>Open Target Page</span>
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div data-tour="methodology-search" className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                <input
+                  id="methodology-search-input"
+                  name="methodology-search"
+                  aria-label="Search methodology commands and techniques"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search commands, techniques, tools (ffuf, linpeas, kerberoast…)"
+                  className="h-11 w-full rounded-lg border border-subtle bg-surface-card pl-10 pr-10 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-9"
+                />
+                {searchQuery && (
                   <button
-                    onClick={() => navigate(`/target/${contextMachine.id}`)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-callout-info-fg hover:underline cursor-pointer"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:text-primary cursor-pointer"
                   >
-                    <span>Open Target Page</span>
-                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    ✕
                   </button>
-                </div>
-              )}
-              {hiddenNote && <p className="text-xs text-muted">{hiddenNote}</p>}
+                )}
+              </div>
             </div>
-          </div>
+            {hiddenNote && <p className="text-xs text-muted">{hiddenNote}</p>}
 
-          {/* Search and filters */}
-          <div className="space-y-3">
-            <div data-tour="methodology-search" className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-              <input
-                id="methodology-search-input"
-                name="methodology-search"
-                aria-label="Search methodology commands and techniques"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search commands, techniques, tools (ffuf, linpeas, kerberoast…)"
-                className="h-11 w-full rounded-lg border border-subtle bg-surface-card pl-10 pr-10 text-sm text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-9"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                  className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:text-primary cursor-pointer"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+            {/* Phones: branch + phase filters collapse behind one control */}
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-expanded={filtersOpen}
+              aria-controls="methodology-filter-panel"
+              className={`${chipBase} w-full justify-between sm:hidden ${filtersOpen ? chipOn : chipOff}`}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Filter className="h-3.5 w-3.5" aria-hidden="true" />
+                Filters
+                {(selectedBranch !== 'all' || selectedPhaseNumber !== 'all') && (
+                  <span className="rounded bg-accent px-1.5 text-[11px] tabular-nums text-on-accent">
+                    {(selectedBranch !== 'all' ? 1 : 0) + (selectedPhaseNumber !== 'all' ? 1 : 0)}
+                  </span>
+                )}
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
 
             {/* Service branch chips */}
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div id="methodology-filter-panel" className={`flex-wrap items-center justify-between gap-x-3 gap-y-2 ${filtersOpen ? 'flex' : 'max-sm:hidden sm:flex'}`}>
               <div className="min-w-0 flex-1 basis-full sm:basis-0">
-                <div className="no-scrollbar flex flex-nowrap items-center gap-1.5 overflow-x-auto py-1 pl-1 pr-10 [mask-image:linear-gradient(to_right,black_88%,transparent)]">
+                <ScrollFade className="flex flex-nowrap items-center gap-1.5 py-1 pl-1">
                   <span className="mr-1 flex-shrink-0 text-xs text-muted">Branches</span>
                   <button
                     onClick={() => setSelectedBranch('all')}
@@ -598,14 +648,14 @@ export const MethodologyPage: React.FC = () => {
                         key={b.type}
                         onClick={() => setSelectedBranch(b.type)}
                         title={b.name}
-                        className={`${chipBase} ${isSelected ? chipOn : chipOff}`}
+                        className={`${chipBase} max-sm:max-w-[13rem] ${isSelected ? chipOn : chipOff}`}
                       >
                         {getBranchIcon(b.type)}
-                        <span>{shortLabel}</span>
+                        <span className="line-clamp-2 whitespace-normal text-left leading-tight">{shortLabel}</span>
                       </button>
                     );
                   })}
-                </div>
+                </ScrollFade>
               </div>
 
               <div className="ml-auto flex flex-shrink-0 items-center justify-end gap-2 text-xs">
@@ -629,29 +679,32 @@ export const MethodologyPage: React.FC = () => {
           {/* Phase navigator + phases: sticky left column at desktop widths */}
           <div className="lg:flex lg:gap-6 lg:items-start">
             <PhaseNav
-              phases={MASTER_METHODOLOGY_FRAMEWORK.map((p) => ({ id: p.id, phaseNumber: p.phaseNumber, title: p.subtitle }))}
+              phases={MASTER_METHODOLOGY_FRAMEWORK.map((p) => ({
+                id: p.id,
+                phaseNumber: p.phaseNumber,
+                title: shortPhaseNavLabel(p),
+                tooltip: p.subtitle,
+              }))}
               mode="playbook"
               selected={selectedPhaseNumber}
               onSelectPhase={setSelectedPhaseNumber}
               getSectionId={phaseSectionId}
-              className="mb-3 lg:mb-0 lg:w-64 lg:flex-shrink-0"
+              className={`mb-3 lg:mb-0 lg:w-64 lg:flex-shrink-0 ${filtersOpen ? '' : 'max-sm:hidden'}`}
             />
             <div className="min-w-0 flex-1">
             {filteredPhases.length === 0 ? (
-              <div className="mx-auto max-w-sm space-y-2 py-12 text-center">
-                <Compass className="mx-auto h-8 w-8 text-muted" aria-hidden="true" />
-                <div className="font-semibold text-primary">No matching methodology tasks found</div>
-                <p className="text-sm text-muted">
-                  Try a different query, or reset the phase and branch filters.
-                </p>
-              </div>
+              <EmptyState
+                icon={Compass}
+                title="No matching methodology tasks found"
+                description="Try a different query, or reset the phase and branch filters."
+              />
             ) : (
               filteredPhases.map((phase) => {
                 const isExpanded = Boolean(searchQuery.trim()) || Boolean(expandedPhases[phase.id]);
                 const taskCount = phase.subcategories.reduce((acc, s) => acc + s.items.length, 0);
 
                 return (
-                  <motion.section
+                  <m.section
                     key={phase.id}
                     id={phaseSectionId(phase.id)}
                     initial={{ opacity: 0, y: 16 }}
@@ -689,7 +742,7 @@ export const MethodologyPage: React.FC = () => {
 
                     <AnimatePresence>
                       {isExpanded && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0, transition: { duration: 0.12 } }}
@@ -727,25 +780,12 @@ export const MethodologyPage: React.FC = () => {
                                       </div>
 
                                       {item.commandSnippet && (
-                                        <div className="flex items-center justify-between gap-2 rounded-lg bg-surface-inverse p-2 text-[12px]">
-                                          <div
-                                            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll region so overflowing commands can be scrolled without a mouse
-                                            tabIndex={0}
-                                            role="region"
-                                            aria-label={`Command for ${item.title}`}
-                                            className="min-w-0 flex-1 select-all overflow-x-auto no-scrollbar whitespace-nowrap rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                                          >
-                                            <SyntaxHighlightedCommand
-                                              command={formatMethodologyCommand(item.commandSnippet)}
-                                              className="text-[12px]"
-                                            />
-                                          </div>
-
-                                          <div className="flex items-center gap-1 flex-shrink-0">
+                                        <div className="overflow-hidden rounded-lg border border-inverse bg-surface-inverse text-[12px]">
+                                          <div className="flex items-center justify-end gap-1 border-b border-inverse/70 bg-surface-inverse-elevated/60 px-2 py-1">
                                             <button
                                               type="button"
                                               onClick={() => handleCopyPsEncoded(item.commandSnippet!, item.id)}
-                                              className="inline-flex min-h-8 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-accent active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                                              className="inline-flex min-h-6 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-accent active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
                                               title="Copy as PowerShell UTF-16LE Base64 -EncodedCommand"
                                             >
                                               {copiedPsId === item.id ? (
@@ -764,7 +804,7 @@ export const MethodologyPage: React.FC = () => {
                                             <button
                                               type="button"
                                               onClick={() => handleCopy(item.commandSnippet!, item.id)}
-                                              className="inline-flex min-h-8 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-on-inverse active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                                              className="inline-flex min-h-6 flex-shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-on-inverse-muted transition-[transform,background-color,color] hover:bg-surface-inverse-elevated hover:text-on-inverse active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11"
                                               title="Copy command to clipboard"
                                             >
                                               {isCopied ? (
@@ -780,6 +820,18 @@ export const MethodologyPage: React.FC = () => {
                                               )}
                                             </button>
                                           </div>
+                                          <div
+                                            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- keyboard-focusable scroll region so overflowing commands can be scrolled without a mouse
+                                            tabIndex={0}
+                                            role="region"
+                                            aria-label={`Command for ${item.title}`}
+                                            className="min-w-0 select-text overflow-x-auto px-3 py-2 whitespace-nowrap scrollbar-thin focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+                                          >
+                                            <SyntaxHighlightedCommand
+                                              command={formatMethodologyCommand(item.commandSnippet)}
+                                              className="text-[12px]"
+                                            />
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -788,10 +840,10 @@ export const MethodologyPage: React.FC = () => {
                               </div>
                             </div>
                           ))}
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
-                  </motion.section>
+                  </m.section>
                 );
               })
             )}
@@ -799,8 +851,7 @@ export const MethodologyPage: React.FC = () => {
           </div>
         </>
       )}
-    </motion.div>
+    </m.div>
   );
 };
 
-export default MethodologyPage;

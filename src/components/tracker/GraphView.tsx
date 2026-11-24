@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo, useEffect, useLayoutEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { 
   Crosshair, 
   X,
   Maximize2,
-  Share2,
   Network,
+  Trash2,
 } from 'lucide-react';
 import { Machine } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
@@ -14,16 +14,18 @@ import { PlatformIcon } from '../common/PlatformBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { EditableIpBadge } from '../common/EditableIpBadge';
 import { playCyberSound } from '../../utils/helpers';
-import { AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
+import { AttackGraphEdge, AttackNodePosition, ATTACK_EDGE_META, ATTACK_EDGE_TYPES } from '../../types/graph';
 import { GraphEdgeInspectorDrawer } from './GraphEdgeInspectorDrawer';
 import { exportToObsidianCanvas, exportToSvg, ExportGraphNode } from '../../utils/graphExportUtils';
 import { computeAutoLayout } from '../../utils/graphAutoLayout';
-import { useGraphHistory } from '../../hooks/useGraphHistory';
+import { useGraphHistory, type GraphHistoryBackend } from '../../hooks/useGraphHistory';
+import { NodeCredentialsList, type GraphNodeCred } from './graph/NodeCredentialsList';
 import { hasActiveFocusTrap } from '../../hooks/useFocusTrap';
+import { NARROW_QUERY, matchesQuery } from '../../hooks/useMediaQuery';
+import { getPrefersReducedMotion, useTheme } from '../../hooks/useTheme';
 import {
   SCOPED_CLUSTER_CAP,
   decideScopedVisibility,
-  formatShowMoreLabel,
 } from './graphScopedVisibility';
 import type {
   GraphNode,
@@ -59,6 +61,24 @@ import { MinimapPanel } from './graph/Minimap';
 import { GraphToolbar } from './graph/GraphToolbar';
 import { useGraphLayout } from './graph/useGraphLayout';
 import { centerX, centerY } from './graph/constants';
+import { HubCluster } from './graph/HubCluster';
+import { useHubView } from './graph/useHubView';
+import { GraphHudStats } from './graph/GraphHudStats';
+import { measureSafeInsets, fitBoundsToSafeArea } from './graph/safeArea';
+import {
+  COLLAPSE_MIN_MACHINES,
+  NARROW_CANVAS_PX,
+  PORTRAIT_MAX_SCALE,
+  PORTRAIT_MIN_PX_PER_UNIT,
+  PORTRAIT_OVERVIEW_MIN_PX_PER_UNIT,
+  computeCollapsibleBounds,
+  hubTextScale,
+  resolveCardPosition,
+  unionBounds,
+} from './graph/hubLayout';
+
+// Anything the canvas must not treat as bare background (pan start, touch hint)
+const INTERACTIVE_SELECTOR = '[data-node-interactive],[data-edge-interactive],[data-hub-interactive],button,input,select';
 
 export { getCanvasThemeTokens };
 export { AttackNodeCard };
@@ -66,8 +86,25 @@ export { getDifficultyColors, extractMachinePorts };
 export { getClusterHub, computeShowAllLayout, SHOW_ALL_CELL_W, SHOW_ALL_CELL_H };
 export { LOD_SCALE_THRESHOLD, LARGE_GRAPH_NODE_COUNT, LOD_DOT_SCALE_THRESHOLD, isNodeCulled, nodeVisibility, computeCanvasDelta };
 
+export type { GraphNodeCred, GraphHistoryBackend };
+
+export interface GraphViewAdapter {
+  title?: string;
+  positions: Record<string, AttackNodePosition>;
+  edges: AttackGraphEdge[];
+  historyBackend: GraphHistoryBackend;
+  disableHubCollapse?: boolean;
+  onActivateNode?: (machine: Machine) => void;
+  activateNodeLabel?: string;
+  onOpenNodeDetails?: (machine: Machine) => void;
+  onDeleteNode?: (machine: Machine) => void;
+  getNodeCreds?: (machineId: string) => GraphNodeCred[];
+  hudActions?: React.ReactNode;
+}
+
 export interface GraphViewProps {
   filteredMachines: Machine[];
+  adapter?: GraphViewAdapter;
 }
 
 // SHOW ALL spans a much larger world, so it may zoom out further than the scoped view (0.2).
@@ -80,6 +117,19 @@ const TOUCH_MOVE_SLOP = 8;
 const TOUCH_HINT_MS = 1500;
 const TOUCH_HINT_FADE_MS = 300;
 const MIN_SCALE_SHOW_ALL = 0.05;
+/** Highest zoom outside phone portrait (portrait uses PORTRAIT_MAX_SCALE). */
+const MAX_SCALE_DEFAULT = 3.0;
+const HUB_TWEEN_MS = 260;
+const EMPTY_NODES: GraphNode[] = [];
+
+// Fields that own the Escape key (cancel an edit, clear a search) while they have focus
+function isEditableElement(el: EventTarget | Element | null): boolean {
+  if (!el || !(el instanceof HTMLElement)) return false;
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+// Edge docking radius around a collapsed hub (just outside its status-dot ring)
+const HUB_DOCK_R = 56;
+const HUB_DOCK_R_PORTRAIT = 34;
 
 // ---------------------------------------------------------------------------
 // Primary Attack Graph Component (<GraphView>)
@@ -94,40 +144,48 @@ const GRAPH_STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
 };
 
-export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) => {
+export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [], adapter }) => {
+  const activeTargetId = useCtfStore((s) => s.activeTargetId);
   const setActiveTarget = useCtfStore((s) => s.setActiveTarget);
   const setSelectedMachineId = useCtfStore((s) => s.setSelectedMachineId);
+  const credentials = useCtfStore((s) => s.credentials);
   const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const globalLhost = useCtfStore((s) => s.globalVars.lhost);
   const operatorCallsign = useAuthStore((s) => s.user?.callsign || s.user?.name || '');
   const rigHeaderLabel = operatorCallsign.trim()
-    ? `${operatorCallsign.trim().slice(0, 14).toUpperCase()} // KALI`
-    : 'OPERATOR // KALI';
+    ? `${operatorCallsign.trim().slice(0, 14).toUpperCase()}'S MACHINE`
+    : 'YOUR MACHINE';
   const rigLhostLabel =
     globalLhost && globalLhost.trim() && !/x/i.test(globalLhost) && globalLhost.trim() !== '10.10.14.5'
       ? globalLhost.trim()
       : '10.10.14.x';
   
-  // Zustand Store Slice for M1/M2 coordinate persistence & M3 edges
+  // Zustand Store Slice (or optional Exam/Personal adapter) for M1/M2 coordinate persistence & M3 edges
   const allMachines = useCtfStore((s) => s.machines);
-  const storedNodePositions = useCtfStore((s) => s.graphNodePositions);
+  const ctfNodePositions = useCtfStore((s) => s.graphNodePositions);
   const themePreset = useCtfStore((s) => s.themePreset || 'obsidian');
-  const graphEdges = useCtfStore((s) => s.graphEdges);
-  // Undo/redo: recorded replacements for the store's edge + node-position mutators
+  const ctfGraphEdges = useCtfStore((s) => s.graphEdges);
+  const storedNodePositions = adapter ? adapter.positions : ctfNodePositions;
+  const graphEdges = adapter ? adapter.edges : ctfGraphEdges;
+  const [personalOnly, setPersonalOnly] = useState(false);
+
+  // Undo/redo: recorded replacements for the store's (or adapter's) edge + node-position mutators
   const {
     addGraphEdge, updateGraphEdge, deleteGraphEdge, setGraphNodePosition, applyNodePositions,
     undo, redo, canUndo, canRedo, undoLabel, redoLabel,
-  } = useGraphHistory();
+  } = useGraphHistory(
+    adapter
+      ? { backend: adapter.historyBackend, edges: adapter.edges, positions: adapter.positions }
+      : undefined,
+  );
 
   // M3 Vector Inspector & Pivot Connection Mode State
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [isConnectingMode, setIsConnectingMode] = useState<boolean>(false);
   const [connectingSourceId, setConnectingSourceId] = useState<string | null>(null);
 
-  // Theme synchronization (independent of window.matchMedia for 100% test & SSR stability)
-  const isDark = typeof document !== 'undefined' 
-    ? !document.documentElement.classList.contains('light')
-    : true;
+  // Reactive theme synchronization via ThemeContext so live Dark <-> Light toggles repaint the canvas immediately
+  const { isDark } = useTheme();
   const tokens = useMemo(() => getCanvasThemeTokens(themePreset, isDark), [themePreset, isDark]);
 
   // DOM Refs
@@ -142,16 +200,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Touch screens start with the minimap closed: it owns one-finger drags (touch-none), so open it
-  // would trap page-scroll swipes over a large share of a phone-width graph. Mouse users keep it open.
-  const [isMinimapOpen, setIsMinimapOpen] = useState(
-    () =>
-      !(
-        typeof window !== 'undefined' &&
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(pointer: coarse)').matches
-      )
-  );
+  // Touch screens and narrow (below md) viewports start with the minimap closed: it owns one-finger drags
+  // (touch-none) and covers a large share of a phone-width graph. Wide mouse layouts keep it open; the toggle stays.
+  const [isMinimapOpen, setIsMinimapOpen] = useState(() => !matchesQuery('(pointer: coarse)') && !matchesQuery(NARROW_QUERY));
   const [showAllNodes, setShowAllNodes] = useState(false);
   // SHOW ALL has its own world: it ignores the persisted (scoped) positions and keeps drags local,
   // so neither view can leak coordinates into the other. Cleared when SHOW ALL is turned off.
@@ -170,6 +221,14 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const viewportGRef = useRef<SVGGElement>(null);
   const minimapRectRef = useRef<SVGRectElement>(null);
   const viewDirtyRef = useRef(false);
+  // In-flight animated view change (hub expand / collapse); any gesture cancels it
+  const tweenRafRef = useRef<number | null>(null);
+  const cancelTween = useCallback(() => {
+    if (tweenRafRef.current !== null) {
+      cancelAnimationFrame(tweenRafRef.current);
+      tweenRafRef.current = null;
+    }
+  }, []);
   const panRafRef = useRef<number | null>(null);
   const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCullAtRef = useRef(0);
@@ -179,6 +238,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const appliedViewRef = useRef({ x: 0, y: 0, scale: 1 });
   const viewSizeRef = useRef<{ w: number; h: number } | null>(null);
   const minScaleRef = useRef(MIN_SCALE_SCOPED);
+  const maxScaleRef = useRef(MAX_SCALE_DEFAULT);
   const layoutBoundsRef = useRef<WorldBounds>(SCOPED_BOUNDS);
   // Scoped view saved when SHOW ALL is entered, restored when leaving it
   const scopedViewRef = useRef<{ x: number; y: number; scale: number } | null>(null);
@@ -242,10 +302,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     touchHintTimersRef.current.forEach(clearTimeout);
     touchHintTimersRef.current = [];
     setTouchHint('on');
-    const reduce =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = getPrefersReducedMotion();
     if (reduce) {
       touchHintTimersRef.current.push(setTimeout(() => setTouchHint('off'), TOUCH_HINT_MS));
     } else {
@@ -268,40 +325,91 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // ---------------------------------------------------------------------------
   // 1. Stable Default Layout Engine (Computed against universe of machines)
   // ---------------------------------------------------------------------------
+  const linkedEdgeNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    graphEdges.forEach((e) => {
+      ids.add(e.sourceId);
+      ids.add(e.targetId);
+    });
+    return ids;
+  }, [graphEdges]);
+
+  const personalMachines = useMemo(() => {
+    if (adapter) return filteredMachines;
+    return filteredMachines.filter(
+      (m) =>
+        Boolean(m.isCustom) ||
+        m.platform === 'Custom' ||
+        m.id === activeTargetId ||
+        m.status !== 'backlog' ||
+        Boolean(m.userPwnedAt) ||
+        Boolean(m.rootPwnedAt) ||
+        linkedEdgeNodeIds.has(m.id),
+    );
+  }, [adapter, filteredMachines, activeTargetId, linkedEdgeNodeIds]);
+
+  const effectiveFilteredMachines = useMemo(() => {
+    if (adapter) return filteredMachines;
+    return personalOnly ? personalMachines : filteredMachines;
+  }, [adapter, personalOnly, personalMachines, filteredMachines]);
+
   // We compute the default topology layout against allMachines (or filteredMachines as fallback)
   // so active filters DO NOT scramble coordinates when typing search or toggling tags!
+  // In adapter or Personal-only mode, the scoped subset IS the universe so the 2k+ catalog steps aside.
   const universeMachines = useMemo(() => {
-    return allMachines.length > 0 ? allMachines : filteredMachines;
-  }, [allMachines, filteredMachines]);
+    if (adapter || personalOnly) return effectiveFilteredMachines;
+    return allMachines.length > 0 ? allMachines : effectiveFilteredMachines;
+  }, [adapter, personalOnly, allMachines, effectiveFilteredMachines]);
 
   // Scoped view: the active search/filter picks which machines fill the cluster slots, so matches
   // are always drawn first. Without a filter this is the whole universe (stable layout).
-  const filterActive = filteredMachines.length < universeMachines.length;
+  const filterActive = effectiveFilteredMachines.length < universeMachines.length;
   // When every match already sits in the first cap machines the universe layout is kept, so
   // coordinates stay put while typing; the layout only repacks when a match would be left out.
   const { scopedPool, matchCount } = useMemo(() => {
     if (!filterActive) return { scopedPool: universeMachines, matchCount: universeMachines.length };
-    const ids = new Set(filteredMachines.map((m) => m.id));
+    const ids = new Set(effectiveFilteredMachines.map((m) => m.id));
     const matches = universeMachines.filter((m) => ids.has(m.id));
     const allInFirstCap = universeMachines.slice(0, SCOPED_CLUSTER_CAP).length >= matches.length
       && matches.every((m) => universeMachines.indexOf(m) < SCOPED_CLUSTER_CAP);
     return { scopedPool: allInFirstCap ? universeMachines : matches, matchCount: matches.length };
-  }, [filterActive, universeMachines, filteredMachines]);
+  }, [filterActive, universeMachines, effectiveFilteredMachines]);
 
+  // Collapsible subnet hubs: scoped view only, and only once there are enough machines to clutter it.
+  // Decided on the universe (not the filtered set) so the layout never jumps while typing a search.
+  const collapsible = adapter?.disableHubCollapse
+    ? false
+    : !showAllNodes && universeMachines.length > COLLAPSE_MIN_MACHINES;
+  // Phone portrait: hubs stack as rows and an open hub shows its cards in one column
+  const portrait = collapsible && viewSize !== null && viewSize.w < NARROW_CANVAS_PX;
+  // Everything that differs between phone portrait and the wide layout, computed together.
+  const { hubText, rigCaptionFont, rigCaptionW, maxScale } = useMemo(() => {
+    const k = portrait ? 1 : hubTextScale(viewSize);
+    // The rig caption stays at least 11px on screen; on a phone it is narrower so it fits beside the left-hand column.
+    const captionFont = portrait ? 14 : Math.round(14 * Math.max(k, 1.3));
+    return {
+      hubText: k,
+      rigCaptionFont: captionFont,
+      rigCaptionW: portrait ? 210 : Math.ceil(captionFont * 0.62 * 20) + 24,
+      maxScale: portrait ? PORTRAIT_MAX_SCALE : MAX_SCALE_DEFAULT,
+    };
+  }, [portrait, viewSize]);
   const {
     clusters,
     defaultNodePositions,
+    clusteredNodes,
     overflowNodes,
     layoutBounds,
     realSubnetCount,
     allNodes,
     hiddenOverflowNodes,
-  } = useGraphLayout({ universeMachines, scopedPool, showAllNodes, storedNodePositions });
+    hubBlocks,
+  } = useGraphLayout({ universeMachines, scopedPool, showAllNodes, storedNodePositions, collapsible, portrait, hubText });
   const hiddenOverflowIds = useMemo(() => new Set(hiddenOverflowNodes.map((n) => n.id)), [hiddenOverflowNodes]);
   // Set of machine IDs currently matching active search/tag filters
   const visibleMachineIds = useMemo(() => {
-    return new Set((filteredMachines || []).map((m) => m.id));
-  }, [filteredMachines]);
+    return new Set((effectiveFilteredMachines || []).map((m) => m.id));
+  }, [effectiveFilteredMachines]);
 
   // Count only matching machines that were left out (pinned overflow that matches stays drawn)
   const pinnedMatchingOverflow = showAllNodes
@@ -313,6 +421,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const visibleNodes = useMemo(() => {
     return allNodes.filter((n) => visibleMachineIds.has(n.id));
   }, [allNodes, visibleMachineIds]);
+
+  // Collapsible hubs: which machines each hub owns, which hub is open, and so which cards are drawn
+  const { nodesByCluster, expansion: hubExpansion, expandedHubId, renderNodes, collapsedHubOf } = useHubView({
+    collapsible,
+    clusters,
+    clusteredNodes,
+    visibleNodes,
+    visibleMachineIds,
+    filterActive,
+  });
 
   // Cluster hub lookup (id -> cluster + hub coordinates), replaces per-node clusters.find()
   const clusterHubs = useMemo(() => {
@@ -328,6 +446,21 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const hoveredClusterId = hoveredNodeId
     ? visibleNodes.find((n) => n.id === hoveredNodeId)?.cluster
     : undefined;
+
+  // Scoped world: the fixed 1600x1200 basis, grown to hold the expanded hub's card block
+  const expandedBlock = expandedHubId ? hubBlocks[expandedHubId] : undefined;
+  const scopedBounds = useMemo<WorldBounds>(
+    () =>
+      expandedBlock
+        ? unionBounds(SCOPED_BOUNDS, {
+            minX: expandedBlock.minX - 130,
+            minY: expandedBlock.minY - 90,
+            maxX: expandedBlock.maxX + 130,
+            maxY: expandedBlock.maxY + 90,
+          })
+        : SCOPED_BOUNDS,
+    [expandedBlock]
+  );
 
   // Large-graph performance modes
   const isLargeGraph = visibleNodes.length > LARGE_GRAPH_NODE_COUNT;
@@ -346,11 +479,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   viewSizeRef.current = viewSize;
   const minScale = showAllNodes ? MIN_SCALE_SHOW_ALL : MIN_SCALE_SCOPED;
   minScaleRef.current = minScale;
-  layoutBoundsRef.current = layoutBounds;
+  maxScaleRef.current = maxScale;
+  layoutBoundsRef.current = showAllNodes ? layoutBounds : scopedBounds;
 
   // World bounds: layout bounds extended by persisted (user-moved) positions. Scoped stays 1600x1200.
   const worldBounds = useMemo<WorldBounds>(() => {
-    if (!showAllNodes) return SCOPED_BOUNDS;
+    if (!showAllNodes) return scopedBounds;
     let { minX, minY, maxX, maxY } = layoutBounds;
     allNodes.forEach((n) => {
       const p = graphNodePositions[n.id];
@@ -361,7 +495,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       maxY = Math.max(maxY, p.y + 42 + SHOW_ALL_BOUNDS_PADDING);
     });
     return { minX, minY, maxX, maxY };
-  }, [showAllNodes, layoutBounds, allNodes, graphNodePositions]);
+  }, [showAllNodes, scopedBounds, layoutBounds, allNodes, graphNodePositions]);
 
   // Minimap shows the whole world, expanded to the 4:3 basis so it never letterboxes
   const minimapBounds = useMemo(() => {
@@ -505,6 +639,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   useEffect(() => () => {
     if (wheelTimerRef.current !== null) clearTimeout(wheelTimerRef.current);
     if (panRafRef.current !== null) cancelAnimationFrame(panRafRef.current);
+    if (tweenRafRef.current !== null) cancelAnimationFrame(tweenRafRef.current);
   }, []);
 
   // Track the rendered SVG size for viewport culling
@@ -566,13 +701,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     if (e.pointerType !== 'touch') return;
     const target = e.target as HTMLElement | SVGElement;
     if (target.closest('[data-testid="graph-minimap-svg"]')) return;
-    const onBg = !(
-      target.closest('[data-node-interactive]') ||
-      target.closest('[data-edge-interactive]') ||
-      target.closest('button') ||
-      target.closest('input') ||
-      target.closest('select')
-    );
+    const onBg = !target.closest(INTERACTIVE_SELECTOR);
     const pointers = touchPointersRef.current;
     pointers.set(e.pointerId, {
       x: e.clientX,
@@ -622,15 +751,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement | SVGElement;
-    if (
-      target.closest('[data-node-interactive]') ||
-      target.closest('[data-edge-interactive]') ||
-      target.closest('button') ||
-      target.closest('input') ||
-      target.closest('select')
-    ) {
+    if (target.closest(INTERACTIVE_SELECTOR)) {
       return;
     }
+    cancelTween();
     if (e.button !== 0) return;
     // Touch: one finger never pans (the page scrolls); the two-finger pan starts in the capture handler
     if (e.pointerType === 'touch') return;
@@ -804,11 +928,55 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     }
   }, []);
 
-  const handleNodeSelectStable = useCallback((node: GraphNode) => selectRef.current(node), []);
+  // Suppresses the synthetic trailing browser `click` that fires immediately after a node drag ends.
+  const suppressClickNodeIdRef = useRef<string | null>(null);
+  const handleNodeSelectStable = useCallback((node: GraphNode) => {
+    if (suppressClickNodeIdRef.current === node.id) {
+      suppressClickNodeIdRef.current = null;
+      return;
+    }
+    selectRef.current(node);
+  }, []);
+  // Keyboard focus follows a hub fold / unfold: cards unmount, and focus must not drop to <body>
+  const pendingHubFocusRef = useRef<string | null>(null);
+  const expandedHubIdRef = useRef<string | null>(null);
+  expandedHubIdRef.current = expandedHubId;
+  useEffect(() => {
+    const id = pendingHubFocusRef.current;
+    if (id === null) return;
+    pendingHubFocusRef.current = null;
+    containerRef.current
+      ?.querySelector<SVGGElement>(`[data-testid="graph-hub-${id}"]`)
+      ?.focus({ preventScroll: true });
+  }, [expandedHubId]);
+
+  const hubToggle = hubExpansion.toggle;
+  const hubCollapse = hubExpansion.collapse;
+  const handleHubToggle = useCallback(
+    (clusterId: string) => {
+      pendingHubFocusRef.current = clusterId;
+      setSelectedNode(null); // the flyout must not point at a card that is about to unmount
+      hubToggle(clusterId);
+      if (soundEnabled) playCyberSound('click');
+    },
+    [hubToggle, soundEnabled]
+  );
+  // Escape and the HUD Collapse chip: fold the open hub and put focus back on it
+  const foldHub = useCallback(() => {
+    pendingHubFocusRef.current = expandedHubIdRef.current;
+    setSelectedNode(null);
+    hubCollapse();
+  }, [hubCollapse]);
+  // Any other route that folds the selected machine away (a filter change) also closes its flyout
+  const selectedFoldedInto = selectedNode ? collapsedHubOf(selectedNode.id) : null;
+  useEffect(() => {
+    if (selectedFoldedInto) setSelectedNode(null);
+  }, [selectedFoldedInto]);
 
   const handleNodePointerDown = useCallback((e: React.PointerEvent<SVGGElement>, node: GraphNode) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    suppressClickNodeIdRef.current = null;
     const isTouch = e.pointerType === 'touch';
     // A second finger makes this a graph gesture (started in the capture handler), not a card press
     if (isTouch && touchPointersRef.current.size >= 2) return;
@@ -903,10 +1071,18 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
     if (nodeDragRef.current.isDragging) {
       commitNodePosition(node.id, nodeDragRef.current.currentPos);
-    } else if (!nodeDragRef.current.isDragging) {
+    } else {
       // Clean click without movement threshold: select node or connect vector
       selectRef.current(node);
     }
+    // Swallow the trailing synthetic browser `click` for BOTH drag and clean pointerup so:
+    //  - clean clicks never double-fire (breaking Toolbar "Add link" / closing GraphEdgeInspectorDrawer)
+    //  - drags never erroneously pop open the node flyout or select a link source.
+    suppressClickNodeIdRef.current = node.id;
+    const upNodeId = node.id;
+    setTimeout(() => {
+      if (suppressClickNodeIdRef.current === upNodeId) suppressClickNodeIdRef.current = null;
+    }, 0);
 
     clearNodeTouchPress();
     nodeDragRef.current = {
@@ -931,9 +1107,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      cancelTween();
       const view = viewRef.current;
       const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-      const newScale = Math.min(Math.max(view.scale * zoomFactor, minScaleRef.current), 3.0);
+      const newScale = Math.min(Math.max(view.scale * zoomFactor, minScaleRef.current), maxScaleRef.current);
       if (newScale === view.scale) return;
 
       // Compute cursor in SVG root coordinate space:
@@ -976,7 +1153,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
 
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [applyViewToDom, commitLiveView, refreshLiveCull]);
+  }, [applyViewToDom, commitLiveView, refreshLiveCull, cancelTween]);
 
   // Two fingers (or an armed card drag) own the gesture: stop the browser from scrolling/zooming the
   // page. React's touchmove listener is passive, so this needs a native non-passive one.
@@ -1011,7 +1188,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         e.touches[0].clientY - e.touches[1].clientY
       );
       const factor = currentDist / touchStartDistRef.current;
-      const newScale = Math.min(Math.max(touchStartScaleRef.current * factor, minScaleRef.current), 3.0);
+      const newScale = Math.min(Math.max(touchStartScaleRef.current * factor, minScaleRef.current), maxScaleRef.current);
       if (newScale === viewRef.current.scale) return;
       // Live update (DOM only); committed in handleTouchEnd
       viewRef.current = { ...viewRef.current, scale: newScale };
@@ -1032,8 +1209,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   // 6. Navigation Controls Toolbar Actions
   // ---------------------------------------------------------------------------
   const handleZoomIn = () => {
+    cancelTween();
     const base = getBaseView();
-    const newScale = Math.min(base.scale * 1.2, 3.0);
+    // Phone portrait opens fitted (small text); the first zoom-in jumps to the readable size
+    const readable = portrait ? PORTRAIT_MIN_PX_PER_UNIT / fitAspect : 0;
+    const newScale = Math.min(Math.max(base.scale * 1.2, readable), maxScaleRef.current);
     const cursorX = 800;
     const cursorY = 600;
     const newPanX = cursorX - (cursorX - base.x) * (newScale / base.scale);
@@ -1043,6 +1223,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   };
 
   const handleZoomOut = () => {
+    cancelTween();
     const base = getBaseView();
     const newScale = Math.max(base.scale / 1.2, minScale);
     const cursorX = 800;
@@ -1053,13 +1234,102 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     setPan({ x: newPanX, y: newPanY });
   };
 
+  // Animated (or instant) move to a committed view; hub expand / collapse uses the animated path
+  const goToView = (t: { x: number; y: number; scale: number }, animate: boolean) => {
+    cancelTween();
+    const reduce = getPrefersReducedMotion();
+    if (!animate || reduce || !viewSizeRef.current || typeof requestAnimationFrame === 'undefined') {
+      setScale(t.scale);
+      setPan({ x: t.x, y: t.y });
+      return;
+    }
+    const from = { ...getBaseView() };
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - start) / HUB_TWEEN_MS);
+      const e = 1 - Math.pow(1 - p, 3);
+      viewRef.current = {
+        x: from.x + (t.x - from.x) * e,
+        y: from.y + (t.y - from.y) * e,
+        scale: from.scale + (t.scale - from.scale) * e,
+      };
+      viewDirtyRef.current = true;
+      applyViewToDom();
+      refreshLiveCull();
+      if (p < 1) {
+        tweenRafRef.current = requestAnimationFrame(step);
+      } else {
+        tweenRafRef.current = null;
+        commitLiveView();
+      }
+    };
+    tweenRafRef.current = requestAnimationFrame(step);
+  };
+
+  // Frames a world rect inside the canvas area the floating chrome leaves free (HUD, rail, legend, minimap)
+  // SVG px per world unit at scale 1 (the 1600x1200 basis fitted into the canvas)
+  const fitAspect = (viewSize ? Math.min(viewSize.w / 1600, viewSize.h / 1200) : 1) || 1;
+  const solveFit = (b: WorldBounds, pad: number, maxScale = 1.8, readable = true) => {
+    const size = viewSize ?? { w: 1600, h: 1200 };
+    const insets = viewSize ? measureSafeInsets(containerRef.current) : { top: 0, right: 0, bottom: 0, left: 0 };
+    // Phone portrait: the overview fits the whole hub column (down to a low floor, a taller column keeps its top in
+    // view and pans); opening a hub zooms to the readable size instead.
+    const readableFloor = portrait ? (readable ? PORTRAIT_MIN_PX_PER_UNIT : PORTRAIT_OVERVIEW_MIN_PX_PER_UNIT) / fitAspect : 0;
+    return fitBoundsToSafeArea(
+      { minX: b.minX - pad, minY: b.minY - pad, maxX: b.maxX + pad, maxY: b.maxY + pad },
+      size,
+      insets,
+      { minScale: Math.max(minScale, readableFloor), maxScale: Math.max(maxScale, readableFloor), anchorTop: portrait }
+    );
+  };
+
+  const currentPosOf = useCallback(
+    (n: GraphNode) =>
+      transientNodePos?.id === n.id ? { x: transientNodePos.x, y: transientNodePos.y } : resolveCardPosition(n.id, graphNodePositions, defaultNodePositions, n),
+    [transientNodePos, graphNodePositions, defaultNodePositions]
+  );
+
+  const hubPoints = useMemo(() => clusters.map((c) => ({ id: c.id, ...getClusterHub(c) })), [clusters]);
+
+  // Collapsible hubs: the open hub and its cards, or the rig + every hub + every drawn card
+  const collapsibleBounds = useCallback(
+    (hubId: string | null): WorldBounds =>
+      computeCollapsibleBounds({
+        hubId,
+        hubs: hubPoints,
+        focusCards: hubId ? (nodesByCluster.get(hubId) ?? []).map(currentPosOf) : [],
+        drawnCards: renderNodes.map(currentPosOf),
+        textScale: hubText,
+        portrait,
+      }),
+    [hubPoints, nodesByCluster, currentPosOf, renderNodes, hubText, portrait]
+  );
+
+  const fitCollapsible = (hubId: string | null, animate: boolean) => {
+    const r = solveFit(collapsibleBounds(hubId), portrait ? 4 : 28, portrait ? PORTRAIT_MAX_SCALE : hubId ? MAX_SCALE_DEFAULT : 1.4, hubId !== null);
+    goToView({ x: r.x, y: r.y, scale: r.scale }, animate);
+  };
+
   const handleResetView = () => {
+    setSelectedNode(null);
+    if (collapsible && viewSize) {
+      fitCollapsible(null, true);
+      return;
+    }
+    if (!collapsible && !showAllNodes && viewSize && visibleNodes.length > 0) {
+      handleFitToScreen();
+      return;
+    }
+    cancelTween();
     setScale(1);
     setPan({ x: 0, y: 0 });
-    setSelectedNode(null);
   };
 
   const handleFitToScreen = () => {
+    if (collapsible) {
+      fitCollapsible(null, true);
+      return;
+    }
     if (visibleNodes.length === 0) {
       handleResetView();
       return;
@@ -1071,19 +1341,14 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     let maxY = 600 + 60;
 
     visibleNodes.forEach((n) => {
-      const x = transientNodePos?.id === n.id 
-        ? transientNodePos.x 
-        : (graphNodePositions[n.id]?.x ?? defaultNodePositions[n.id]?.x ?? n.x);
-      const y = transientNodePos?.id === n.id 
-        ? transientNodePos.y 
-        : (graphNodePositions[n.id]?.y ?? defaultNodePositions[n.id]?.y ?? n.y);
+      const { x, y } = currentPosOf(n);
       minX = Math.min(minX, x - 95);
       maxX = Math.max(maxX, x + 95);
       minY = Math.min(minY, y - 47);
       maxY = Math.max(maxY, y + 47);
     });
-    // SHOW ALL: hubs (with their label pills) are part of the world being framed
-    if (showAllNodes) {
+    // Uncollapsed views (SHOW ALL or small <=12-machine graphs): hubs (with their label pills) are part of the framed world
+    if (showAllNodes || !collapsible) {
       clusters.forEach((c) => {
         const hub = getClusterHub(c);
         minX = Math.min(minX, hub.x - 95);
@@ -1093,18 +1358,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       });
     }
 
-    const padding = 80;
-    const bboxW = (maxX - minX) + padding * 2;
-    const bboxH = (maxY - minY) + padding * 2;
-    const targetScale = Math.min(Math.max(Math.min(1600 / bboxW, 1200 / bboxH), minScale), 1.8);
-    const bboxCenterX = (minX + maxX) / 2;
-    const bboxCenterY = (minY + maxY) / 2;
-
-    setScale(targetScale);
-    setPan({
-      x: 800 - bboxCenterX * targetScale,
-      y: 600 - bboxCenterY * targetScale,
-    });
+    const r = solveFit({ minX, minY, maxX, maxY }, 80);
+    goToView({ x: r.x, y: r.y, scale: r.scale }, false);
   };
 
   // Toggling SHOW ALL: fit the whole world on entry; on exit restore the scoped view the user had
@@ -1126,6 +1381,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       setPan({ x: v.x, y: v.y });
     }
   }, [showAllNodes]);
+
+  // Collapsible hubs: frame everything inside the safe area on first measure, then follow expand / collapse
+  const fitCollapsibleRef = useRef(fitCollapsible);
+  const didInitialFitRef = useRef(false);
+  const lastFitHubRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    fitCollapsibleRef.current = fitCollapsible;
+  });
+  useLayoutEffect(() => {
+    if (!viewSize) return;
+    if (!didInitialFitRef.current) {
+      didInitialFitRef.current = true;
+      lastFitHubRef.current = expandedHubId;
+      if (collapsible) {
+        fitCollapsibleRef.current(expandedHubId, false);
+      } else if (!showAllNodes && visibleNodes.length > 0) {
+        fitRef.current();
+      }
+      return;
+    }
+    if (!collapsible) return;
+    if (lastFitHubRef.current === expandedHubId) return;
+    lastFitHubRef.current = expandedHubId;
+    fitCollapsibleRef.current(expandedHubId, true);
+  }, [collapsible, showAllNodes, visibleNodes.length, viewSize, expandedHubId]);
 
   const showAllMachines = () => {
     if (showAllNodes) return;
@@ -1162,12 +1442,33 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   }, [graphEdges, selectedEdgeId]);
 
   const edgeSourceMachine = useMemo(() => {
-    return selectedEdge ? allMachines.find((m) => m.id === selectedEdge.sourceId) : undefined;
-  }, [selectedEdge, allMachines]);
+    return selectedEdge ? universeMachines.find((m) => m.id === selectedEdge.sourceId) : undefined;
+  }, [selectedEdge, universeMachines]);
 
   const edgeTargetMachine = useMemo(() => {
-    return selectedEdge ? allMachines.find((m) => m.id === selectedEdge.targetId) : undefined;
-  }, [selectedEdge, allMachines]);
+    return selectedEdge ? universeMachines.find((m) => m.id === selectedEdge.targetId) : undefined;
+  }, [selectedEdge, universeMachines]);
+
+  const selectedNodeCreds = useMemo<GraphNodeCred[]>(() => {
+    if (!selectedNode) return [];
+    const fromVault: GraphNodeCred[] = credentials
+      .filter((c) => c.sourceMachineId === selectedNode.id || Boolean(c.verifications?.[selectedNode.id]))
+      .map((c) => ({
+        id: c.id,
+        domain: c.domain,
+        username: c.username,
+        secret: c.secret,
+        type: c.type,
+      }));
+    const fromAdapter = adapter?.getNodeCreds ? adapter.getNodeCreds(selectedNode.id) : [];
+    const seen = new Set<string>();
+    return [...fromAdapter, ...fromVault].filter((item) => {
+      const key = `${item.domain || ''}|${item.username}|${item.secret}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [selectedNode, credentials, adapter]);
 
 
   // M4: 1-Click Topology Exporters
@@ -1200,20 +1501,56 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
   const handleAutoLayout = useCallback(() => {
     // The auto-layout box (1510x1150) cannot hold the SHOW ALL world; it is a scoped-view tool
     if (showAllNodes) return;
+    if (collapsible) {
+      // Collapsible hubs: lay out the open hub's machines inside its own block; nothing to do when all are folded
+      const block = expandedHubId ? hubBlocks[expandedHubId] : undefined;
+      const ids = expandedHubId ? (nodesByCluster.get(expandedHubId) ?? []).map((n) => n.id) : [];
+      if (!block || ids.length === 0) return;
+      const positions = computeAutoLayout(ids, graphEdges, {
+        originX: block.minX + 90,
+        originY: block.minY + 55,
+        maxX: block.maxX - 90,
+        maxY: block.maxY - 55,
+      });
+      applyNodePositions(positions, 'Auto layout');
+      if (soundEnabled) playCyberSound('click');
+      return;
+    }
     const positions = computeAutoLayout(allNodes.map((n) => n.id), graphEdges, { maxX: 1510, maxY: 1150 });
     applyNodePositions(positions, 'Auto layout');
     if (soundEnabled) playCyberSound('click');
-  }, [allNodes, graphEdges, applyNodePositions, soundEnabled, showAllNodes]);
+  }, [allNodes, graphEdges, applyNodePositions, soundEnabled, showAllNodes, collapsible, expandedHubId, hubBlocks, nodesByCluster]);
 
-  // Keyboard shortcut listener
+  // Keyboard shortcut listener. Escape peels one layer per press, in this order: the flyout / edge inspector / link
+  // mode, then an expanded hub, then fullscreen. The latest state lives in a ref so the listener registers once.
+  const escapeStateRef = useRef({ layers: false, hub: false, fullscreen: false, collapseHub: foldHub });
+  escapeStateRef.current = {
+    layers: Boolean(selectedNode || selectedEdgeId || isConnectingMode || connectingSourceId),
+    hub: expandedHubId !== null,
+    fullscreen: isFullscreen,
+    collapseHub: foldHub,
+  };
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key !== 'Escape') return;
+      const st = escapeStateRef.current;
+      if (st.layers) {
         setSelectedNode(null);
         setSelectedEdgeId(null);
         setIsConnectingMode(false);
         setConnectingSourceId(null);
+        return;
       }
+      // Folding a hub and leaving fullscreen are the weaker Escape actions: leave the key to anything else that
+      // wants it (an open modal or trap, a handler that already consumed it)
+      const claimed = e.defaultPrevented || hasActiveFocusTrap() || Boolean(document.querySelector('[data-escape-open]'));
+      if (st.hub) {
+        // ...and a field being edited keeps its own Escape (cancel an edit, clear a search)
+        if (claimed || isEditableElement(e.target) || isEditableElement(document.activeElement)) return;
+        st.collapseHub();
+        return;
+      }
+      if (st.fullscreen && !claimed) setIsFullscreen(false);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -1236,34 +1573,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
     });
   };
 
-  // Exit fullscreen on Escape when no nested edge inspector, modal trap, or node flyout is open
-  useEffect(() => {
-    if (!isFullscreen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.defaultPrevented ||
-        hasActiveFocusTrap() ||
-        (typeof document !== 'undefined' && Boolean(document.querySelector('[data-escape-open="true"]')))
-      ) {
-        return;
-      }
-      if (e.key === 'Escape' && !selectedEdgeId) {
-        if (selectedNode) {
-          setSelectedNode(null);
-        } else {
-          setIsFullscreen(false);
-        }
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isFullscreen, selectedEdgeId, selectedNode]);
-
   const graphShell = (
     <div 
       ref={containerRef}
       className={`relative w-full border border-subtle bg-surface-card overflow-hidden font-sans shadow-2xl select-none touch-pan-x touch-pan-y transition-[box-shadow,background-color,border-color,color] duration-300 machined-edge ${
-        isFullscreen ? 'fixed inset-0 z-modal rounded-none h-dvh' : 'rounded-2xl h-[720px]'
+        isFullscreen ? 'fixed inset-0 z-modal rounded-none h-dvh' : 'rounded-2xl h-[clamp(440px,calc(100dvh-15rem),720px)] lg:h-[clamp(480px,calc(100dvh-10rem),720px)]'
       }`}
       onPointerDownCapture={handleCanvasPointerDownCapture}
       onPointerDown={handleCanvasPointerDown}
@@ -1294,65 +1608,45 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         </div>
       )}
       {/* Top HUD: a column. Stats pill on the left, canvas toolbar as a vertical rail on the right
-          edge directly below it, so it never wraps into the middle of the graph. */}
+          edge directly below it, so it never wraps into the middle of the graph. On phones the stats
+          collapse into a one-line summary pill; the chips open on tap. */}
       <div className="absolute inset-x-4 top-4 z-20 flex flex-col items-start gap-2 pointer-events-none">
-      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 pointer-events-auto">
-        <div className="px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs flex items-center gap-2 machined-edge">
-          <Share2 className="w-3.5 h-3.5 text-accent" />
-          <span className="text-xs font-semibold text-primary font-sans">
-            Machine graph
-          </span>
-          <span 
-            className="text-xs text-accent font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-            title={showAllNodes ? 'Every machine is placed in its subnet group' : `The first ${SCOPED_CLUSTER_CAP} machines are grouped by subnet; use Show all to see the rest`}
-          >
-            {visibleNodes.length} of {universeMachines.length} machines
-          </span>
-          {universeMachines.length > SCOPED_CLUSTER_CAP && (
-            <button
-              type="button"
-              onClick={() => {
-                if (!showAllNodes) scopedViewRef.current = { ...getBaseView() };
-                setShowAllNodes(!showAllNodes);
+      <GraphHudStats
+        title={adapter?.title}
+        visibleCount={visibleNodes.length}
+        universeCount={universeMachines.length}
+        subnetCount={realSubnetCount}
+        linkCount={graphEdges.length}
+        showAllNodes={showAllNodes}
+        filterActive={filterActive}
+        showMoreControl={scopedVisibility.showMoreControl}
+        hiddenCount={scopedVisibility.hiddenCount}
+        expandedHubName={expandedHubId ? (clusters.find((c) => c.id === expandedHubId)?.name ?? '') : undefined}
+        personalOnly={!adapter ? personalOnly : undefined}
+        personalCount={!adapter ? personalMachines.length : undefined}
+        onTogglePersonalOnly={
+          !adapter
+            ? () => {
+                setPersonalOnly((prev) => !prev);
+                setSelectedNode(null);
                 if (soundEnabled) playCyberSound('toggle');
-              }}
-              className={`text-xs font-semibold font-mono px-2 py-0.5 rounded-md border transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer ${
-                showAllNodes
-                  ? 'bg-accent text-on-accent border-accent shadow-xs'
-                  : 'bg-surface-sunken text-accent border-subtle hover:border-accent/40'
-              }`}
-              title={showAllNodes ? `Back to the compact layout: first ${SCOPED_CLUSTER_CAP} grouped by subnet, the rest hidden` : 'Place every machine in its subnet group (larger canvas)'}
-              aria-label={showAllNodes ? 'Compact layout' : 'Group all by subnet'}
-            >
-              {showAllNodes ? 'Compact layout' : 'Group all by subnet'}
-            </button>
-          )}
-          <span
-            className="text-xs text-callout-tip-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle"
-            title={showAllNodes ? 'Subnet groups across every machine' : `Subnet groups among the first ${SCOPED_CLUSTER_CAP} machines`}
-          >
-            {realSubnetCount} {realSubnetCount === 1 ? 'subnet' : 'subnets'}
-          </span>
-          {!showAllNodes && scopedVisibility.showMoreControl && (
-            <button
-              type="button"
-              data-testid="graph-grid-overflow"
-              onClick={showAllMachines}
-              className="text-xs font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md border border-subtle bg-surface-sunken text-accent hover:border-accent/40 transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer"
-              title="Only the first machines are drawn here. Show all places every machine in its subnet group."
-            >
-              {formatShowMoreLabel(scopedVisibility.hiddenCount, filterActive)}
-            </button>
-          )}
-          <span className="text-xs text-callout-success-fg font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md bg-surface-sunken border border-subtle">
-            {graphEdges.length} {graphEdges.length === 1 ? 'link' : 'links'}
-          </span>
-        </div>
-      </div>
+              }
+            : undefined
+        }
+        extraActions={adapter?.hudActions}
+        onToggleShowAll={() => {
+          if (!showAllNodes) scopedViewRef.current = { ...getBaseView() };
+          setShowAllNodes(!showAllNodes);
+          if (soundEnabled) playCyberSound('toggle');
+        }}
+        onShowAll={showAllMachines}
+        onCollapseHub={foldHub}
+      />
 
       {/* Canvas Navigation Toolbar */}
       <GraphToolbar
-        scale={scale}
+        // Phone portrait reads the zoom as on-screen size (100% = 1 px per world unit), not as a multiple of the shrunken basis
+        scale={portrait ? scale * fitAspect : scale}
         isConnectingMode={isConnectingMode}
         onToggleConnecting={() => {
           setIsConnectingMode(!isConnectingMode);
@@ -1368,7 +1662,8 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
         undoLabel={undoLabel}
         redoLabel={redoLabel}
         handleAutoLayout={handleAutoLayout}
-        autoLayoutDisabled={allNodes.length === 0 || showAllNodes}
+        autoLayoutDisabled={allNodes.length === 0 || showAllNodes || (collapsible && !expandedHubId)}
+        autoLayoutNeedsSubnet={collapsible && !expandedHubId}
         showAllNodes={showAllNodes}
         handleZoomIn={handleZoomIn}
         handleZoomOut={handleZoomOut}
@@ -1406,8 +1701,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       )}
 
       {/* Tactical Minimap HUD in Canvas Corner */}
-      <div className="absolute bottom-4 left-4 z-20 flex flex-col items-start gap-2 pointer-events-auto select-none">
-          {/* Legend */}
+      <div data-graph-corner="true" className="absolute bottom-4 left-4 z-20 flex flex-col items-start gap-2 pointer-events-auto select-none">
+          {/* Legend: hide while a hub is expanded or canvas is narrow so it never stamps over hub badges */}
+          {!expandedHubId && !portrait && (
           <div className="hidden lg:flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 py-1.5 rounded-xl bg-surface-elevated/95 border border-subtle backdrop-blur-sm shadow-xs text-xs font-sans machined-edge">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-callout-success-fg" />
@@ -1422,18 +1718,19 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               <span className="text-secondary">Backlog or recon</span>
             </span>
           </div>
+          )}
         <MinimapPanel
           tokens={tokens}
           clusters={clusters}
           graphEdges={graphEdges}
           allNodes={allNodes}
-          visibleNodes={visibleNodes}
+          visibleNodes={renderNodes}
           graphNodePositions={graphNodePositions}
           defaultNodePositions={defaultNodePositions}
           transientNodePos={transientNodePos}
           selectedNodeId={selectedNode?.id ?? null}
           minimapBounds={minimapBounds}
-          isMinimapOpen={isMinimapOpen}
+          isMinimapOpen={isMinimapOpen && !portrait}
           setIsMinimapOpen={setIsMinimapOpen}
           isMinimapDraggingRef={isMinimapDraggingRef}
           handleMinimapPointerEvent={handleMinimapPointerEvent}
@@ -1494,8 +1791,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           </defs>
 
           {/* Canvas Background Grid */}
-          <rect width="1600" height="1200" fill={tokens.canvasBg} className="pointer-events-none" />
-          <rect width="1600" height="1200" fill="url(#graph-grid)" className="pointer-events-none" />
+          {/* Oversized so the letterbox area around the 1600x1200 basis (tall phones, wide windows) is painted too */}
+          <rect x="-3000" y="-3000" width="7600" height="7200" fill={tokens.canvasBg} className="pointer-events-none" />
+          <rect x="-3000" y="-3000" width="7600" height="7200" fill="url(#graph-grid)" className="pointer-events-none" />
 
           {/* INNER VIEWPORT TRANSFORM GROUP */}
           <g
@@ -1507,69 +1805,30 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
           >
             {/* Subnet Cluster Hubs & Radiating Background Paths */}
             {clusters.map((cluster) => {
-              const { x: clusterX, y: clusterY } = getClusterHub(cluster);
-              const isSubnetHovered = hoveredClusterId === cluster.id;
-
+              const hub = getClusterHub(cluster);
               return (
-                <g key={cluster.id} className="transition-opacity">
-                  {/* Attack Path line from Operator Rig to Subnet Hub */}
-                  <line
-                    x1={centerX}
-                    y1={centerY}
-                    x2={clusterX}
-                    y2={clusterY}
-                    stroke={cluster.color}
-                    strokeWidth={isSubnetHovered ? '2.5' : '1.5'}
-                    strokeDasharray="5 5"
-                    opacity={isSubnetHovered ? '0.9' : '0.45'}
-                  />
-
-                  {/* Subnet Hub Outer Glow */}
-                  <circle cx={clusterX} cy={clusterY} r="42" fill="url(#clusterGlow)" opacity="0.6" className="pointer-events-none" />
-
-                  {/* Subnet Hub Node */}
-                  <circle
-                    cx={clusterX}
-                    cy={clusterY}
-                    r="24"
-                    fill={tokens.cardBg}
-                    stroke={cluster.color}
-                    strokeWidth="2.2"
-                    style={{ filter: tokens.accentGlow && tokens.accentGlow !== 'none' ? `drop-shadow(0 0 10px ${tokens.accentGlow})` : undefined }}
-                  />
-                  <circle cx={clusterX} cy={clusterY} r="9" fill={cluster.color} opacity="0.8" className="pointer-events-none" />
-
-                  {/* Subnet Label Pill */}
-                  <rect
-                    x={clusterX - 90}
-                    y={clusterY + 28}
-                    width="180"
-                    height="22"
-                    rx="4"
-                    fill={tokens.cardBg}
-                    fillOpacity="0.94"
-                    stroke={cluster.color}
-                    strokeWidth="1.2"
-                    className="pointer-events-none"
-                  />
-                  <text
-                    x={clusterX}
-                    y={clusterY + 43}
-                    fill={cluster.color}
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    className="pointer-events-none select-none"
-                  >
-                    {cluster.name}
-                  </text>
-                </g>
+                <HubCluster
+                  key={cluster.id}
+                  cluster={cluster}
+                  x={hub.x}
+                  y={hub.y}
+                  tokens={tokens}
+                  isHovered={hoveredClusterId === cluster.id}
+                  collapsible={collapsible}
+                  expanded={expandedHubId === cluster.id}
+                  // zoomed in on one hub the plain size already reads well
+                  textScale={expandedHubId ? 1 : hubText}
+                  portrait={portrait}
+                  hidden={portrait && expandedHubId !== null && expandedHubId !== cluster.id}
+                  nodes={nodesByCluster.get(cluster.id) ?? EMPTY_NODES}
+                  matchedIds={filterActive ? visibleMachineIds : null}
+                  onToggle={handleHubToggle}
+                />
               );
             })}
 
             {/* Tactical Edges from Subnet Hubs to Target Nodes */}
-            {visibleNodes.map((node) => {
+            {renderNodes.map((node) => {
               const hub = clusterHubs.map.get(node.cluster) ?? clusterHubs.first;
               const clusterX = hub ? hub.x : centerX;
               const clusterY = hub ? hub.y : centerY;
@@ -1633,19 +1892,39 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 ? transientNodePos.y 
                 : (graphNodePositions[edge.targetId]?.y ?? defaultNodePositions[edge.targetId]?.y ?? (allNodes.find(n => n.id === edge.targetId)?.y ?? centerY));
 
+              // A machine folded into a collapsed hub is reached through the hub: dock on its dot ring
+              const srcHub = collapsedHubOf(edge.sourceId);
+              const tgtHub = collapsedHubOf(edge.targetId);
+              if (srcHub && srcHub === tgtHub) return null; // both ends in the same folded hub
+              // Phone portrait with one hub open: the other hubs are not drawn, so an edge docking on one would run into empty space
+              if (portrait && expandedHubId !== null && ((srcHub && srcHub !== expandedHubId) || (tgtHub && tgtHub !== expandedHubId))) return null;
+              const srcHubPos = srcHub ? clusterHubs.map.get(srcHub) : undefined;
+              const tgtHubPos = tgtHub ? clusterHubs.map.get(tgtHub) : undefined;
+              const dock = portrait ? HUB_DOCK_R_PORTRAIT : HUB_DOCK_R;
+              const hubAnchors = (hx: number, hy: number) => [
+                { x: hx, y: hy - dock },
+                { x: hx, y: hy + dock },
+                { x: hx - dock, y: hy },
+                { x: hx + dock, y: hy },
+              ];
+
               // Compute shortest cardinal docking anchors
-              const srcAnchors = [
-                { x: srcX, y: srcY - 42 },
-                { x: srcX, y: srcY + 42 },
-                { x: srcX - 90, y: srcY },
-                { x: srcX + 90, y: srcY },
-              ];
-              const tgtAnchors = [
-                { x: tgtX, y: tgtY - 42 },
-                { x: tgtX, y: tgtY + 42 },
-                { x: tgtX - 90, y: tgtY },
-                { x: tgtX + 90, y: tgtY },
-              ];
+              const srcAnchors = srcHubPos
+                ? hubAnchors(srcHubPos.x, srcHubPos.y)
+                : [
+                    { x: srcX, y: srcY - 42 },
+                    { x: srcX, y: srcY + 42 },
+                    { x: srcX - 90, y: srcY },
+                    { x: srcX + 90, y: srcY },
+                  ];
+              const tgtAnchors = tgtHubPos
+                ? hubAnchors(tgtHubPos.x, tgtHubPos.y)
+                : [
+                    { x: tgtX, y: tgtY - 42 },
+                    { x: tgtX, y: tgtY + 42 },
+                    { x: tgtX - 90, y: tgtY },
+                    { x: tgtX + 90, y: tgtY },
+                  ];
 
               let bestDist = Infinity;
               let bestSrc = srcAnchors[3];
@@ -1756,7 +2035,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
             })}
 
             {/* Pure SVG Machine Node Cards (<AttackNodeCard>) */}
-            {visibleNodes.map((node) => {
+            <g
+              key={collapsible ? `cards-${expandedHubId ?? 'none'}` : 'cards'}
+              className={collapsible ? 'animate-in fade-in duration-200 motion-reduce:animate-none' : undefined}
+            >
+            {renderNodes.map((node) => {
               const currentX = transientNodePos?.id === node.id 
                 ? transientNodePos.x 
                 : (graphNodePositions[node.id]?.x ?? defaultNodePositions[node.id]?.x ?? node.x);
@@ -1792,6 +2075,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   isSelected={isSelected}
                   isHovered={isHovered}
                   isConnectingSource={isConnectingSource}
+                  isDark={isDark}
                   tokens={tokens}
                   onSelect={handleNodeSelectStable}
                   onHover={setHoveredNodeId}
@@ -1802,9 +2086,15 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 />
               );
             })}
+            </g>
 
             {/* Central Operator Node (Kali Attack Rig) */}
-            <g className="pointer-events-none select-none">
+            <g
+              data-graph-rig="true"
+              className="pointer-events-none select-none"
+              // phone portrait: an open hub shows alone, so the rig above it would only sit under the HUD
+              style={portrait && expandedHubId ? { display: 'none' } : undefined}
+            >
               <circle cx={centerX} cy={centerY} r="70" fill="url(#centerGlow)" />
               <circle
                 cx={centerX}
@@ -1816,10 +2106,10 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               />
               <circle cx={centerX} cy={centerY} r="12" fill={tokens.statusRoot} />
               <rect
-                x={centerX - 85}
+                x={centerX - rigCaptionW / 2}
                 y={centerY + 36}
-                width="170"
-                height="40"
+                width={rigCaptionW}
+                height={rigCaptionFont * 3.6}
                 rx="6"
                 fill={tokens.cardBg}
                 fillOpacity="0.95"
@@ -1828,9 +2118,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               />
               <text
                 x={centerX}
-                y={centerY + 49}
+                y={centerY + 36 + rigCaptionFont * 1.5}
                 fill={tokens.statusRoot}
-                fontSize="11"
+                fontSize={rigCaptionFont}
                 fontFamily="monospace"
                 fontWeight="bold"
                 textAnchor="middle"
@@ -1839,13 +2129,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               </text>
               <text
                 x={centerX}
-                y={centerY + 65}
+                y={centerY + 36 + rigCaptionFont * 2.9}
                 fill={tokens.accent}
-                fontSize="11"
+                fontSize={rigCaptionFont}
                 fontFamily="monospace"
                 textAnchor="middle"
               >
-                {`${rigLhostLabel} [ATTACK RIG]`}
+                {`${rigLhostLabel} (your IP)`}
               </text>
             </g>
           </g>
@@ -1855,7 +2145,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
       {/* Selected Node Tactical Detail Flyout Card */}
       <AnimatePresence>
         {selectedNode && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -1872,7 +2162,13 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                   <CategoryBadge machine={selectedNode.machine} size="xs" />
                 </div>
                 <div>
-                  <EditableIpBadge machineId={selectedNode.id} initialIp={selectedNode.ip} size="xs" showLabel />
+                  {adapter ? (
+                    <span className="inline-flex items-center rounded-md border border-subtle bg-surface-sunken px-1.5 py-0.5 font-mono text-[11px] font-semibold text-secondary">
+                      {selectedNode.ip || 'IP not set'}
+                    </span>
+                  ) : (
+                    <EditableIpBadge machineId={selectedNode.id} initialIp={selectedNode.ip} size="xs" showLabel />
+                  )}
                 </div>
               </div>
 
@@ -1906,17 +2202,33 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
               </div>
             </div>
 
+            {selectedNode.machine.quickNotes && adapter && (
+              <p className="rounded-lg border border-subtle bg-surface-sunken px-2.5 py-1.5 text-[11px] text-secondary leading-relaxed">
+                {selectedNode.machine.quickNotes}
+              </p>
+            )}
+
+            <NodeCredentialsList
+              creds={selectedNodeCreds}
+              nodeIp={selectedNode.ip}
+              nodeDomain={selectedNode.machine.domain}
+            />
+
             <div className="flex items-center gap-2 pt-2 border-t border-subtle">
               <button
-                title="Make this the machine you are working on"
+                title={adapter ? (adapter.activateNodeLabel || 'Focus this target') : 'Make this the machine you are working on'}
                 onClick={() => {
-                  setActiveTarget(selectedNode.id);
+                  if (adapter?.onActivateNode) {
+                    adapter.onActivateNode(selectedNode.machine);
+                  } else {
+                    setActiveTarget(selectedNode.id);
+                  }
                   if (soundEnabled) playCyberSound('engage');
                 }}
                 className="flex-1 py-1.5 px-3 rounded-lg bg-callout-success-bg border border-callout-success-border text-callout-success-fg hover:bg-callout-success-fg hover:text-surface-base font-semibold text-xs transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.97] flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <Crosshair className="w-3.5 h-3.5" />
-                <span>Set as active machine</span>
+                <span>{adapter?.activateNodeLabel || 'Set as active machine'}</span>
               </button>
 
               <button
@@ -1934,18 +2246,39 @@ export const GraphView: React.FC<GraphViewProps> = ({ filteredMachines = [] }) =
                 <span>Link from here</span>
               </button>
 
-              <button
-                onClick={() => {
-                  setSelectedMachineId(selectedNode.id);
-                  if (soundEnabled) playCyberSound('click');
-                }}
-                className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-primary text-xs transition-colors active:scale-[0.97] cursor-pointer"
-                title="Open full machine details"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
+              {adapter?.onDeleteNode && selectedNode.machine.isCustom ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    adapter.onDeleteNode?.(selectedNode.machine);
+                    setSelectedNode(null);
+                    if (soundEnabled) playCyberSound('click');
+                  }}
+                  className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-callout-danger-border text-muted hover:text-callout-danger-fg text-xs transition-colors active:scale-[0.97] cursor-pointer"
+                  title="Remove internal host"
+                  aria-label="Remove internal host"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              ) : (!adapter || adapter.onOpenNodeDetails) ? (
+                <button
+                  onClick={() => {
+                    if (adapter?.onOpenNodeDetails) {
+                      adapter.onOpenNodeDetails(selectedNode.machine);
+                    } else {
+                      setSelectedMachineId(selectedNode.id);
+                    }
+                    if (soundEnabled) playCyberSound('click');
+                  }}
+                  className="py-1.5 px-2.5 rounded-lg bg-surface-sunken border border-subtle hover:border-accent text-muted hover:text-primary text-xs transition-colors active:scale-[0.97] cursor-pointer"
+                  title="Open full machine details"
+                  aria-label="Open full machine details"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 

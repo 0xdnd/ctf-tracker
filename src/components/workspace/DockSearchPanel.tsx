@@ -59,7 +59,7 @@ export const DockSearchPanel: React.FC<DockSearchPanelProps> = ({ onOpenNote, on
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface-card" data-testid="dock-search-panel">
       <div className="flex-shrink-0 border-b border-subtle p-2">
-        <div className="flex items-center gap-1.5 rounded-lg border border-subtle bg-surface-sunken px-2 py-1.5">
+        <div className="flex items-center gap-1.5 rounded-lg border border-subtle bg-surface-sunken px-2 py-1.5 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40">
           <Search className="h-3.5 w-3.5 flex-shrink-0 text-muted" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -139,5 +139,3 @@ export const DockSearchPanel: React.FC<DockSearchPanelProps> = ({ onOpenNote, on
     </div>
   );
 };
-
-export default DockSearchPanel;

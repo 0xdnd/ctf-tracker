@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
-import { beforeEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 const src = readFileSync('public/table-filter.js', 'utf8');
 const run = () => new Function('module', src)({ exports: {} });
@@ -103,5 +103,72 @@ describe('table filter in the DOM', () => {
     document.body.innerHTML = '<main id="main"><h1>Other</h1><table><tbody><tr><td>x</td></tr></tbody></table></main>';
     expect(run).not.toThrow();
     expect(document.querySelector('.tf')).toBeNull();
+  });
+
+  it('places toolbar before h2 + .sec-note sections and hides both when filtered out', () => {
+    document.body.innerHTML = `<main id="main"><h1>TJ Null</h1>
+<h2 id="sec-htb">HTB</h2><p class="sec-note">HTB intro</p>
+<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>
+<tr data-name="Lame" data-os="Linux" data-difficulty="Easy" data-platform="HTB" data-tags=""><td>Lame</td><td>Linux</td><td>Easy</td></tr>
+</tbody></table>
+<h2 id="sec-pg">PG Play</h2><p class="sec-note">PG intro</p>
+<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>
+<tr data-name="Nibbles" data-os="Linux" data-difficulty="Easy" data-platform="PG" data-tags=""><td>Nibbles</td><td>Linux</td><td>Easy</td></tr>
+</tbody></table></main>`;
+    run();
+    const tf = document.querySelector('.tf');
+    const secHtb = document.getElementById('sec-htb')!;
+    expect(tf?.nextElementSibling).toBe(secHtb);
+
+    choose(document.getElementById('tf-platform') as HTMLSelectElement, 'PG');
+    expect(secHtb.hidden).toBe(true);
+    expect((secHtb.nextElementSibling as HTMLElement).hidden).toBe(true);
+    expect(document.getElementById('sec-pg')!.hidden).toBe(false);
+    expect((document.getElementById('sec-pg')!.nextElementSibling as HTMLElement).hidden).toBe(false);
+  });
+});
+
+describe('deferred rows load in idle time', () => {
+  const win = window as unknown as { requestIdleCallback?: unknown };
+  const originalRic = win.requestIdleCallback;
+  const COUNT = 130;
+  const rowsHtml = (from: number, to: number) =>
+    Array.from({ length: to - from }, (_, i) => tr(`Box${from + i}`, 'Linux', 'Easy', 'HTB', 'Web')).join('');
+
+  beforeEach(() => {
+    document.body.innerHTML = `<main id="main"><h1>All</h1><h2 id="htb">HTB</h2><table class="list"><thead><tr><th>Machine</th></tr></thead><tbody>${rowsHtml(0, 5)}</tbody></table>
+<template data-tf-rest><h2 id="thm">THM</h2><table class="list"><thead><tr><th>Machine</th></tr></thead><tbody>${rowsHtml(5, COUNT)}</tbody></table></template></main>`;
+  });
+  afterEach(() => {
+    win.requestIdleCallback = originalRic;
+  });
+
+  it('keeps loading when every idle slice reports no time left, with the count line following the rows', async () => {
+    // An always-busy page: the callback runs with no time remaining and no timeout.
+    win.requestIdleCallback = (cb: (d: { timeRemaining: () => number; didTimeout: boolean }) => void) =>
+      setTimeout(() => cb({ timeRemaining: () => 0, didTimeout: false }), 0);
+    run();
+    await wait(15);
+    // Mid-load: rows are arriving and the count line matches the rows in the page.
+    const inPage = document.querySelectorAll('tbody tr').length;
+    expect(inPage).toBeGreaterThan(5);
+    if (document.querySelector('template[data-tf-rest]')) {
+      expect($('.tf-count').textContent).toBe(`Showing ${inPage} of ${COUNT} machines`);
+    }
+    await vi.waitFor(() => expect(document.querySelector('template[data-tf-rest]')).toBeNull(), { timeout: 3000 });
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(COUNT);
+    expect(document.querySelector('.tf-more')).toBeNull();
+    expect($('.tf-count').textContent).toBe(`Showing ${COUNT} of ${COUNT} machines`);
+  });
+
+  it('sort reorders every row once all rows are in', async () => {
+    win.requestIdleCallback = undefined;
+    run();
+    choose(document.getElementById('tf-sort') as HTMLSelectElement, 'name-desc');
+    const names = [...document.querySelectorAll<HTMLElement>('tbody tr')].map((r) => r.dataset.name);
+    expect(names).toHaveLength(COUNT);
+    expect(names[0]).toBe('Box4'); // each table sorts on its own
+    expect(document.querySelector<HTMLElement>('#htb ~ table.list ~ #thm ~ table.list tbody tr')?.dataset.name).toBe('Box129');
+    expect(document.querySelectorAll('table.list')).toHaveLength(2);
   });
 });

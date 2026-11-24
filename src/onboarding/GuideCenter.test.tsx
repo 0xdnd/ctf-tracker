@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { domAnimation, LazyMotion } from 'framer-motion';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GuideControls } from './GuideControls';
@@ -56,11 +57,13 @@ const Hotkeys: React.FC = () => {
 
 const renderAt = (path: string, extra?: React.ReactNode) =>
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <OnboardingLayer />
-      <Where />
-      {extra}
-    </MemoryRouter>,
+    <LazyMotion features={domAnimation}>
+      <MemoryRouter initialEntries={[path]}>
+        <OnboardingLayer />
+        <Where />
+        {extra}
+      </MemoryRouter>
+    </LazyMotion>,
   );
 
 const anchors: HTMLElement[] = [];

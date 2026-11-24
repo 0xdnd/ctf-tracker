@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { playCyberSound } from '../../utils/helpers';
@@ -64,7 +64,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   return (
     <div className={`inline-flex shrink-0 items-center gap-2 select-none ${className}`}>
-      <motion.button
+      <m.button
         type="button"
         aria-label={label}
         title={label}
@@ -74,7 +74,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
       >
         <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
+          <m.span
             key={isDark ? 'moon' : 'sun'}
             className="inline-flex items-center justify-center"
             initial={iconInitial}
@@ -87,16 +87,16 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
             ) : (
               <Sun className={dimensions.iconSize} />
             )}
-          </motion.span>
+          </m.span>
         </AnimatePresence>
-      </motion.button>
+      </m.button>
 
       {/* Optional mode label */}
       {showLabel && (
         <button
           type="button"
           tabIndex={-1}
-          className="text-xs font-medium text-secondary hover:text-primary transition-colors duration-150 cursor-pointer"
+          className="inline-flex min-h-6 items-center text-xs font-medium text-secondary hover:text-primary transition-colors duration-150 cursor-pointer [@media(pointer:coarse)]:min-h-11"
           onClick={handleToggle}
         >
           {isDark ? 'Dark' : 'Light'}

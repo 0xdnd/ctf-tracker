@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { GraphView, AttackNodeCard, getCanvasThemeTokens, GraphNode } from '../../components/tracker/GraphView';
 import { useCtfStore, safeLocalStorage, ATTACK_GRAPH_STORAGE_KEY } from '../../store/useCtfStore';
 import { Machine } from '../../types';
+import { expandHubContaining } from './graphHubTestUtils';
 
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -148,7 +149,8 @@ describe('Graph controls use plain labels', () => {
 
   it('labels the selected-machine action by its effect', () => {
     renderGraph();
-    fireEvent.click(screen.getByTestId('attack-node-m3'));
+    // subnet hubs start collapsed: open the one that holds m3, then pick the machine
+    fireEvent.click(expandHubContaining('m3'));
     expect(screen.getByRole('button', { name: /Set as active machine/ })).toBeInTheDocument();
   });
 

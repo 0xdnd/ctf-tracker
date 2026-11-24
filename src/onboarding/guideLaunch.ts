@@ -64,7 +64,7 @@ function closeHostSurfaces(keepNotes: boolean): void {
 const foreignDialogOpen = () =>
   document.querySelector('[role="dialog"][aria-modal="true"]:not([data-guide-surface])') !== null;
 
-export const anchorSelector = (anchor: string) => `[data-tour="${anchor}"]`;
+const anchorSelector = (anchor: string) => `[data-tour="${anchor}"]`;
 
 /**
  * Gets the page ready for a guide: closes what is open, navigates or opens the host, and waits for the

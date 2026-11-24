@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { Database } from 'lucide-react';
 import { useCtfStore } from '../../store/useCtfStore';
 import { useExamStore } from '../../store/examStore';
@@ -59,7 +59,7 @@ export const BackupReminderCard: React.FC<{ placement?: 'default' | 'notes' }> =
     'cursor-pointer rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:min-h-11';
 
   return (
-    <motion.section
+    <m.section
       role="region"
       aria-labelledby="backup-reminder-title"
       data-testid="backup-reminder"
@@ -102,6 +102,6 @@ export const BackupReminderCard: React.FC<{ placement?: 'default' | 'notes' }> =
           Back up now
         </button>
       </div>
-    </motion.section>
+    </m.section>
   );
 };

@@ -68,7 +68,8 @@ describe('MethodologyPage', () => {
     renderPage();
     expect(screen.getByRole('heading', { level: 2, name: /Host Discovery/i })).toBeInTheDocument();
 
-    const serviceEnumEntries = screen.getAllByRole('button', { name: /Deep Non-Exploitative Service Inspection/i });
+    const serviceEnumEntries = screen.getAllByRole('button', { name: /Service Inspection/i });
+    expect(within(serviceEnumEntries[0]).getByTitle('Deep Non-Exploitative Service Inspection')).toBeInTheDocument();
     fireEvent.click(serviceEnumEntries[0]);
 
     expect(screen.queryByRole('heading', { level: 2, name: /Host Discovery/i })).not.toBeInTheDocument();

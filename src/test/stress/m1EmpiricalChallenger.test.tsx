@@ -14,6 +14,7 @@ import { DifficultyBadge } from '../../components/common/DifficultyBadge';
 import { useCtfStore } from '../../store/useCtfStore';
 import { applyThemeToDOM, ThemeProvider } from '../../hooks/useTheme';
 import { Machine } from '../../types';
+import { openSessionPanel } from '../layout/openSessionPanel';
 
 // =============================================================================
 // WCAG 2.1 Color Math Utilities for Empirical Contrast Assertions
@@ -368,13 +369,14 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(c2.innerHTML).toContain('tabular-nums');
     });
 
-    it('verifies UnifiedHeader variables inputs (L, R, P) enforce tabular-nums and font-mono', () => {
+    it('verifies UnifiedHeader variables inputs (LHOST, RHOST, LPORT) enforce tabular-nums and font-mono', async () => {
       render(
         <MemoryRouter>
           <UnifiedHeader />
         </MemoryRouter>
       );
 
+      await openSessionPanel();
       const lhostInput = screen.getByLabelText('Attacker IP (LHOST)');
       const targetInput = screen.getByLabelText('Target IP (RHOST)');
       const lportInput = screen.getByLabelText('Listener Port (LPORT)');
@@ -395,10 +397,10 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       const t2 = '23:59:58';
       expect(t1.length).toBe(t2.length);
 
-      // IP lengths vary between 7 and 15 chars, so target input fields must have fixed Tailwind widths (w-16 / xl:w-20)
-      const inputClass = 'w-16 xl:w-20';
-      expect(inputClass).toContain('w-16');
-      expect(inputClass).toContain('xl:w-20');
+      // IP lengths vary between 7 and 15 chars; the popover inputs fill one fixed-width column instead of width ladders
+      const inputClass = 'min-w-0 flex-1';
+      expect(inputClass).toContain('flex-1');
+      expect(inputClass).toContain('min-w-0');
     });
   });
 
@@ -550,7 +552,7 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(header?.className).toContain('h-[52px]');
     });
 
-    it('asserts 1024px (lg) density budget: operator profile is a compact avatar (no ROOT badge) and variables capsule is visible (hidden lg:flex)', () => {
+    it('asserts the bar has no breakpoint show/hide ladders: operator profile is a compact avatar and the main controls are always rendered', () => {
       const { container } = render(
         <MemoryRouter>
           <UnifiedHeader />
@@ -558,8 +560,8 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       );
 
       // Operator profile is a compact fixed-size avatar button (no name pill, no ROOT badge, no chevron),
-      // so it cannot overflow at 1024px. The rooted count lives in its aria-label instead.
-      const operatorPill = container.querySelector('button[title*="Active Operator"]');
+      // so it cannot overflow. The rooted count lives in its aria-label instead.
+      const operatorPill = container.querySelector('button[title*="Profile:"]');
       expect(operatorPill).not.toBeNull();
       expect(operatorPill?.className).toContain('h-8');
       expect(operatorPill?.className).toContain('w-8');
@@ -567,102 +569,82 @@ describe('Milestone 1 Empirical Challenger: Adversarial Stress & Correctness Sui
       expect(operatorPill?.textContent).not.toContain('ROOT');
       expect(operatorPill?.getAttribute('aria-label')).toMatch(/\d+ rooted/);
 
-      // Variables capsule must be visible at lg (1024px) via "hidden lg:flex"
-      const varsCapsule = container.querySelector('div[aria-label="Tactical Variables (LHOST / RHOST / LPORT)"]');
-      expect(varsCapsule).not.toBeNull();
-      expect(varsCapsule?.className).toContain('hidden');
-      expect(varsCapsule?.className).toContain('lg:flex');
+      // LHOST / RHOST / LPORT editing now lives in the Session popover, not in the bar.
+      expect(container.querySelector('div[aria-label="Tactical Variables (LHOST / RHOST / LPORT)"]')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Session' })).toBeInTheDocument();
 
-      // Deploy Box and Scans Hub must be hidden below xl
-      const deployBtn = screen.getByLabelText(/Deploy Box/i);
-      const scansBtn = screen.getByLabelText('Scans Hub');
-      expect(deployBtn.className).toContain('hidden xl:flex');
-      expect(scansBtn.className).toContain('hidden xl:flex');
-
-      // Command Palette launcher button must be hidden below xl
+      // Search, RHOST copy and the Session button are never hidden by a 2xl / xl ladder.
       const paletteBtn = screen.getByLabelText(/open command palette/i);
-      expect(paletteBtn.className).toContain('hidden xl:flex');
+      const rhostChip = screen.getByRole('button', { name: /^Copy RHOST/ });
+      const sessionBtn = screen.getByRole('button', { name: 'Session' });
+      for (const el of [paletteBtn, rhostChip, sessionBtn]) {
+        expect(el.className).not.toMatch(/(^|\s)(?:2xl|xl|lg|md):(?:flex|inline-flex)/);
+        expect(el.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+      }
     });
 
-    it('asserts 1280px (xl) layout: Deploy Box, Scans Hub, and Command Palette are enabled with icon-only compact labels', () => {
-      render(
-            <MemoryRouter>
-                <UnifiedHeader />
-            </MemoryRouter>
-        );
-
-      const deployBtn = screen.getByLabelText(/Deploy Box/i);
-      const scansBtn = screen.getByLabelText('Scans Hub');
-      const paletteBtn = screen.getByLabelText(/open command palette/i);
-
-      // All 3 have xl:flex to become visible at 1280px
-      expect(deployBtn.className).toContain('xl:flex');
-      expect(scansBtn.className).toContain('xl:flex');
-      expect(paletteBtn.className).toContain('xl:flex');
-
-      // Their text spans are hidden until 2xl (1536px)
-      expect(deployBtn.innerHTML).toContain('hidden 2xl:inline');
-      expect(scansBtn.innerHTML).toContain('hidden 2xl:inline');
-      expect(paletteBtn.innerHTML).toContain('hidden 2xl:inline');
-    });
-
-    it('asserts 1440px viewport: variables inputs maintain calibrated width classes without layout clash', () => {
+    it('asserts the quick tools, Add target and Scans Hub are one popover away at every width', async () => {
       render(
         <MemoryRouter>
           <UnifiedHeader />
         </MemoryRouter>
       );
 
-      const lhostInput = screen.getByLabelText('Attacker IP (LHOST)');
-      const targetInput = screen.getByLabelText('Target IP (RHOST)');
-      const lportInput = screen.getByLabelText('Listener Port (LPORT)');
+      expect(screen.queryByLabelText(/Add target/i)).toBeNull();
+      expect(screen.queryByLabelText('Scans Hub')).toBeNull();
 
-      // Inputs have responsive width scale: w-16 at lg (1024px), xl:w-20 at xl+ (1280px, 1440px)
-      expect(lhostInput.className).toContain('w-16');
-      expect(lhostInput.className).toContain('xl:w-20');
-
-      expect(targetInput.className).toContain('w-16');
-      expect(targetInput.className).toContain('xl:w-20');
-
-      expect(lportInput.className).toContain('w-10');
-      expect(lportInput.className).toContain('xl:w-11');
+      await openSessionPanel();
+      for (const name of ['Add target', 'Scans Hub', 'Reverse Shell Crafter', 'Snippets', 'Field notes']) {
+        const btn = screen.getByRole('button', { name });
+        expect(btn.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+        expect(btn.className).not.toMatch(/2xl:flex/);
+      }
     });
 
-    it('asserts 1920px (2xl+) luxury layout: route breadcrumb and extended labels expand cleanly', () => {
+    it('asserts variable inputs in the popover share one width model (no width ladders)', async () => {
+      render(
+        <MemoryRouter>
+          <UnifiedHeader />
+        </MemoryRouter>
+      );
+
+      await openSessionPanel();
+      for (const label of ['Attacker IP (LHOST)', 'Target IP (RHOST)', 'Listener Port (LPORT)']) {
+        const input = screen.getByLabelText(label);
+        expect(input.className).toContain('flex-1');
+        expect(input.className).toContain('min-w-0');
+        expect(input.className).not.toMatch(/(^|\s)(?:xl|2xl|lg):w-/);
+      }
+    });
+
+    it('asserts the bar carries no route breadcrumb and truncates labels instead of using width ladders', () => {
       const { container } = render(
         <MemoryRouter>
           <UnifiedHeader />
         </MemoryRouter>
       );
 
-      // Route breadcrumb indicator has "hidden 2xl:flex"
-      expect(container.innerHTML).toContain('hidden 2xl:flex');
-      expect(container.textContent).toContain('Tracker');
-
-      // RevShell text expands at min-[1650px]
-      const revShellBtn = screen.getByLabelText(/RevShell/i);
-      expect(revShellBtn.innerHTML).toContain('hidden min-[1650px]:inline');
+      expect(container.innerHTML).not.toContain('hidden 2xl:flex');
+      const targetLink = screen.getByTitle('View Target Command Center');
+      expect(targetLink.className).toContain('truncate');
+      expect(targetLink.className).not.toMatch(/(^|\s)(?:sm|md|xl|2xl):max-w-/);
     });
 
-    it('verifies safe physical separation barrier between Pentest Report and Disengage buttons', () => {
+    it('verifies the pentest report and disengage actions are in different containers (no mis-click barrier needed)', async () => {
       render(
-            <MemoryRouter>
-                <UnifiedHeader />
-            </MemoryRouter>
-        );
+        <MemoryRouter>
+          <UnifiedHeader />
+        </MemoryRouter>
+      );
 
-      const reportBtn = screen.getByLabelText(/Pentest Report for ChallengerTarget/i);
       const disengageBtn = screen.getByLabelText('Disengage Active Target');
-
-      expect(reportBtn).toBeInTheDocument();
       expect(disengageBtn).toBeInTheDocument();
+      expect(screen.queryByLabelText(/Pentest report for ChallengerTarget/i)).toBeNull();
 
-      // Parent container contains 1px vertical barrier
-      const parent = reportBtn.parentElement;
-      const barrier = parent?.querySelector('div[aria-hidden="true"]');
-      expect(barrier).not.toBeNull();
-      expect(barrier?.className).toContain('w-px');
-      expect(barrier?.className).toContain('h-3.5');
+      const panel = await openSessionPanel();
+      const reportBtn = screen.getByLabelText(/Pentest report for ChallengerTarget/i);
+      expect(panel.contains(reportBtn)).toBe(true);
+      expect(panel.contains(disengageBtn)).toBe(false);
     });
   });
 });

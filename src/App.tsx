@@ -1,7 +1,7 @@
 import { useDesktopNotifications } from './hooks/useDesktopNotifications';
 import React, { useRef, useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import { HashRouter, BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { m, AnimatePresence, MotionConfig, LazyMotion, domAnimation } from 'framer-motion';
 import { UnifiedHeader } from './components/layout/UnifiedHeader';
 import { Sidebar } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
@@ -18,6 +18,8 @@ import { useCtfStore, UiScale } from './store/useCtfStore';
 import { useExamStore } from './store/examStore';
 import { useNotesWorkspaceStore } from './store/useNotesWorkspaceStore';
 import { useAuthStore } from './store/useAuthStore';
+import { useUpdateUiStore } from './store/useUpdateUiStore';
+import { usePostUpdateWhatsNew } from './hooks/usePostUpdateWhatsNew';
 import { EphemeralStorageBanner } from './components/common/EphemeralStorageBanner';
 import { ensurePersistence, bindExportGuard } from './utils/resilientStorage';
 import { OnboardingLayer } from './onboarding/OnboardingLayer';
@@ -47,6 +49,8 @@ const KeyboardShortcutsModal = lazy(() => import('./components/common/KeyboardSh
 const BackupModal = lazy(() => import('./components/backup/BackupModal').then(m => ({ default: m.BackupModal })));
 const ReconAutomationModal = lazy(() => import('./components/automation/ReconAutomationModal').then(m => ({ default: m.ReconAutomationModal })));
 const SettingsModal = lazy(() => import('./components/common/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const UpdateAvailableModal = lazy(() => import('./components/common/UpdateAvailableModal').then(m => ({ default: m.UpdateAvailableModal })));
+const WhatsNewModal = lazy(() => import('./components/common/WhatsNewModal').then(m => ({ default: m.WhatsNewModal })));
 
 // Code-split global overlays: mounted (and fetched) only once they are first needed
 const SnippetsDrawer = lazy(() => import('./components/layout/SnippetsDrawer').then(m => ({ default: m.SnippetsDrawer })));
@@ -140,6 +144,11 @@ const MainAppContent: React.FC = () => {
   const mountOperatorProfile = useEverTrue(operatorProfileModalOpen);
   const mountNotesImport = useEverTrue(notesImportModalOpen);
   const mountSettings = useEverTrue(settingsModalOpen);
+  const mountMachineDetail = useEverTrue(Boolean(selectedMachineId));
+  const updateAvailableOpen = useUpdateUiStore((s) => s.updateAvailableOpen);
+  const whatsNewOpen = useUpdateUiStore((s) => s.whatsNewOpen);
+  const mountUpdateAvailable = useEverTrue(updateAvailableOpen);
+  const mountWhatsNew = useEverTrue(whatsNewOpen);
   const focusMode = useCtfStore((s) => s.focusMode);
   const setFocusMode = useCtfStore((s) => s.setFocusMode);
   const uiScale = useCtfStore((s) => s.uiScale || 'normal');
@@ -151,6 +160,8 @@ const MainAppContent: React.FC = () => {
 
   // First visit: open the Welcome screen / guided tour once.
   useFirstRunTour(!isPopout && !isFirstRunTourExcludedPath(location.pathname));
+  // Returning visits after an app or catalog update: show concise What's New once when idle.
+  usePostUpdateWhatsNew(!isPopout && !isFirstRunTourExcludedPath(location.pathname));
 
   // Storage quota / error notification banner
   const [storageAlert, setStorageAlert] = React.useState<{ kind: string; message: string } | null>(null);
@@ -204,7 +215,9 @@ const MainAppContent: React.FC = () => {
           revShellModalOpen ||
           filterDrawerOpen ||
           examDrawerOpen ||
-          noteSwitcherOpen
+          noteSwitcherOpen ||
+          updateAvailableOpen ||
+          whatsNewOpen
         );
         if (!isAnyModalOpen) {
           setFocusMode(false);
@@ -235,6 +248,8 @@ const MainAppContent: React.FC = () => {
     filterDrawerOpen,
     examDrawerOpen,
     noteSwitcherOpen,
+    updateAvailableOpen,
+    whatsNewOpen,
   ]);
 
   // Handle opt-in UI scale (native 1:1 token sizing by default; no unconditional viewport zoom)
@@ -358,26 +373,27 @@ const MainAppContent: React.FC = () => {
       {/* Zen Focus Mode Recovery Banner */}
       <AnimatePresence>
         {chrome.zenBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
+          <m.aside
+            aria-label="Focus mode controls"
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-2.5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-3 py-1.5 bg-cyber-card text-cyber-text border border-cyber-cyan rounded-md shadow-sm text-xs font-mono"
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-3 py-1.5 bg-surface-card text-primary border border-strong rounded-lg shadow-lg text-xs"
           >
-            <span className="flex items-center gap-1.5 text-cyber-cyan font-bold tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyber-cyan" />
-              ZEN FOCUS MODE
+            <span className="flex items-center gap-1.5 font-semibold text-primary">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+              Focus mode
             </span>
-            <span className="text-cyber-muted text-[11px] hidden sm:inline">Press Esc or</span>
+            <span className="text-muted text-[11px] hidden sm:inline">Press Esc or</span>
             <button
               onClick={() => setFocusMode(false)}
-              className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyber-cyan text-black hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer"
-              title="Exit Zen Focus Mode"
+              className="px-2.5 min-h-6 rounded-md text-[11px] font-semibold bg-accent text-on-accent hover:brightness-105 transition-[filter,transform] active:scale-[0.97] flex items-center gap-1 cursor-pointer"
+              title="Exit focus mode"
             >
-              ✕ Exit Zen
+              Exit focus
             </button>
-          </motion.div>
+          </m.aside>
         )}
       </AnimatePresence>
 
@@ -385,24 +401,32 @@ const MainAppContent: React.FC = () => {
       {mountCommandPalette && <Suspense fallback={null}><CommandPalette /></Suspense>}
       {mountNoteSwitcher && <Suspense fallback={null}><NoteSwitcherModal /></Suspense>}
 
-      {/* Heavy Tactical Modals (Deferred Lazy Loading - Fetched strictly when triggered) */}
+      {/* Heavy Tactical Modals (Deferred Lazy Loading - Isolated Suspense boundaries prevent one lazy modal from suspending sibling AnimatePresence exits) */}
       <RouteErrorBoundary>
         <Suspense fallback={null}>
           <AnimatePresence>
             {backupModalOpen && <BackupModal key="backup-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {reconAutomationModalOpen && <ReconAutomationModal key="recon-automation-modal" />}
           </AnimatePresence>
-          <AnimatePresence>
-            {selectedMachineId && <MachineDetailModal key="machine-detail-modal" />}
-          </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
+          {mountMachineDetail && <MachineDetailModal />}
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {assignIpMachineId && <QuickAssignIpModal key="quick-assign-ip-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {newMachineModalOpen && <NewMachineModal key="new-machine-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {reportMachineId && (
               <PentestReportModal
@@ -413,21 +437,41 @@ const MainAppContent: React.FC = () => {
               />
             )}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {operatorModalOpen && <OperatorDossierModal key="operator-dossier-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           {mountOperatorProfile && <OperatorProfileModal />}
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {licenseModalOpen && <LicenseModal key="license-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           {mountNotesImport && <NotesImportModal />}
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {flexCardModalOpen && <OperatorFlexCardModal key="flex-card-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           <AnimatePresence>
             {shortcutsModalOpen && <KeyboardShortcutsModal key="shortcuts-modal" />}
           </AnimatePresence>
+        </Suspense>
+        <Suspense fallback={null}>
           {mountSettings && <SettingsModal />}
+        </Suspense>
+        <Suspense fallback={null}>
+          {mountUpdateAvailable && <UpdateAvailableModal />}
+        </Suspense>
+        <Suspense fallback={null}>
+          {mountWhatsNew && <WhatsNewModal />}
         </Suspense>
       </RouteErrorBoundary>
 
@@ -453,7 +497,7 @@ const MainAppContent: React.FC = () => {
       {/* Storage Quota Alert Banner with 1-Click Export Action */}
       <AnimatePresence>
         {storageAlert && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -486,7 +530,7 @@ const MainAppContent: React.FC = () => {
                 Dismiss
               </button>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -506,13 +550,13 @@ const MainAppContent: React.FC = () => {
           className={`outline-none flex-1 min-h-0 relative bg-surface-base transition-colors ${
             chrome.mainLayout === 'fullscreen' ? 'overflow-hidden' : 'overflow-y-auto'
           } ${
-            chrome.mainLayout === 'default' ? 'p-3 pb-24 sm:p-4 md:p-6 md:pb-12' : chrome.mainLayout === 'bare' ? 'p-0 pb-0' : 'p-0'
+            chrome.mainLayout === 'default' ? 'p-3 pb-24 sm:p-4 md:p-6 md:pb-20' : chrome.mainLayout === 'bare' ? 'p-0 pb-0' : 'p-0'
           } ${
             focusMode && chrome.mainLayout !== 'fullscreen' ? 'max-w-7xl mx-auto w-full' : ''
           }`}
         >
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -552,7 +596,7 @@ const MainAppContent: React.FC = () => {
                   </Routes>
                 </Suspense>
               </RouteErrorBoundary>
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </main>
         {/* Global Persistent Multi-Tab Notes Workspace Sidecar (Non-blocking) */}
@@ -577,18 +621,18 @@ export const App: React.FC = () => {
   const Router = isTauriTarget() ? HashRouter : BrowserRouter;
   return (
     <MotionConfig reducedMotion="user">
-      <Router>
-        <ScrollProvider>
-          <ThemeProvider>
-            <DesktopUpdateProvider>
-              <MainAppContent />
-            </DesktopUpdateProvider>
-          </ThemeProvider>
-        </ScrollProvider>
-      </Router>
+      <LazyMotion features={domAnimation}>
+        <Router>
+          <ScrollProvider>
+            <ThemeProvider>
+              <DesktopUpdateProvider>
+                <MainAppContent />
+              </DesktopUpdateProvider>
+            </ThemeProvider>
+          </ScrollProvider>
+        </Router>
+      </LazyMotion>
     </MotionConfig>
   );
 };
-
-export default App;
 

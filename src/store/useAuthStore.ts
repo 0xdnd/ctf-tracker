@@ -4,15 +4,16 @@ import { User, AuthState, OperatorLoginOptions } from '../types/auth';
 import { playCyberSound } from '../utils/helpers';
 import { useCtfStore, safeLocalStorage, getAttackGraphStorageKey, getCustomMachinesStorageKey } from './useCtfStore';
 import { CYBER_AVATAR_PRESETS, getAvatarPresetById } from '../data/avatarPresets';
-import { clearDeepProfileData } from '../utils/indexedDbDeepStorage';
+import { clearDeepProfileData, loadDeepProfileData, saveDeepProfileData } from '../utils/indexedDbDeepStorage';
 import { deleteWorkspaceFromIdb } from '../utils/resilientStorage';
 import { deleteProfileImages } from '../utils/imageStore';
-import { removeLootState } from './lootPersistence';
+import { getLootStorageKey, removeLootState } from './lootPersistence';
 import { syncStateKey } from '../utils/syncState';
 import { clearUndoBatchesForProfile } from '../utils/undoBatchDb';
 import { isSchemaWriteGated } from '../utils/schemaWriteGate';
 import { toast } from './useToastStore';
 import { BACKUP_GATED_MESSAGE } from './backupFile';
+import { takePreSyncSnapshot } from './preMigrationBackup';
 
 const AUTH_STORAGE_KEY = 'rootvector_auth_session';
 const LEGACY_CLIENT_ID_STORAGE_KEY = 'rootvector_google_client_id';
@@ -67,6 +68,7 @@ function purgeProfileStorage(profileId: string): void {
     getCustomMachinesStorageKey(profileId),
     getAttackGraphStorageKey(profileId),
     syncStateKey(profileId),
+    `zerobox_guest_migrated_to_${profileId}`,
   ];
   for (const key of keys) safeLocalStorage.removeItem(key);
   // Credentials and loot, including a copy held in memory after a quota failure.
@@ -257,11 +259,17 @@ export const useAuthStore = create<AuthState>()(
         playCyberSound('click');
       },
 
-      // Migrate guest localStorage progress non-destructively
+      // Migrate guest progress non-destructively: copy, then read back and verify. The guest copy is never removed.
+      // A failure at any step throws before the destination is marked done, and a re-run after success is skipped.
       migrateGuestData: async (targetProfileId?: string) => {
         if (typeof window === 'undefined') return { success: false, count: 0 };
         const destId = targetProfileId || get().user?.id || 'usr_daniel';
+        if (destId === 'guest') return { success: true, count: 0 };
+        // Copying and clearing are writes (the IndexedDB ones are no-ops while gated): refuse before changing anything.
+        if (isSchemaWriteGated()) return { success: false, count: 0 };
+        const migratedMarkerKey = `zerobox_guest_migrated_to_${destId}`;
         try {
+          if (localStorage.getItem(migratedMarkerKey)) return { success: true, count: 0 };
           // Search for guest data in modern or legacy keys
           const guestKeys = [
             'zerobox_operator_profile_guest',
@@ -276,17 +284,63 @@ export const useAuthStore = create<AuthState>()(
               break;
             }
           }
-          if (!guestDataStr) return { success: true, count: 0 };
+          // Per-profile data that lives outside the profile blob: loot, graph, isolated custom machines, and the
+          // writeups / notes held in IndexedDB. A failed IndexedDB read rejects, which aborts before any write.
+          const extraKeyPairs: Array<[string, string]> = [
+            [getLootStorageKey('guest'), getLootStorageKey(destId)],
+            [getAttackGraphStorageKey('guest'), getAttackGraphStorageKey(destId)],
+            [getCustomMachinesStorageKey('guest'), getCustomMachinesStorageKey(destId)],
+          ];
+          const extras = extraKeyPairs
+            .map(([from, to]) => ({ from, to, raw: localStorage.getItem(from) }))
+            .filter((e): e is { from: string; to: string; raw: string } => !!e.raw);
+          const guestDeep = await loadDeepProfileData('guest');
+          if (!guestDataStr && extras.length === 0 && !guestDeep) return { success: true, count: 0 };
 
-          const parsed = JSON.parse(guestDataStr);
+          const parsed = guestDataStr ? JSON.parse(guestDataStr) : {};
           const payload = parsed.state || parsed;
           const targetKey = `zerobox_operator_profile_${destId}`;
           // A fresh stamp: guest's savedAt says nothing about this profile, and an older one would let the
           // destination's stale IndexedDB copy win at the next boot (restoreFromResilientCopy).
-          localStorage.setItem(targetKey, JSON.stringify({ ...payload, savedAt: new Date().toISOString() }));
-          useCtfStore.getState().loadProfileData(destId);
+          const targetBlob = guestDataStr ? JSON.stringify({ ...payload, savedAt: new Date().toISOString() }) : null;
+
+          // 0. The first run overwrites whatever the destination already holds: snapshot it first, and change
+          // nothing if the snapshot could not be written.
+          if ((await takePreSyncSnapshot(destId)) === 'failed') return { success: false, count: 0 };
+
+          // 1. Copy.
+          if (targetBlob) localStorage.setItem(targetKey, targetBlob);
+          for (const e of extras) localStorage.setItem(e.to, e.raw);
+          if (guestDeep) {
+            await saveDeepProfileData(destId, { writeups: guestDeep.writeups || {}, customNotes: guestDeep.customNotes || [] });
+          }
+
+          // 2. Read back and verify.
+          if (targetBlob && localStorage.getItem(targetKey) !== targetBlob) throw new Error('profile copy did not verify');
+          for (const e of extras) {
+            if (localStorage.getItem(e.to) !== e.raw) throw new Error(`copy of ${e.from} did not verify`);
+          }
+          if (guestDeep) {
+            const back = await loadDeepProfileData(destId);
+            if (
+              !back ||
+              JSON.stringify(back.writeups) !== JSON.stringify(guestDeep.writeups || {}) ||
+              JSON.stringify(back.customNotes || []) !== JSON.stringify(guestDeep.customNotes || [])
+            ) {
+              throw new Error('IndexedDB copy did not verify');
+            }
+          }
+
+          // When the destination is already the active profile, loadProfileData would first save the in-memory
+          // state of that profile over the verified copy written above, so it must not save the outgoing profile.
+          const destIsActive = (useCtfStore.getState().currentProfileId || 'guest') === destId;
+          useCtfStore.getState().loadProfileData(destId, destIsActive ? { skipSaveOutgoing: true } : undefined);
           set({ guestDataMigrated: true });
           const count = Array.isArray(payload.machines) ? payload.machines.length : 0;
+
+          // 3. Remember that this destination holds a verified copy, so a re-run does not overwrite later work.
+          // The guest copy is deliberately left in place: migration never deletes user data.
+          localStorage.setItem(migratedMarkerKey, new Date().toISOString());
           return { success: true, count };
         } catch (err) {
           console.error('[ZeroBox] Failed to migrate guest data:', err);

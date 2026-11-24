@@ -1,4 +1,5 @@
 import { Machine } from '../types';
+import { EXAM_TRACKS_LIST } from '../data/catalogStats';
 import { 
   OperatorRank, 
   TrophyDefinition, 
@@ -219,7 +220,7 @@ const TROPHY_DEFINITIONS: TrophyDefinition[] = [
   {
     id: 'exam_gladiator',
     title: 'Exam Gladiator',
-    description: 'Successfully conquer a 24-hour Exam Simulator session (OSCP, CPTS, or CRTO).',
+    description: `Successfully conquer a 24-hour Exam Simulator session (${EXAM_TRACKS_LIST}).`,
     category: 'exam',
     xpReward: 150,
     icon: 'GraduationCap',
@@ -229,7 +230,7 @@ const TROPHY_DEFINITIONS: TrophyDefinition[] = [
   {
     id: 'vault_curator',
     title: 'Vault Curator',
-    description: 'Catalogue and store 10 or more target credentials, hashes, or SSH keys in the Evidence Vault.',
+    description: 'Catalog and store 10 or more target credentials, hashes, or SSH keys in the Evidence Vault.',
     category: 'recon',
     xpReward: 50,
     icon: 'Database',

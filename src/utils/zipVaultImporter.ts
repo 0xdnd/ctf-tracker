@@ -1,6 +1,13 @@
 import JSZip from 'jszip';
 import { CptsNoteEntry } from './obsidianManualUtils';
 import { extractCommands, parseFrontmatterAndBody } from './markdownFrontmatter';
+import {
+  ImportLimitError,
+  MAX_ZIP_ENTRIES,
+  MAX_ZIP_UNCOMPRESSED_BYTES,
+  zipTooBigMessage,
+  zipTooManyEntriesMessage,
+} from './importLimits';
 
 // Re-exported so existing importers keep working; the parsers live in a JSZip-free module.
 export { extractCommands, parseFrontmatterAndBody };
@@ -195,7 +202,8 @@ export async function parseObsidianRawItems(
   }
 
   const notes: CptsNoteEntry[] = [];
-  const wikilinkMap: Record<string, string> = {};
+  // No prototype: a note called "constructor" or "__proto__" must be a plain key, never an inherited member.
+  const wikilinkMap: Record<string, string> = Object.create(null);
   const categoriesSet = new Set<string>();
 
   for (let i = 0; i < total; i++) {
@@ -360,6 +368,65 @@ export async function parseObsidianRawItems(
   };
 }
 
+type ZipEntryStream = {
+  on(event: 'data', cb: (chunk: Uint8Array) => void): ZipEntryStream;
+  on(event: 'end', cb: () => void): ZipEntryStream;
+  on(event: 'error', cb: (err: Error) => void): ZipEntryStream;
+  pause(): ZipEntryStream;
+  resume(): ZipEntryStream;
+};
+
+/**
+ * Inflates one ZIP entry through JSZip's stream API, adding each chunk to the shared running byte count and
+ * rejecting with an ImportLimitError the moment it passes MAX_ZIP_UNCOMPRESSED_BYTES (the entry's declared size is
+ * not trusted).
+ */
+function inflateWithinLimit(
+  entry: JSZip.JSZipObject,
+  getTotal: () => number,
+  addToTotal: (bytes: number) => void
+): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    let settled = false;
+    const stream = (entry as unknown as { internalStream(type: 'uint8array'): ZipEntryStream }).internalStream(
+      'uint8array'
+    );
+    stream
+      .on('data', (chunk) => {
+        if (settled) return;
+        addToTotal(chunk.length);
+        if (getTotal() > MAX_ZIP_UNCOMPRESSED_BYTES) {
+          settled = true;
+          stream.pause();
+          chunks.length = 0;
+          reject(new ImportLimitError(zipTooBigMessage(getTotal())));
+          return;
+        }
+        chunks.push(chunk);
+        size += chunk.length;
+      })
+      .on('error', (err) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      })
+      .on('end', () => {
+        if (settled) return;
+        settled = true;
+        const out = new Uint8Array(size);
+        let offset = 0;
+        for (const c of chunks) {
+          out.set(c, offset);
+          offset += c.length;
+        }
+        resolve(out);
+      });
+    stream.resume();
+  });
+}
+
 /**
  * Parse an uploaded Obsidian Vault .zip archive into ZeroBox CptsNoteEntry[] format
  * Safely ignores non-markdown assets (.png, .pdf, .obsidian/, .git/) to conserve browser memory.
@@ -376,6 +443,19 @@ export async function parseObsidianVaultZip(
   });
 
   const zip = await JSZip.loadAsync(zipSource);
+
+  // Zip-bomb guard. JSZip only reads the central directory here, so nothing has been inflated yet. The sizes are
+  // what the archive declares (JSZip keeps them on the entry's internal record), so the real text is counted again
+  // below as it is read, in case the headers lie.
+  const entryCount = Object.keys(zip.files).length;
+  if (entryCount > MAX_ZIP_ENTRIES) throw new ImportLimitError(zipTooManyEntriesMessage(entryCount));
+  let declaredBytes = 0;
+  zip.forEach((_path, entry) => {
+    if (entry.dir) return;
+    declaredBytes += (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
+  });
+  if (declaredBytes > MAX_ZIP_UNCOMPRESSED_BYTES) throw new ImportLimitError(zipTooBigMessage(declaredBytes));
+  let inflatedBytes = 0;
 
   // Filter markdown entries, skipping system and hidden directories
   const rawItems: { path: string; getText: () => Promise<string> }[] = [];
@@ -397,7 +477,14 @@ export async function parseObsidianVaultZip(
     if (lower.endsWith('.md') || lower.endsWith('.markdown')) {
       rawItems.push({
         path: normalizedPath,
-        getText: () => entry.async('text'),
+        getText: async () => {
+          // Inflate chunk by chunk and stop as soon as the running total is over the limit, instead of
+          // inflating the whole entry first and measuring it afterwards.
+          const bytes = await inflateWithinLimit(entry, () => inflatedBytes, (n) => {
+            inflatedBytes += n;
+          });
+          return new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes);
+        },
       });
     }
   });

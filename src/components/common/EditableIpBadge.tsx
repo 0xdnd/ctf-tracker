@@ -193,13 +193,14 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
         onClick={(e) => e.stopPropagation()}
         className={`group/ip inline-flex items-center gap-1 font-mono tabular-nums ${sizeClasses.text} ${className}`}
       >
-        {showLabel && <span className="text-secondary text-xs">IP</span>}
-        <div className={`inline-flex items-center rounded-[3px] border overflow-hidden tabular-nums ${plain ? 'border-transparent' : 'border-subtle bg-surface-sunken py-0.5'}`}>
+        {/* The button already reads "IP not set", so no separate IP label here. */}
+        {/* Always quiet: an unset IP is plain muted text; the edit pencil appears on hover, focus or touch. */}
+        <div className="inline-flex items-center rounded-[3px] border border-transparent overflow-hidden tabular-nums">
           <button
             type="button"
             onClick={handleOpenQuickModal}
-            aria-label={size === 'xs' ? (initialIp ? `${initialIp}, set IP` : 'Set IP, dynamic') : `SET IP ${initialIp ? `(${initialIp})` : ''}`}
-            className={`min-h-[24px] inline-flex items-center gap-1 ${plain ? `px-0 py-0.5 ${COARSE_TEXT}` : size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5'} text-muted hover:text-primary hover:bg-surface-hover transition-interactive active:scale-[0.97] font-medium tabular-nums`}
+            aria-label={`IP not set (${initialIp || 'dynamic'}), set IP`}
+            className={`min-h-[24px] inline-flex items-center gap-1 px-0 py-0.5 ${COARSE_TEXT} text-muted hover:text-primary hover:bg-surface-hover transition-interactive active:scale-[0.97] font-medium tabular-nums`}
             title="Click to set the IP"
           >
             <span className="whitespace-nowrap tabular-nums">IP not set</span>
@@ -208,7 +209,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
             type="button"
             onClick={handleStartEdit}
             aria-label="Edit IP inline"
-            className={`${plain ? COLLAPSED : 'min-w-[24px]'} min-h-[24px] inline-flex items-center justify-center ${plain ? '' : size === 'xs' ? 'px-1 py-0.5' : 'px-1.5 py-0.5'} text-muted hover:text-primary hover:bg-surface-hover transition-interactive active:scale-[0.97] ${plain ? `opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100` : 'border-l border-subtle'}`}
+            className={`${COLLAPSED} min-h-[24px] inline-flex items-center justify-center text-muted hover:text-primary hover:bg-surface-hover transition-interactive active:scale-[0.97] opacity-0 group-hover/ip:opacity-100 group-focus-within/ip:opacity-100 focus-visible:opacity-100 touch:opacity-100`}
             title="Edit inline"
           >
             <Pencil className={sizeClasses.icon} />
@@ -245,7 +246,7 @@ export const EditableIpBadge: React.FC<EditableIpBadgeProps> = React.memo(({
           type="button"
           onClick={handleCopy}
           onDoubleClick={handleStartEdit}
-          className={`cursor-pointer font-bold select-all tabular-nums max-md:min-h-6 max-md:inline-flex max-md:items-center ${plain ? COARSE_TEXT : ''}`}
+          className={`cursor-pointer font-bold select-text tabular-nums min-h-6 inline-flex items-center ${plain ? COARSE_TEXT : ''}`}
           title="Click to copy IP • Double-click to edit"
         >
           {initialIp}

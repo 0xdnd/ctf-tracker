@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { MoreHorizontal } from 'lucide-react';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 
@@ -90,8 +90,18 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
     anchorRef.current = r;
     const w = menu.offsetWidth;
     const h = menu.offsetHeight;
+    const topInset = 8;
+    const bottomInset = window.innerWidth < 640 ? 72 : 12;
+    const maxBottom = window.innerHeight - bottomInset;
     const left = Math.max(8, Math.min(align === 'right' ? r.right - w : r.left, window.innerWidth - w - 8));
-    const top = r.bottom + 4 + h > window.innerHeight && r.top - 4 - h >= 0 ? r.top - 4 - h : r.bottom + 4;
+    let top: number;
+    if (r.bottom + 4 + h <= maxBottom) {
+      top = r.bottom + 4;
+    } else if (r.top - 4 - h >= topInset) {
+      top = r.top - 4 - h;
+    } else {
+      top = Math.max(topInset, maxBottom - h);
+    }
     setPos({ top, left });
   }, [portal, open, align]);
 
@@ -216,7 +226,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
       {wrap(
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             ref={menuRef}
             id={menuId}
             role="menu"
@@ -229,7 +239,7 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: skipMotion ? 0 : 0.12, ease: 'easeOut' } }}
             transition={skipMotion ? { duration: 0 } : TACTICAL_SPRING}
-            className={`${portal ? 'fixed z-popover' : `absolute top-full mt-1 z-[100] ${originClass}`} min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge`}
+            className={`${portal ? 'fixed z-popover max-h-[min(60vh,calc(100vh-5.5rem))] overflow-y-auto overscroll-contain' : `absolute top-full mt-1 z-[100] ${originClass}`} min-w-[180px] max-w-[260px] rounded-xl border border-subtle bg-surface-elevated p-1 shadow-lg machined-edge`}
           >
             {items.map((item) => (
               <button
@@ -259,12 +269,10 @@ export const OverflowMenu: React.FC<OverflowMenuProps> = ({
                 <span className="truncate">{item.label}</span>
               </button>
             ))}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
       )}
     </div>
   );
 };
-
-export default OverflowMenu;

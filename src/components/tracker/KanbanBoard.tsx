@@ -18,15 +18,18 @@ import {
 } from 'lucide-react';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
+import { entersRootStage, STAGE_LABEL } from '../../utils/pipeline';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
-import { OsBadge } from '../common/OsBadge';
-import { PlatformBadge } from '../common/PlatformBadge';
 import { CardIpBadge } from './CardIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
-import { DifficultyBadge } from '../common/DifficultyBadge';
 import { ShareLinkButton } from '../common/ShareLinkButton';
 import { TargetTypeBadge } from '../common/TargetTypeBadge';
+import { EmptyState } from '../common/EmptyState';
+import { useMediaQuery, matchesQuery, LG_QUERY, PHONE_QUERY } from '../../hooks/useMediaQuery';
+import { GridView } from './GridView';
+import { machineChips } from './machineChips';
+import { ScrollFade } from '../common/ScrollFade';
 
 import {
   DndContext,
@@ -59,7 +62,7 @@ interface LaneConfig {
 const LANES: LaneConfig[] = [
   {
     id: 'backlog',
-    title: 'Backlog',
+    title: STAGE_LABEL.backlog,
     subtitle: 'Queued and scoped labs',
     dotClass: 'bg-surface-hover border border-strong',
     icon: Layers,
@@ -67,7 +70,7 @@ const LANES: LaneConfig[] = [
   },
   {
     id: 'recon',
-    title: 'Active recon',
+    title: STAGE_LABEL.recon,
     subtitle: 'Port and web enumeration',
     dotClass: 'bg-accent',
     icon: Radio,
@@ -75,7 +78,7 @@ const LANES: LaneConfig[] = [
   },
   {
     id: 'foothold',
-    title: 'Foothold',
+    title: STAGE_LABEL.foothold,
     subtitle: 'User shell and initial access',
     dotClass: 'bg-callout-warn-fg',
     icon: Key,
@@ -83,7 +86,7 @@ const LANES: LaneConfig[] = [
   },
   {
     id: 'root',
-    title: 'System pwned',
+    title: STAGE_LABEL.root,
     subtitle: 'Root flag captured',
     dotClass: 'bg-callout-success-fg',
     icon: Zap,
@@ -91,7 +94,7 @@ const LANES: LaneConfig[] = [
   },
   {
     id: 'completed',
-    title: 'Completed',
+    title: STAGE_LABEL.completed,
     subtitle: 'Writeup archived and retired',
     dotClass: 'bg-callout-tip-fg',
     icon: Award,
@@ -157,19 +160,10 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         : 'bg-surface-sunken text-muted'
     }`;
 
-  const metaBadges: React.ReactNode[] = [
-    ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
-    <OsBadge key="os" os={m.os} size="xs" />,
-    <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-    ...(m.certifications || []).map((cert) => (
-      <span
-        key={cert}
-        className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
-      >
-        {cert}
-      </span>
-    )),
-  ];
+  const { badges: metaBadges, labels: chipLabels } = machineChips(m, {
+    order: ['platform', 'os', 'difficulty'],
+    extras: m.certifications || [],
+  });
 
   return (
     <div
@@ -199,12 +193,14 @@ const KanbanCard = React.memo<KanbanCardProps>(({
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
-          className="line-clamp-2 min-w-0 flex-1 cursor-pointer break-words rounded-xs border-0 bg-transparent p-0 text-left font-sans text-sm font-semibold leading-snug text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className={`line-clamp-2 min-h-6 min-w-0 flex-1 cursor-pointer break-words rounded-xs ${isActiveTarget ? 'lg:pr-6' : ''} border-0 bg-transparent p-0 text-left font-sans text-sm font-semibold leading-snug text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
         >
           {m.name}
         </button>
         <TargetTypeBadge machine={m} />
 
+        {/* From lg the stage and engage controls float over the card corner so they never squeeze the name. */}
+        <div className="flex shrink-0 items-center gap-0.5 lg:absolute lg:right-1.5 lg:top-2 lg:rounded-md lg:group-hover:bg-surface-card lg:group-focus-within:bg-surface-card">
         <div className={`flex shrink-0 items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
           {prevLane && (
             <button
@@ -239,6 +235,7 @@ const KanbanCard = React.memo<KanbanCardProps>(({
         >
           <Crosshair className="h-4 w-4" />
         </button>
+        </div>
       </div>
 
       {/* Row 2: IP (telemetry) and time spent */}
@@ -264,7 +261,12 @@ const KanbanCard = React.memo<KanbanCardProps>(({
 
           {/* Row 3: platform/OS/difficulty badges (+N) (+N), flags and utility actions on hover */}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 pl-4">
-            <BadgeOverflow badges={metaBadges} max={3} className="flex-wrap" />
+            <BadgeOverflow
+              badges={metaBadges}
+              labels={chipLabels}
+              max={3}
+              className="flex-wrap"
+            />
             <div className={`flex shrink-0 items-center gap-1 ${REVEAL}`}>
               <span
                 className={flagChip(hasUser, 'warn')}
@@ -316,6 +318,8 @@ const KanbanCard = React.memo<KanbanCardProps>(({
 
 interface KanbanLaneProps {
   lane: LaneConfig;
+  /** Read once in KanbanBoard (one media-query listener for the board, not one per lane). */
+  isPhone: boolean;
   isMobileActive: boolean;
   laneMachines: Machine[];
   limit: number;
@@ -332,7 +336,7 @@ interface KanbanLaneProps {
 }
 
 const KanbanLane = React.memo<KanbanLaneProps>(({
-  lane, isMobileActive, laneMachines, limit, setLaneLimits, displayedMachines, activeTargetId, prevLane, nextLane, setSelectedMachineId, handleSetTarget, handleAdvance, handleRetreat, setReportMachineId
+  lane, isPhone, isMobileActive, laneMachines, limit, setLaneLimits, displayedMachines, activeTargetId, prevLane, nextLane, setSelectedMachineId, handleSetTarget, handleAdvance, handleRetreat, setReportMachineId
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: lane.id,
@@ -361,7 +365,7 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
       } backdrop-blur-sm ${
         isMobileActive ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'
       } lg:h-[var(--kanban-h,calc(100vh-270px))] lg:min-h-[480px] lg:snap-start ${
-        laneMachines.length === 0 ? 'lg:w-40 lg:shrink-0' : 'lg:w-60 lg:min-w-60 lg:max-w-[30rem] lg:flex-1'
+        laneMachines.length === 0 ? 'lg:w-40 lg:shrink-0' : 'lg:w-60 lg:min-w-[10.5rem] lg:max-w-[30rem] lg:flex-1'
       }`}
     >
       {/* Lane header: sentence-case title, mono count */}
@@ -369,10 +373,10 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         <div className="flex items-center gap-2 min-w-0">
           <LaneIcon className="w-3.5 h-3.5 shrink-0 text-muted" />
           <div className="min-w-0">
-            <div className={`text-sm font-semibold text-primary font-sans ${laneMachines.length === 0 ? 'lg:leading-tight' : 'truncate'}`}>
+            <h2 className="text-[13px] xl:text-sm font-semibold text-primary font-sans whitespace-nowrap truncate">
               {lane.title}
-            </div>
-            <div className={`text-xs text-muted truncate font-sans ${laneMachines.length === 0 ? 'lg:hidden' : ''}`} title={lane.subtitle}>{lane.subtitle}</div>
+            </h2>
+            <div className={`text-xs text-muted truncate font-sans ${laneMachines.length === 0 ? 'lg:hidden' : 'lg:hidden xl:block'}`} title={lane.subtitle}>{lane.subtitle}</div>
             {laneMachines.length > limit && (
                 <button
                   onClick={() => setLaneLimits(prev => ({ ...prev, [lane.id]: laneMachines.length }))}
@@ -396,25 +400,31 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         onScroll={handleLaneScroll}
         className="flex-1 p-2 space-y-2 md:overflow-y-auto scroll-smooth"
       >
-        {displayedMachines.map((m, idx) => (
-          <div
-            key={m.id}
-            className="card-enter"
-            style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
-          >
-            <KanbanCard
-              machine={m}
-              isActiveTarget={activeTargetId === m.id}
-              prevLane={prevLane}
-              nextLane={nextLane}
-              onSelect={setSelectedMachineId}
-              onSetTarget={handleSetTarget}
-              onAdvance={handleAdvance}
-              onRetreat={handleRetreat}
-              onOpenReport={setReportMachineId}
-            />
-          </div>
-        ))}
+        {isPhone ? (
+          // Phones: the same compact row the Cards layout uses (6+ targets per screen); stage moves go through the flags.
+          // Only the open lane is mounted; the others are display:none on a phone, so their cards would be dead DOM.
+          isMobileActive ? <GridView filteredMachines={displayedMachines} /> : null
+        ) : (
+          displayedMachines.map((m, idx) => (
+            <div
+              key={m.id}
+              className="card-enter"
+              style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
+            >
+              <KanbanCard
+                machine={m}
+                isActiveTarget={activeTargetId === m.id}
+                prevLane={prevLane}
+                nextLane={nextLane}
+                onSelect={setSelectedMachineId}
+                onSetTarget={handleSetTarget}
+                onAdvance={handleAdvance}
+                onRetreat={handleRetreat}
+                onOpenReport={setReportMachineId}
+              />
+            </div>
+          ))
+        )}
 
         {laneMachines.length > displayedMachines.length && (
           <div className="pt-2 pb-1 px-2 flex flex-col items-center gap-2 border-t border-subtle bg-surface-sunken/60 rounded-lg machined-edge">
@@ -442,21 +452,12 @@ const KanbanLane = React.memo<KanbanLaneProps>(({
         )}
 
         {laneMachines.length === 0 && (
-          <div className={`flex flex-col items-center justify-center gap-2.5 p-6 text-center border border-dashed border-subtle rounded-lg min-h-[120px] ${lane.id === 'backlog' ? '' : 'lg:hidden'}`}>
-            <p className="text-sm text-muted font-sans max-w-[210px] leading-snug">
-              {lane.emptyLine}
-            </p>
-            {lane.id === 'backlog' && (
-              <button
-                type="button"
-                onClick={() => setNewMachineModalOpen(true)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-3 text-xs font-medium text-primary hover:bg-surface-hover transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add machine
-              </button>
-            )}
-          </div>
+          <EmptyState
+            compact
+            title={lane.emptyLine}
+            className="min-h-[120px] rounded-lg border border-dashed border-subtle"
+            action={lane.id === 'backlog' ? { label: 'Add machine', icon: Plus, onClick: () => setNewMachineModalOpen(true) } : undefined}
+          />
         )}
       </div>
     </div>
@@ -482,6 +483,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     }))
   );
 
+  const isPhone = useMediaQuery(PHONE_QUERY);
   const [laneLimits, setLaneLimits] = React.useState<Record<string, number>>({});
   const [mobileActiveLane, setMobileActiveLane] = React.useState<PipelineStatus>('backlog');
 
@@ -494,7 +496,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     const main = grid?.closest('main') as HTMLElement | null;
     if (!grid || !main) return;
     const measure = () => {
-      if (!window.matchMedia('(min-width: 1024px)').matches) {
+      if (!matchesQuery(LG_QUERY)) {
         setLaneHeight((prev) => (prev === null ? prev : null));
         return;
       }
@@ -523,7 +525,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     e.stopPropagation();
     updateMachineStatus(m.id, nextStatus);
     if (nextStatus === 'root' || nextStatus === 'completed') {
-      triggerRootCelebration();
+      if (entersRootStage(m.status, nextStatus)) triggerRootCelebration();
       if (soundEnabled) playCyberSound('root');
     } else {
       if (soundEnabled) playCyberSound('toggle');
@@ -613,7 +615,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
     if (machine && newStatus && machine.status !== newStatus) {
       if (soundEnabled) playCyberSound('flag');
       updateMachineStatus(machine.id, newStatus);
-      if (newStatus === 'root' || newStatus === 'completed') {
+      if (entersRootStage(machine.status, newStatus)) {
         triggerRootCelebration();
       }
     }
@@ -656,11 +658,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
       </div>
 
       {/* 2. RESPONSIVE GRID LAYOUT: Single un-trapped container on mobile, multi-column lane grid on desktop */}
-      <div
+      <ScrollFade
         ref={gridRef}
+        unstyled
+        fade="end"
+        fadeSize="56px"
         role="region"
         aria-label="Kanban lanes, scroll horizontally"
-        className="grid grid-cols-1 gap-3.5 items-start transition-colors lg:flex lg:overflow-x-auto lg:snap-x lg:snap-proximity lg:pb-3 lg:scroll-pl-0 rounded-xl"
+        className="grid grid-cols-1 gap-3.5 lg:gap-2.5 items-start transition-colors lg:flex lg:overflow-x-auto lg:snap-x lg:snap-mandatory lg:pb-3 lg:scroll-pl-0 rounded-xl"
       >
         {visibleLanes.map((lane) => {
           const { laneMachines, displayedMachines } = laneData.get(lane.id)!;
@@ -675,6 +680,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
             <KanbanLane
               key={lane.id}
               lane={lane}
+              isPhone={isPhone}
               isMobileActive={isMobileActive}
               laneMachines={laneMachines}
               limit={limit}
@@ -691,7 +697,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ filteredMachines }) =>
             />
           );
         })}
-      </div>
+      </ScrollFade>
       </div>
       <DragOverlay>
         {activeDragMachine ? (

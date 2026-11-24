@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import { App } from './App';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
 import { isTauriTarget } from './utils/runtimeTarget';
@@ -8,6 +8,8 @@ import { installExternalLinkHandler } from './utils/externalLinks';
 import { initServiceWorkerUpdates } from './utils/swUpdate';
 import { flushProfileSave, useCtfStore } from './store/useCtfStore';
 import { useToastStore } from './store/useToastStore';
+import { useUpdateUiStore } from './store/useUpdateUiStore';
+import { isOperatorInterruptSensitive } from './hooks/usePostUpdateWhatsNew';
 import { registerBackupImageProvider } from './store/backupFile';
 import { imageBackupProvider } from './utils/backupImageProvider';
 
@@ -49,13 +51,10 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         location,
         now: Date.now,
         flushBeforeReload: () => flushProfileSave(),
-        notify: ({ message, actionLabel, onAction }) =>
-          useToastStore.getState().addToast({
-            type: 'info',
-            message,
-            durationMs: 0,
-            action: { label: actionLabel, onClick: onAction },
-          }),
+        notify: ({ onAction }) => {
+          const autoOpen = !isOperatorInterruptSensitive();
+          useUpdateUiStore.getState().setWebUpdateReady(onAction, autoOpen);
+        },
       }).catch((err) => {
         console.warn('[ZeroBox SW] Service Worker registration failed:', err);
       });

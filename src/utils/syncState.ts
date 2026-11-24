@@ -9,8 +9,8 @@
  */
 import { isSchemaWriteGated } from './schemaWriteGate';
 
-export const DEVICE_ID_KEY = 'zerobox_device_id';
-export const SYNC_STATE_PREFIX = 'zerobox_sync_state_v1_';
+const DEVICE_ID_KEY = 'zerobox_device_id';
+const SYNC_STATE_PREFIX = 'zerobox_sync_state_v1_';
 
 export interface SyncState {
   peers: Record<string, string>;

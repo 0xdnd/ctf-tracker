@@ -6,10 +6,7 @@ import { toast } from '../../store/useToastStore';
 import {
   COMMON_TRANSFER_TOOLS,
   generateFileTransferMethods,
-  FileTransferMethod,
 } from '../../utils/offensiveTransferUtils';
-
-export type { FileTransferMethod as FileTransferItem };
 
 export const FileTransferCheatsheet: React.FC = () => {
   const { globalVars, soundEnabled } = useCtfStore();
@@ -180,7 +177,7 @@ export const FileTransferCheatsheet: React.FC = () => {
 
               <div className="space-y-1.5">
                 <div className="relative group">
-                  <pre className="p-2.5 rounded-lg bg-surface-sunken border border-subtle text-xs font-mono text-primary overflow-x-auto whitespace-pre-wrap break-all select-all">
+                  <pre className="p-2.5 rounded-lg bg-surface-sunken border border-subtle text-xs font-mono text-primary overflow-x-auto whitespace-pre-wrap break-all select-text">
                     {item.commandTemplate}
                   </pre>
                   <button

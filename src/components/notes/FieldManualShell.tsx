@@ -59,7 +59,8 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
   const [dragging, setDragging] = useState(false);
   const canResize = !!resizeStorageKey && isLeftOpen && !narrowLeft;
   const shellWidth = () => shellRef.current?.getBoundingClientRect().width ?? 0;
-  const leftWidth = resizeStorageKey && leftCustom !== null ? clampSidebarWidth(leftCustom, shellWidth()) : sidebarWidth;
+  const leftWidth =
+    !narrowLeft && resizeStorageKey && leftCustom !== null ? clampSidebarWidth(leftCustom, shellWidth()) : sidebarWidth;
 
   const handleResize = useCallback(
     (w: number, commit: boolean) => {
@@ -92,7 +93,7 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
   const widthFor = (narrow: boolean, open: boolean, w: number = sidebarWidth) =>
     narrow ? { width: w } : { width: open ? w : 0 };
   const leftClass = narrowLeft
-    ? `left-[44px] border-r border-subtle ${isLeftOpen ? 'translate-x-0' : '-translate-x-[120%]'}`
+    ? `${ribbon ? 'left-[44px]' : 'left-0'} border-r border-subtle ${isLeftOpen ? 'translate-x-0' : '-translate-x-[120%]'}`
     : isLeftOpen
       ? 'border-r border-subtle'
       : '';
@@ -126,7 +127,9 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
         style={widthFor(narrowLeft, isLeftOpen, leftWidth)}
         className={`${asideBase(narrowLeft, dragging)} ${leftClass}${canResize ? ' relative' : ''}`}
       >
-        {left}
+        <div data-testid="notes-left-panel-content" className="h-full min-w-0" style={{ width: leftWidth }}>
+          {left}
+        </div>
         {canResize && (
           <SidebarResizeHandle
             width={leftWidth}
@@ -155,5 +158,3 @@ export const FieldManualShell: React.FC<FieldManualShellProps> = ({
     </div>
   );
 };
-
-export default FieldManualShell;

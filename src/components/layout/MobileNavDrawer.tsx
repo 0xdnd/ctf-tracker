@@ -1,9 +1,10 @@
 import React from 'react';
+import { ScrollFade, useScrollEdges } from '../common/ScrollFade';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
-import { X, Volume2, VolumeX, Database, Plus, Search, Server, Copy, Check, ChevronRight, Save, Coffee, Scale, Settings, User, KeyRound, SquareTerminal, NotebookPen, Timer, Compass } from 'lucide-react';
+import { X, Volume2, VolumeX, Database, Plus, Search, Server, Copy, Check, ChevronRight, ChevronDown, Save, Coffee, Scale, Settings, User, KeyRound, SquareTerminal, NotebookPen, Timer, Compass } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { stripTrailingSlash } from '../../utils/pathUtils';
 import { useCtfStore, type ActiveTab } from '../../store/useCtfStore';
@@ -70,6 +71,9 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
 
   const user = useAuthStore((s) => s.user);
   const [copiedVar, setCopiedVar] = React.useState<'lhost' | 'lport' | null>(null);
+  const bodyRef = React.useRef<HTMLDivElement>(null);
+  // The body only mounts while the menu is open, so re-measure on open. The "scroll down" cue shows while more is below.
+  const bodyAtEnd = !useScrollEdges(bodyRef, 'y', mobileMenuOpen).end;
   const [justSavedMobile, setJustSavedMobile] = React.useState(false);
 
   const drawerRef = useFocusTrap<HTMLDivElement>({
@@ -78,7 +82,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
   });
 
   // Lock page scroll while the drawer is open.
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!mobileMenuOpen) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -129,7 +133,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
         {mobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-drawer flex font-sans">
             {/* Backdrop */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
@@ -138,7 +142,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
             />
 
             {/* Sliding panel */}
-            <motion.div
+            <m.div
               ref={drawerRef}
               role="dialog"
               aria-modal="true"
@@ -147,7 +151,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
               animate={{ x: 0 }}
               exit={{ x: '100%', transition: { duration: 0.15, ease: 'easeOut' } }}
               transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
-              className="relative ml-auto w-[85%] max-w-sm h-full bg-surface-card border-l border-subtle shadow-xl flex flex-col z-10 overflow-hidden"
+              className="relative ml-auto w-[85%] max-w-sm h-full max-h-[100dvh] bg-surface-card border-l border-subtle shadow-xl flex flex-col z-10 overflow-hidden"
             >
               {/* Drawer header */}
               <div className="p-4 border-b border-subtle flex items-center justify-between bg-surface-card">
@@ -171,15 +175,15 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
               </div>
 
               {/* Drawer body */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-5 text-sm scrollbar-thin">
+              <ScrollFade ref={bodyRef} unstyled axis="y" fade="end" fadeSize="28px" className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 pb-10 space-y-5 text-sm scrollbar-thin">
                 {/* Operator and save */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
                     <div className="text-xs text-muted">
-                      Operator <span className="text-primary font-medium">{user ? user.name : 'Local Operator'}</span>
+                      Profile <span className="text-primary font-medium">{user ? user.name : 'Local profile'}</span>
                     </div>
                     <div className="text-xs text-muted tabular-nums">
-                      <span className="font-mono tabular-nums text-secondary">{rootedMachines} / {totalMachines}</span> pwned
+                      <span className="font-mono tabular-nums text-secondary">{rootedMachines} / {totalMachines}</span> solved
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -211,12 +215,12 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                 {/* Payload variables */}
                 <div className="space-y-2">
                   <div className={`${sectionLabel} flex items-center gap-1.5`}>
-                    <Server className="w-3 h-3" /> Payload tuning (LHOST:LPORT)
+                    <Server className="w-3 h-3" /> Your IP and listener port
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[11px] text-muted">LHOST (tun0)</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
+                      <span className="text-[11px] text-muted">Your IP (LHOST)</span>
+                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40 ${
                         copiedVar === 'lhost' ? 'border-callout-success-border' : 'border-subtle'
                       }`}>
                         <input
@@ -226,7 +230,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                           aria-label="Attacker Host LHOST"
                           value={globalVars.lhost}
                           onChange={(e) => setGlobalVars({ lhost: e.target.value })}
-                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
+                          className="h-11 w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
                         />
                         <button
                           aria-label="Copy LHOST"
@@ -244,8 +248,8 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-muted">LPORT</span>
-                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors ${
+                      <span className="text-[11px] text-muted">Listener port (LPORT)</span>
+                      <div className={`flex items-center gap-1 mt-0.5 bg-surface-sunken px-2 min-h-[44px] rounded-lg border transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/40 ${
                         copiedVar === 'lport' ? 'border-callout-success-border' : 'border-subtle'
                       }`}>
                         <input
@@ -255,7 +259,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                           aria-label="Attacker Port LPORT"
                           value={globalVars.lport}
                           onChange={(e) => setGlobalVars({ lport: e.target.value })}
-                          className="w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
+                          className="h-11 w-full bg-transparent text-primary font-mono tabular-nums text-xs focus:outline-none"
                         />
                         <button
                           aria-label="Copy LPORT"
@@ -348,9 +352,9 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Search className={iconCls} />
-                      <span>Command Search (Ctrl+K)</span>
+                      <span>Command Search<span className="[@media(hover:none)]:hidden"> (Ctrl+K)</span></span>
                     </div>
-                    <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle">Ctrl+K</kbd>
+                    <kbd className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface-sunken text-muted border border-subtle [@media(hover:none)]:hidden">Ctrl+K</kbd>
                   </button>
 
                   <button
@@ -362,7 +366,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Plus className={iconCls} />
-                      <span>Deploy Custom Target</span>
+                      <span>Add target</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -376,7 +380,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Database className={iconCls} />
-                      <span>Backup / Restore JSON</span>
+                      <span>Backup and restore</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -413,7 +417,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                   >
                     <div className="flex items-center gap-2.5">
                       <Settings className={iconCls} />
-                      <span>Operator Settings & Themes</span>
+                      <span>Settings and themes</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted" />
                   </button>
@@ -492,13 +496,24 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ onNavigate }) => {
                     </button>
                   </div>
                 </div>
-              </div>
+              </ScrollFade>
+
+              {!bodyAtEnd && (
+                <button
+                  type="button"
+                  aria-label="Scroll the menu down"
+                  onClick={() => bodyRef.current?.scrollBy({ top: 320, behavior: "smooth" })}
+                  className="absolute bottom-14 left-1/2 z-10 inline-flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-subtle bg-surface-card text-muted shadow-md transition-[transform,color] duration-150 hover:text-primary active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
 
               {/* Drawer footer */}
               <div className="p-3 border-t border-subtle bg-surface-card text-center text-[11px] text-muted">
                 ZeroBox mobile
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>,

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   ArrowUp,
@@ -18,11 +18,14 @@ import {
   ListChecks,
   Maximize2,
   Lock,
-  Download
+  Download,
+  Check,
+  MoreHorizontal
 } from 'lucide-react';
 import { downloadMachinesCsv } from '../../utils/machineCsvExport';
 import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
+import { entersRootStage } from '../../utils/pipeline';
 import { useShallow } from 'zustand/react/shallow';
 import { formatSeconds, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
 import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
@@ -33,22 +36,20 @@ import { CardIpBadge } from './CardIpBadge';
 import { CategoryBadge } from '../common/CategoryBadge';
 import { DifficultyBadge } from '../common/DifficultyBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
+import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
+// Phones render a dense list instead of the table, so the desktop table never loads it.
+const PhoneTargetTable = React.lazy(() => import('./PhoneTargetTable').then((m) => ({ default: m.PhoneTargetTable })));
+import { PHONE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery';
+import { ViewSkeleton } from '../common/Skeleton';
 import { CyberSelect, CyberSelectOption } from '../common/CyberSelect';
 import { CyberButton } from '../common/CyberButton';
 import { confirmAction, useConfirmStore } from '../../store/useConfirmStore';
 import { SortKey, nextSortKeys, sortByKeys, applySelectionClick } from '../../utils/tableSort';
+import { CHECKBOX_BOX, CHECKBOX_CLASS, CHECK_CELL, STATUS_DOT, type SortField } from './tableShared';
 
 interface TableViewProps {
   filteredMachines: Machine[];
 }
-
-type SortField = 'name' | 'platform' | 'os' | 'difficulty' | 'status' | 'timeSpentSeconds';
-
-const CHECKBOX_CLASS =
-  'h-3.5 w-3.5 rounded border-strong text-accent bg-surface-card cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
-
-const CHECK_CELL =
-  'flex h-8 w-8 cursor-pointer items-center justify-center [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
 
 const STATUS_OPTIONS: CyberSelectOption<PipelineStatus>[] = [
   { value: 'backlog', label: 'Backlog' },
@@ -58,20 +59,8 @@ const STATUS_OPTIONS: CyberSelectOption<PipelineStatus>[] = [
   { value: 'completed', label: 'Completed' },
 ];
 
-/** Hover/focus reveal for secondary actions; always visible on touch. Opacity only, so keyboard focus still works. */
-const REVEAL =
-  'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150';
-
 const ICON_BTN =
   'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-8 [@media(pointer:coarse)]:w-8 tap-target-sm';
-
-const STATUS_DOT: Record<string, string> = {
-  backlog: 'bg-surface-hover border border-strong',
-  recon: 'bg-accent',
-  foothold: 'bg-callout-warn-fg',
-  root: 'bg-callout-success-fg',
-  completed: 'bg-callout-tip-fg',
-};
 
 const flagBtnClass = (captured: boolean, tone: 'warn' | 'success') =>
   `inline-flex h-6 items-center gap-1 rounded-md border px-2 font-mono text-xs font-medium tabular-nums transition-colors duration-150 active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11 ${
@@ -81,22 +70,6 @@ const flagBtnClass = (captured: boolean, tone: 'warn' | 'success') =>
         : 'bg-callout-success-bg border-callout-success-border text-callout-success-fg'
       : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
   }`;
-
-/** True below the `sm` breakpoint (640px). Falls back to false where matchMedia is unavailable. */
-function useIsBelowSm(): boolean {
-  const query = '(max-width: 639px)';
-  const get = () => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : false);
-  const [below, setBelow] = useState<boolean>(get);
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mql = window.matchMedia(query);
-    const onChange = () => setBelow(mql.matches);
-    onChange();
-    mql.addEventListener?.('change', onChange);
-    return () => mql.removeEventListener?.('change', onChange);
-  }, []);
-  return below;
-}
 
 interface TableRowProps {
   machine: Machine;
@@ -123,78 +96,81 @@ const RowActions: React.FC<Pick<TableRowProps, 'machine' | 'isActiveTarget' | 'o
   onOpenTarget,
   onOpenReport,
   onOpenWriteup,
-}) => (
-  <div className="flex flex-wrap items-center justify-end gap-0.5 [@media(pointer:coarse)]:gap-3">
-    <div className={`flex items-center gap-0.5 [@media(pointer:coarse)]:gap-3 ${REVEAL}`}>
+}) => {
+  // Built once per row data, not on every render of the row (the menu stays closed almost always).
+  const items = React.useMemo((): OverflowItem[] => {
+    const roomHref = sanitizeExternalUrl(m.roomUrl);
+    return [
+      {
+        id: 'checklist',
+        label: 'Checklist',
+        ariaLabel: m.isActive ? `Open active target compliance details for ${m.name}` : `Open attack methodology checklist for ${m.name}`,
+        icon: <ListChecks className="h-3.5 w-3.5" />,
+        onSelect: () => onSelect(m.id),
+      },
+      {
+        id: 'dossier',
+        label: 'Open full page',
+        ariaLabel: `Open dedicated mission dossier for ${m.name}`,
+        icon: <Maximize2 className="h-3.5 w-3.5" />,
+        onSelect: () => onOpenTarget(m.id),
+      },
+      ...(m.isActive
+        ? []
+        : [
+            {
+              id: 'report',
+              label: 'Pre-report',
+              ariaLabel: `Open executive pentest pre-report for ${m.name}`,
+              icon: <ClipboardCheck className="h-3.5 w-3.5" />,
+              onSelect: () => onOpenReport(m.id),
+            },
+            {
+              id: 'writeup',
+              label: 'Writeup studio',
+              ariaLabel: `Open writeup studio for ${m.name}`,
+              icon: <FileText className="h-3.5 w-3.5" />,
+              onSelect: () => onOpenWriteup(m.id),
+            },
+          ]),
+      ...(roomHref
+        ? [{
+            id: 'room',
+            label: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Room link',
+            ariaLabel: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`,
+            icon: <ExternalLink className="h-3.5 w-3.5" />,
+            onSelect: () => {
+              window.open(roomHref, '_blank', 'noopener,noreferrer');
+            },
+          }]
+        : []),
+    ];
+  }, [m, onSelect, onOpenTarget, onOpenReport, onOpenWriteup]);
+
+  return (
+    <div className="flex items-center justify-end gap-1">
       <button
         type="button"
-        onClick={() => onSelect(m.id)}
-        className={ICON_BTN}
-        title={m.isActive ? 'Active Lab Compliance & Details' : 'Attack Methodology Checklist'}
-        aria-label={m.isActive ? `Open active target compliance details for ${m.name}` : `Open attack methodology checklist for ${m.name}`}
+        onClick={() => onEngageTarget(m.id)}
+        className={`inline-flex h-6 items-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          isActiveTarget ? 'border-accent bg-accent-muted text-accent' : 'border-subtle bg-surface-sunken text-secondary hover:border-strong hover:text-primary'
+        }`}
+        title={isActiveTarget ? 'Currently engaged target' : 'Engage target and start timer'}
+        aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
       >
-        <ListChecks className="w-3.5 h-3.5" />
+        <Crosshair className="h-3 w-3" aria-hidden="true" />
+        {isActiveTarget ? 'Engaged' : 'Engage'}
       </button>
-
-      <button
-        type="button"
-        onClick={() => onOpenTarget(m.id)}
-        className={ICON_BTN}
-        title="Open Dedicated Full-Page Mission"
-        aria-label={`Open dedicated mission dossier for ${m.name}`}
-      >
-        <Maximize2 className="w-3.5 h-3.5" />
-      </button>
-
-      {!m.isActive && (
-        <>
-          <button
-            type="button"
-            onClick={() => onOpenReport(m.id)}
-            className={`${ICON_BTN} hover:text-accent`}
-            title="Open Executive Pentest Pre-Report"
-            aria-label={`Open executive pentest pre-report for ${m.name}`}
-          >
-            <ClipboardCheck className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onOpenWriteup(m.id)}
-            className={`${ICON_BTN} hover:text-accent`}
-            title="Open Writeup"
-            aria-label={`Open writeup studio for ${m.name}`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-          </button>
-        </>
-      )}
-
-      {Boolean(sanitizeExternalUrl(m.roomUrl)) && (
-        <a
-          href={sanitizeExternalUrl(m.roomUrl)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={ICON_BTN}
-          title={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Open Room Link'}
-          aria-label={isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`}
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      )}
+      <OverflowMenu
+        portal
+        items={items}
+        label={`More actions for ${m.name}`}
+        triggerContent={<MoreHorizontal className="h-4 w-4" aria-hidden="true" />}
+        triggerClassName={`${ICON_BTN} aria-expanded:bg-surface-hover aria-expanded:text-primary`}
+      />
     </div>
-
-    <button
-      type="button"
-      onClick={() => onEngageTarget(m.id)}
-      className={`${ICON_BTN} ${isActiveTarget ? 'bg-accent-muted text-accent' : 'hover:text-accent'}`}
-      title={isActiveTarget ? 'Currently Engaged Target' : 'Engage Target & Start Timer'}
-      aria-label={isActiveTarget ? `Currently engaged target: ${m.name}` : `Engage target ${m.name} and start timer`}
-    >
-      <Crosshair className="w-3.5 h-3.5" />
-    </button>
-  </div>
-);
+  );
+};
 
 const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' | 'onToggleRootFlag'> & { full?: boolean }> = ({
   full = false,
@@ -213,7 +189,7 @@ const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' |
         title="User flag"
         aria-label={hasUser ? `Toggle user flag for ${m.name} (currently captured)` : `Toggle user flag for ${m.name} (currently pending)`}
       >
-        <Flag className="w-2.5 h-2.5" /> {full ? 'User' : <>U<span className="hidden xl:inline">ser</span></>}
+        <Flag className="w-2.5 h-2.5" /> <span>{full ? 'User' : <>U<span className="hidden xl:inline">ser</span></>}</span>
       </button>
       <button
         type="button"
@@ -222,7 +198,7 @@ const FlagButtons: React.FC<Pick<TableRowProps, 'machine' | 'onToggleUserFlag' |
         title="Root flag"
         aria-label={hasRoot ? `Toggle root flag for ${m.name} (currently captured)` : `Toggle root flag for ${m.name} (currently pending)`}
       >
-        <Flag className="w-2.5 h-2.5" /> {full ? 'Root' : <>R<span className="hidden xl:inline">oot</span></>}
+        <Flag className="w-2.5 h-2.5" /> <span>{full ? 'Root' : <>R<span className="hidden xl:inline">oot</span></>}</span>
       </button>
     </div>
   );
@@ -267,6 +243,7 @@ const TableRow = React.memo<TableRowProps>(({
             className={CHECKBOX_CLASS}
             aria-label={`Select ${m.name}`}
           />
+          <span aria-hidden="true" className={CHECKBOX_BOX}><Check className="h-2.5 w-2.5" strokeWidth={3} /></span>
         </label>
       </td>
 
@@ -287,7 +264,7 @@ const TableRow = React.memo<TableRowProps>(({
             {m.isActive ? (
               <div className="mt-0.5 text-xs font-mono text-muted">HTB ToS Protected</div>
             ) : (
-              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="mt-0.5 tabular-nums font-mono text-xs" />
+              <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" plain className="mt-0.5 tabular-nums font-mono text-xs" />
             )}
           </div>
         </div>
@@ -342,7 +319,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Time */}
-      <td className="py-2.5 px-2 max-[1099px]:hidden">
+      <td className="py-2.5 px-2 min-w-[88px] whitespace-nowrap max-[1099px]:hidden">
         <span className="text-secondary font-mono tabular-nums text-xs">{formatSeconds(m.timeSpentSeconds)}</span>
       </td>
 
@@ -366,7 +343,7 @@ const TableRow = React.memo<TableRowProps>(({
       </td>
 
       {/* Actions */}
-      <td className={`xl:sticky xl:right-0 xl:z-[1] ${stickyCellBg} xl:border-l xl:border-subtle/60 py-2.5 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]`} onClick={(e) => e.stopPropagation()}>
+      <td className={`sticky right-0 z-[1] ${stickyCellBg} border-l border-subtle/60 py-2.5 px-4 text-right pr-4 whitespace-nowrap min-w-[136px]`} onClick={(e) => e.stopPropagation()}>
         <RowActions
           machine={m}
           isActiveTarget={isActiveTarget}
@@ -381,94 +358,6 @@ const TableRow = React.memo<TableRowProps>(({
   );
 });
 
-/** Stacked card used below `sm` instead of a table row. */
-const StackedCard = React.memo<TableRowProps>(({
-  machine: m,
-  isActiveTarget,
-  soundEnabled,
-  onSelect,
-  onStatusChange,
-  onToggleUserFlag,
-  onToggleRootFlag,
-  onEngageTarget,
-  onOpenTarget,
-  onOpenReport,
-  onOpenWriteup,
-}) => (
-  <div
-    role="presentation"
-    onClick={() => onSelect(m.id)}
-    className={`group cursor-pointer rounded-2xl border bg-surface-card p-3.5 transition-colors active:scale-[0.97] ${
-      isActiveTarget ? 'border-accent ring-1 ring-accent/40' : 'border-subtle'
-    }`}
-  >
-    <div className="flex items-center gap-2">
-      <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[m.status] ?? STATUS_DOT.backlog}`} />
-      <span className="min-w-0 flex-1 truncate font-sans text-base font-semibold text-primary">{m.name}</span>
-      {m.isActive && (
-        <span className="inline-flex h-5 shrink-0 items-center rounded border border-callout-warn-border bg-callout-warn-bg px-1.5 text-xs font-medium text-callout-warn-fg">
-          Active
-        </span>
-      )}
-      <span className="shrink-0 font-mono text-xs tabular-nums text-muted">{formatSeconds(m.timeSpentSeconds)}</span>
-    </div>
-    <div className="mt-1 pl-4">
-      {m.isActive ? (
-        <span className="inline-flex items-center gap-1 text-xs font-mono text-callout-warn-fg">
-          <Lock className="w-3 h-3" />
-          <span>HTB ToS Protected</span>
-        </span>
-      ) : (
-        <CardIpBadge machineId={m.id} initialIp={m.ip} size="xs" className="font-mono text-xs tabular-nums" />
-      )}
-    </div>
-    <div className="mt-2.5 flex items-center justify-between gap-2 pl-4">
-      {m.isActive ? (
-        <span className="text-xs text-muted font-mono">Protected Target</span>
-      ) : (
-        <BadgeOverflow
-          badges={[
-            ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
-            <OsBadge key="os" os={m.os} size="xs" />,
-            <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-            ...(m.certifications || []).map((c) => (
-              <span
-                key={c}
-                className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
-              >
-                {c}
-              </span>
-            )),
-          ]}
-          max={3}
-        />
-      )}
-    </div>
-    <div className="mt-3 flex items-center justify-between gap-2" role="presentation" onClick={(e) => e.stopPropagation()}>
-      <FlagButtons full machine={m} onToggleUserFlag={onToggleUserFlag} onToggleRootFlag={onToggleRootFlag} />
-      <CyberSelect<PipelineStatus>
-        value={m.status}
-        onChange={(newStatus) => onStatusChange(newStatus, m.id)}
-        options={STATUS_OPTIONS}
-        size="sm"
-        variant="hardware"
-        soundEnabled={soundEnabled}
-      />
-    </div>
-    <div className="mt-2 border-t border-subtle pt-2" role="presentation" onClick={(e) => e.stopPropagation()}>
-      <RowActions
-        machine={m}
-        isActiveTarget={isActiveTarget}
-        onSelect={onSelect}
-        onEngageTarget={onEngageTarget}
-        onOpenTarget={onOpenTarget}
-        onOpenReport={onOpenReport}
-        onOpenWriteup={onOpenWriteup}
-      />
-    </div>
-  </div>
-));
-
 const HEADERS: { label: string; field?: SortField; className: string }[] = [
   { label: 'Target', field: 'name', className: 'sticky left-10 z-20 bg-surface-base py-3 px-3' },
   { label: 'Platform', field: 'platform', className: 'py-3 px-2 min-w-[96px] whitespace-nowrap max-[1535px]:hidden' },
@@ -476,9 +365,9 @@ const HEADERS: { label: string; field?: SortField; className: string }[] = [
   { label: 'Difficulty', field: 'difficulty', className: 'py-3 px-2 min-w-[112px] whitespace-nowrap' },
   { label: 'Status', field: 'status', className: 'py-3 px-2 min-w-[112px] whitespace-nowrap' },
   { label: 'Flags', className: 'py-3 px-2' },
-  { label: 'Time', field: 'timeSpentSeconds', className: 'py-3 px-2 max-[1099px]:hidden' },
+  { label: 'Time', field: 'timeSpentSeconds', className: 'py-3 px-2 min-w-[88px] whitespace-nowrap max-[1099px]:hidden' },
   { label: 'Tracks', className: 'py-3 px-2 max-[1535px]:hidden' },
-  { label: 'Actions', className: 'xl:sticky xl:right-0 xl:z-20 bg-surface-base py-3 px-4 text-right pr-6 whitespace-nowrap min-w-[120px] xl:min-w-[140px]' },
+  { label: 'Actions', className: 'sticky right-0 z-20 bg-surface-base border-l border-subtle/60 py-3 px-4 text-right pr-4 whitespace-nowrap min-w-[136px]' },
 ];
 
 export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
@@ -507,9 +396,8 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     }))
   );
 
-  const isBelowSm = useIsBelowSm();
+  const isBelowSm = useMediaQuery(PHONE_QUERY);
   const [sortKeys, setSortKeys] = useState<SortKey<SortField>[]>([]);
-  const [mobileVisible, setMobileVisible] = useState(30);
 
   /** Plain click = primary sort only; shift+click = add / flip / remove a secondary key. */
   const handleSort = useCallback((field: SortField, additive: boolean) => {
@@ -596,9 +484,11 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     (status: PipelineStatus) => {
       const ids = [...selectedIds];
       if (ids.length === 0) return;
+      const known = useCtfStore.getState().machines;
+      const anyNewRoot = ids.some((id) => entersRootStage(known.find((m) => m.id === id)?.status, status));
       ids.forEach((id) => updateMachineStatus(id, status));
       if (status === 'root' || status === 'completed') {
-        triggerRootCelebration();
+        if (anyNewRoot) triggerRootCelebration();
         if (soundEnabled) playCyberSound('root');
       }
       const label = STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status;
@@ -669,9 +559,10 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
   const paddingBottom = virtualRows.length > 0 ? totalSize - virtualRows[virtualRows.length - 1].end : 0;
 
   const handleStatusChange = useCallback((newStatus: PipelineStatus, machineId: string) => {
+    const prevStatus = useCtfStore.getState().machines.find((m) => m.id === machineId)?.status;
     updateMachineStatus(machineId, newStatus);
     if (newStatus === 'root' || newStatus === 'completed') {
-      triggerRootCelebration();
+      if (entersRootStage(prevStatus, newStatus)) triggerRootCelebration();
       if (soundEnabled) playCyberSound('root');
     }
   }, [updateMachineStatus, soundEnabled]);
@@ -714,32 +605,8 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
     onOpenWriteup: handleOpenWriteup,
   });
 
-  if (isBelowSm) {
-    const visible = sortedMachines.slice(0, mobileVisible);
-    return (
-      <div className="space-y-3 pb-8" data-testid="table-stacked-cards">
-        {visible.map((m) => (
-          <StackedCard key={m.id} {...rowProps(m)} />
-        ))}
-        {sortedMachines.length > mobileVisible && (
-          <div className="flex justify-center pt-2">
-            <button
-              type="button"
-              onClick={() => setMobileVisible((n) => n + 30)}
-              className="px-6 min-h-[44px] rounded-lg bg-surface-card hover:bg-surface-hover border border-subtle text-secondary text-sm font-medium transition-colors active:scale-[0.97] cursor-pointer"
-            >
-              Load more <span className="font-mono tabular-nums text-muted">({visible.length} of {sortedMachines.length})</span>
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
+  const bulkToolbar = hasSelection ? (
 
-  return (
-    <div className="space-y-3">
-    <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
-    {hasSelection && (
       <div
         role="toolbar"
         aria-label="Bulk actions for selected targets"
@@ -815,15 +682,63 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
           </CyberButton>
         </div>
       </div>
-    )}
-    <motion.div
+  ) : null;
+
+  const setAssignIpMachineId = useCtfStore((s) => s.setAssignIpMachineId);
+
+  if (isBelowSm) {
+    // Phones: a dense list (Target, Status, Flags, row menu) with the same sorting, selection and bulk actions.
+    return (
+      <div className="space-y-3">
+        <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
+        {bulkToolbar}
+        <React.Suspense fallback={<ViewSkeleton />}>
+          <PhoneTargetTable
+            machines={sortedMachines}
+            activeTargetId={activeTargetId}
+            soundEnabled={soundEnabled}
+            sortKeys={sortKeys}
+            onSort={handleSort}
+            selectedIds={selectedIds}
+            onToggleCheck={handleToggleCheck}
+            allSelected={allSelected}
+            someSelected={someSelected}
+            onToggleAll={handleToggleAll}
+            onSelect={setSelectedMachineId}
+            onStatusChange={handleStatusChange}
+            onToggleUserFlag={toggleUserFlag}
+            onToggleRootFlag={handleToggleRootFlag}
+            onEngageTarget={handleEngageTarget}
+            onOpenTarget={handleOpenTarget}
+            onOpenReport={handleOpenReport}
+            onOpenWriteup={handleOpenWriteup}
+            onSetAssignIp={setAssignIpMachineId}
+            onAnnounce={setAnnouncement}
+          />
+        </React.Suspense>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+    <div role="status" aria-live="polite" className="sr-only">{announcement}</div>
+    {bulkToolbar}
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={TACTICAL_SPRING}
       className="rounded-2xl border border-subtle bg-surface-card overflow-hidden text-xs pb-4 mb-20 surface-card-depth machined-edge"
     >
-      <div ref={parentRef} className="overflow-x-auto max-h-[calc(100vh-230px)] overflow-y-auto">
-        <table className="w-full text-left border-collapse">
+      <div
+        ref={parentRef}
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scroll container must take focus so the keyboard can scroll it
+        tabIndex={0}
+        role="region"
+        aria-label="Targets table, scrolls horizontally"
+        className="overflow-x-auto max-h-[calc(100vh-230px)] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+      >
+        <table className="w-full min-w-[900px] min-[1536px]:min-w-[1120px] text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-surface-base/95 backdrop-blur-sm border-b border-subtle text-xs text-muted font-sans font-semibold machined-edge">
             <tr>
               <th className="sticky left-0 z-20 bg-surface-base py-3 pl-4 pr-0 w-10">
@@ -837,6 +752,7 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
                     className={CHECKBOX_CLASS}
                     aria-label={`Select all ${sortedMachines.length} filtered targets`}
                   />
+                  <span aria-hidden="true" className={CHECKBOX_BOX}><Check className="h-2.5 w-2.5" strokeWidth={3} /></span>
                 </label>
               </th>
               {HEADERS.map((h) => {
@@ -856,10 +772,10 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
                       onClick={(e) => handleSort(field, e.shiftKey)}
                       title="Click to sort. Shift+click to add or change a secondary sort."
                       aria-label={`Sort by ${h.label}${state}`}
-                      className={`group flex cursor-pointer items-center gap-1.5 rounded-sm font-semibold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${key ? 'text-primary' : ''}`}
+                      className={`group flex min-h-6 cursor-pointer items-center gap-1.5 rounded-sm font-semibold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${key ? 'text-primary' : ''}`}
                     >
                       <span>{h.label}</span>
-                      <Icon className={`w-3 h-3 transition-colors group-hover:text-primary ${key ? 'text-accent' : 'text-muted/70'}`} aria-hidden="true" />
+                      <Icon className={`w-3 h-3 transition-colors group-hover:text-primary ${key ? 'text-accent' : 'text-tertiary'}`} aria-hidden="true" />
                       {key && sortKeys.length > 1 && (
                         <span aria-hidden="true" className="font-mono text-xs tabular-nums text-accent">{idx + 1}</span>
                       )}
@@ -894,10 +810,10 @@ export const TableView: React.FC<TableViewProps> = ({ filteredMachines }) => {
           <span className="font-mono tabular-nums font-medium text-primary">{sortedMachines.length}</span> targets
         </div>
         <div className="text-xs text-muted hidden sm:block">
-          <span className="font-mono">j/k</span> navigate · <span className="font-mono">space</span> inspect · <span className="font-mono">shift+click</span> header multi-sort or checkbox range
+          <span className="font-mono">j</span>/<span className="font-mono">k</span> move between rows · <span className="font-mono">Space</span> open details · <span className="font-mono">Shift</span>+click a header to add a second sort, or a checkbox to select a range
         </div>
       </div>
-    </motion.div>
+    </m.div>
     </div>
   );
 };

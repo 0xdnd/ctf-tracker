@@ -27,10 +27,11 @@ const VH_ROWS = expandVulnhubRows(VH_PACKED) as unknown as Row[];
 const readData = (rel: string) => JSON.parse(readFileSync(resolve(__dirname, '../../..', rel), 'utf8')) as unknown;
 const VH_RAW = readData('scripts/data/vulnhub-raw.json') as { slug: string; url: string }[];
 const PG_LEGACY = readData('scripts/data/pg-legacy-rows.json') as { id: string; certifications: string[] }[];
+const PG_ID_MAP = readData('scripts/data/pg-id-map.json') as Record<string, string>;
 const VH_ID_MAP = readData('scripts/data/vulnhub-id-map.json') as Record<string, string | null>;
-// 341 official labs minus 14 Play labs that live in VulnHub rows (tagged Also-on-PG-Play), plus 12 legacy rows
-// that are not in the official list (scripts/sync-pg.mjs prints these numbers).
-const PG_COUNT = 339;
+// PG rows = every mapped official lab id (scripts/data/pg-id-map.json) plus any legacy row not in the official list.
+const EXPECTED_PG_IDS = new Set([...Object.values(PG_ID_MAP), ...PG_LEGACY.map((r) => r.id)]);
+const MIN_PG_COUNT = 339;
 const ALL = [...PG_ROWS, ...VH_ROWS];
 const DIFFICULTIES = ['Very Easy', 'Easy', 'Medium', 'Hard', 'Insane'];
 
@@ -39,7 +40,12 @@ describe('catalog source JSON', () => {
     // The VulnHub rows are generated from the raw cache plus the legacy rows that have no match in it.
     const unmatched = Object.values(VH_ID_MAP).filter((s) => s === null).length;
     expect(VH_ROWS).toHaveLength(VH_RAW.length + unmatched);
-    expect(PG_ROWS).toHaveLength(PG_COUNT);
+    // Every mapped official lab id and legacy id must exist; pg.json may also keep previously-shipped labs
+    // that OffSec later unlisted (protectedRows in scripts/sync-pg.mjs).
+    const pgIds = new Set(PG_ROWS.map((r) => r.id));
+    for (const id of EXPECTED_PG_IDS) expect(pgIds.has(id), id).toBe(true);
+    expect(PG_ROWS.length).toBeGreaterThanOrEqual(EXPECTED_PG_IDS.size);
+    expect(PG_ROWS.length).toBeGreaterThanOrEqual(MIN_PG_COUNT);
   });
 
   it('decodes the compact PG file the same way in the app and in the build scripts, and repacks to the same file', () => {

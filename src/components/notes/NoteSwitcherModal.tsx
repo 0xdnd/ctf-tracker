@@ -94,7 +94,7 @@ const SwitcherDialog: React.FC = () => {
         aria-label="Open note"
         className="w-full max-w-xl rounded-md border border-strong bg-surface-elevated shadow-xl overflow-hidden machined-edge"
       >
-        <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card">
+        <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent/60">
           <Search className="w-5 h-5 text-muted flex-shrink-0" />
           <input
             type="text"
@@ -116,13 +116,15 @@ const SwitcherDialog: React.FC = () => {
             Esc
           </kbd>
         </div>
-        <div ref={listRef} id={listId} role="listbox" aria-label="Notes" className="max-h-[60vh] overflow-y-auto p-3 space-y-1 text-xs">
-          {results.length === 0 ? (
+        {results.length === 0 ? (
+          <div role="status" className="max-h-[60vh] overflow-y-auto overscroll-contain p-3 text-xs">
             <div className="px-2 py-6 text-center text-muted">
               {query.trim() ? 'No matching notes' : 'No recent notes. Type to search.'}
             </div>
-          ) : (
-            results.map((n, i) => (
+          </div>
+        ) : (
+        <div ref={listRef} id={listId} role="listbox" aria-label="Notes" className="max-h-[60vh] overflow-y-auto overscroll-contain p-3 space-y-1 text-xs">
+          {results.map((n, i) => (
               // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- keyboard handled by the combobox input (aria-activedescendant)
               <div
                 key={n.id}
@@ -142,9 +144,9 @@ const SwitcherDialog: React.FC = () => {
                 <div className="font-medium text-primary truncate">{n.title}</div>
                 <div className="text-[11px] text-muted truncate">{n.relPath}</div>
               </div>
-            ))
-          )}
+            ))}
         </div>
+        )}
         <div className="border-t border-subtle bg-surface-card px-4 py-2 flex items-center gap-3 text-[10px] text-muted">
           <span>Navigate <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">↑</kbd> <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">↓</kbd></span>
           <span>{opensInDock ? 'Open in side panel' : 'Open'} <kbd className="bg-surface-sunken px-1 py-0.5 rounded font-mono">Enter</kbd></span>

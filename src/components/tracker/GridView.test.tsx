@@ -110,16 +110,17 @@ describe('GridView card actions', () => {
     useCtfStore.setState({ activeTargetId: null, soundEnabled: false, selectedMachineId: null, reportMachineId: null });
   });
 
-  it('keeps the hint behind one small control until it is used', () => {
+  it('keeps the hint in the more menu until it is used', () => {
     const [m] = makeMachines(1);
     mount([{ ...m, hint: 'Look at the web root' } as Machine]);
     expect(screen.queryByText('Look at the web root')).toBeNull();
-    const peek = screen.getByRole('button', { name: 'Peek intel hint for box0' });
-    expect(peek).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(peek);
+    expect(screen.queryByRole('button', { name: /intel hint/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for box0' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Peek intel hint for box0' }));
     expect(screen.getByText('Look at the web root')).toBeInTheDocument();
     expect(useCtfStore.getState().selectedMachineId).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide intel hint for box0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for box0' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Hide intel hint for box0' }));
     expect(screen.queryByText('Look at the web root')).toBeNull();
   });
 

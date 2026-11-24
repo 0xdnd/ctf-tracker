@@ -2,10 +2,10 @@
 // Each page lives in ./guides/<name>.cjs and exports build(ctx) -> page spec; this file adds the shared chrome
 // (lead, CTA, FAQ + FAQPage JSON-LD from the same array, Related, last-reviewed note, TechArticle JSON-LD).
 // Public interface: buildGuidePages({ model, renderPage, site }) -> [{ path, title, description, html, lastmod }]
-const { ORIGIN, esc, ctaBox } = require('./layout.cjs');
+const { ORIGIN, esc, ctaStrip } = require('./layout.cjs');
 const { ogImageFor } = require('../og/pages.cjs');
 
-const LAST_REVIEWED = '2026-10-08';
+const LAST_REVIEWED = '2026-11-24';
 
 const BUILDERS = [
   require('./guides/oscp-scoring.cjs'),
@@ -45,6 +45,8 @@ const LINKS = {
   '/htb-pro-labs-guide/': 'Hack The Box Pro Labs comparison guide',
   '/oscp-vs-cpts/': 'OSCP vs CPTS comparison',
   '/crto-like-machines/':'CRTO-like machines by difficulty',
+  '/oscp-points-calculator/': 'OSCP points calculator',
+  '/htb-starting-point-machines/': 'HTB Starting Point machines',
 };
 
 const externalLink = (href, label) => `<a href="${esc(href)}" rel="noopener">${esc(label)}</a>`;
@@ -77,7 +79,11 @@ function addHeadingIdsAndToc(html) {
     return existing ? m : `<h2${attrs} id="${esc(id)}">${inner}</h2>`;
   });
   if (headings.length < 3) return { toc: '', html: withIds };
-  const toc = `<nav class="guide-toc" aria-label="On this page"><span class="guide-toc-label">On this page</span><div class="chips">${headings.map(([id, label]) => `<a href="#${esc(id)}">${esc(label)}</a>`).join('')}</div></nav>`;
+  const chips = headings.map(([id, label]) => `<a href="#${esc(id)}">${esc(label)}</a>`).join('');
+  // Wide screens show every section as a chip; phones get a closed disclosure instead, so the first screen is not a wall of chips (CSS picks one).
+  const toc =
+    `<nav class="guide-toc guide-toc-full" aria-label="On this page"><span class="guide-toc-label">On this page</span><div class="chips">${chips}</div></nav>` +
+    `<details class="guide-toc guide-toc-fold"><summary>On this page (${headings.length} sections)</summary><div class="chips">${chips}</div></details>`;
   return { toc, html: withIds };
 }
 
@@ -100,7 +106,7 @@ function buildGuidePages({ model, renderPage, site } = {}) {
     const mainSections = [
       g.directAnswer || '',
       g.body,
-      ctaBox({ title: esc(g.cta.title), body: esc(g.cta.body), href: g.cta.href, label: g.cta.label }),
+      ctaStrip({ title: esc(g.cta.title), text: esc(g.cta.body), href: g.cta.href, label: g.cta.label, secondary: g.cta.secondary }),
       g.faq && g.faq.length ? faqSection(g.faq) : '',
       relatedSection(g.related),
       sourcesSection(g.sources),
@@ -110,7 +116,6 @@ function buildGuidePages({ model, renderPage, site } = {}) {
     const { toc, html: numberedBody } = addHeadingIdsAndToc(mainSections);
     const body = [
       `<p class="lead">${g.lead}</p>`,
-      g.topCta ? ctaBox({ body: esc(g.topCta.body), href: g.topCta.href, label: g.topCta.label }) : '',
       toc,
       numberedBody,
       `<p class="note">${esc(g.affil)}</p>`,
@@ -143,12 +148,14 @@ function buildGuidePages({ model, renderPage, site } = {}) {
     ];
     const html = renderPage({
       path: g.path,
+      ctaUnderLead: true,
       title: g.title,
       description: g.description,
       h1: g.h1,
       body,
       crumbs: [['Home', '/'], [g.crumb, g.path]],
       ld,
+      tableFilter: g.path === '/tj-null-list/',
       localProgress: g.path === '/tj-null-list/',
     });
     return { path: g.path, title: g.title, description: g.description, html, lastmod: LAST_REVIEWED };

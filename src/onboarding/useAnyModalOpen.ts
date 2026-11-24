@@ -1,5 +1,6 @@
 import { useCtfStore } from '../store/useCtfStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useUpdateUiStore } from '../store/useUpdateUiStore';
 
 /** True while any modal or slide-over drawer is open. Page hints stay hidden meanwhile. */
 export function useAnyModalOpen(): boolean {
@@ -23,5 +24,6 @@ export function useAnyModalOpen(): boolean {
     ),
   );
   const profileOpen = useAuthStore((s) => s.operatorProfileModalOpen);
-  return ctfOpen || Boolean(profileOpen);
+  const updateOpen = useUpdateUiStore((s) => s.updateAvailableOpen || s.whatsNewOpen);
+  return ctfOpen || Boolean(profileOpen) || updateOpen;
 }

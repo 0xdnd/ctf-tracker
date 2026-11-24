@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
+import { AnimatePresence, m, useIsPresent } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { DURATION, EASE_OUT } from '../../utils/motion';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-export type ModalZIndex = 'modal' | 'modalNested' | 'critical';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+type ModalZIndex = 'modal' | 'modalNested' | 'critical';
 
 export interface ModalProps {
   open: boolean;
@@ -134,7 +134,7 @@ const ModalSurface: React.FC<SurfaceProps> = ({
     onClick: (e: React.MouseEvent) => e.stopPropagation(),
   };
 
-  const body = <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>;
+  const body = <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">{children}</div>;
 
   if (!animated) {
     return (
@@ -146,7 +146,7 @@ const ModalSurface: React.FC<SurfaceProps> = ({
 
   // Enter: ease-out, slow (200ms). Exit is faster (150ms). Transform + opacity only.
   return (
-    <motion.div
+    <m.div
       className={backdropClass}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: DURATION.slow, ease: EASE_OUT } }}
@@ -154,7 +154,7 @@ const ModalSurface: React.FC<SurfaceProps> = ({
       onClick={handleBackdropClick}
       data-modal-backdrop
     >
-      <motion.div
+      <m.div
         {...panelProps}
         initial={{ opacity: 0, transform: 'translateY(8px) scale(0.96)' }}
         animate={{
@@ -169,8 +169,8 @@ const ModalSurface: React.FC<SurfaceProps> = ({
         }}
       >
         {body}
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 };
 
@@ -193,5 +193,3 @@ export const Modal: React.FC<ModalProps> = ({ open, instant = false, ...rest }) 
     document.body
   );
 };
-
-export default Modal;

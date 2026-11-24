@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
 import { useToastStore } from '../../store/useToastStore';
 
@@ -14,7 +14,7 @@ export const ToastContainer: React.FC = () => {
     >
       <AnimatePresence mode="popLayout">
         {toasts.map((t) => (
-          <motion.div
+          <m.div
             key={t.id}
             role="status"
             aria-live="polite"
@@ -65,11 +65,9 @@ export const ToastContainer: React.FC = () => {
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          </motion.div>
+          </m.div>
         ))}
       </AnimatePresence>
     </div>
   );
 };
-
-export default ToastContainer;

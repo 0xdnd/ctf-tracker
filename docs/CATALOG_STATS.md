@@ -1,6 +1,6 @@
 # סטטיסטיקות קטלוג המכונות של ZeroBox
 
-> נכון לתאריך **2026-11-09**. הקובץ נוצר אוטומטית על ידי `npm run stats:catalog` (scripts/catalog-stats.mjs) מתוך הנתונים שב-`src/data`; אין לערוך אותו ידנית.
+> נכון לתאריך **2026-11-17**. הקובץ נוצר אוטומטית על ידי `npm run stats:catalog` (scripts/catalog-stats.mjs) מתוך הנתונים שב-`src/data`; אין לערוך אותו ידנית.
 
 ## תקציר
 
@@ -47,8 +47,8 @@
 
 | מערכת הפעלה | HTB מפורשות (Retired) | HTB פעילות (Active) | THM | סה"כ |
 | --- | --- | --- | --- | --- |
-| Linux | 383 | 12 | 522 | 917 |
-| Windows | 165 | 8 | 35 | 208 |
+| Linux | 383 | 11 | 522 | 916 |
+| Windows | 165 | 9 | 35 | 209 |
 | BSD | 10 | 0 | 0 | 10 |
 | Other | 1 | 0 | 1 | 2 |
 | Android | 1 | 0 | 0 | 1 |
@@ -61,6 +61,7 @@
 
 | מכונה | רמת קושי | מערכת הפעלה | תאריך שחרור |
 | --- | --- | --- | --- |
+| RedEye | Hard | Windows | 2026-11-14 |
 | Unclaimed | Medium | Windows | 2026-11-07 |
 | Takeoff | Hard | Linux | 2026-10-31 |
 | DutyBound | Medium | Linux | 2026-10-24 |
@@ -78,7 +79,6 @@
 | Bedside | Medium | Linux | 2026-07-18 |
 | Paperwork | Easy | Linux | 2026-07-11 |
 | Enigma | Easy | Linux | 2026-06-27 |
-| Nimbus | Hard | Linux | 2026-06-20 |
 | Connected | Easy | Linux | 2026-06-06 |
 | PingPong | Insane | Windows | 2026-04-25 |
 
@@ -99,7 +99,7 @@
 | `crto-ad` | Active Directory & Red Team Warfare (CRTO) | certification | 79 | 6 | **85** |
 | `web-master` | Web Exploitation Master Pathway | technique | 56 | 31 | **87** |
 | `linux-privesc` | Linux Privilege Escalation Intensive | technique | 8 | 29 | **37** |
-| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 175 | 61 | **236** |
+| `windows-privesc` | Windows & Enterprise PrivEsc Domination | technique | 176 | 61 | **237** |
 | `beginner-essentials` | Fast Track: Easy Footholds & Essentials | level | 191 | 199 | **390** |
 | `insane-hardcore` | Hardcore & Insane Challenge Track | level | 192 | 109 | **301** |
 
@@ -136,7 +136,7 @@
 - **IppSec** (https://github.com/IppSec/ippsec.github.io, הקובץ dataset.json): המכונות שיש להן סרטון הדרכה.
 - **seriotonctf/HackTheBox-AD-Machines** (https://github.com/seriotonctf/HackTheBox-AD-Machines): מכונות Active Directory.
 - **מפת האתר של TryHackMe** (https://tryhackme.com/sitemaps/rooms.xml): חדרי THM.
-- **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (2026-11-09): רשימת המכונות הפעילות.
+- **צילומי מסך של לשונית Active ב-HTB** שסיפק המשתמש (2026-11-17): רשימת המכונות הפעילות.
 - **Hack The Box Pro Labs Directory** (https://app.hackthebox.com/pro-labs): שמות מעבדות, מספר שרתים, דגלים וקישורים רשמיים.
 
 ## הערת תנאי שימוש

@@ -28,10 +28,10 @@ import type {
   NewLootItemInput,
 } from '../types/loot';
 import { identifyHash } from '../utils/hashIdentifier';
-import { isSchemaWriteGated } from '../utils/schemaWriteGate';
+import { engageSchemaWriteGate, isSchemaWriteGated } from '../utils/schemaWriteGate';
 
-export const LOOT_SCHEMA_VERSION = 1;
-export const LOOT_STORAGE_KEY_PREFIX = 'zerobox_loot_v2_';
+const LOOT_SCHEMA_VERSION = 1;
+const LOOT_STORAGE_KEY_PREFIX = 'zerobox_loot_v2_';
 /** Legacy unscoped key of the old EvidenceVaultPage custom loot (pre-profile era). */
 export const LEGACY_LOOT_KEY = 'zerobox_vault_custom_loot_v1';
 /** Global marker: the legacy unscoped key has been claimed by exactly one profile. */
@@ -44,7 +44,7 @@ export const getLootStorageKey = (profileId?: string): string =>
 export const getLegacyProfileLootKey = (profileId?: string): string =>
   `${LEGACY_LOOT_KEY}_${profileId || 'guest'}`;
 
-export const emptyLootState = (): LootState => ({ credentials: [], credAttempts: [], lootItems: [] });
+const emptyLootState = (): LootState => ({ credentials: [], credAttempts: [], lootItems: [] });
 
 // ---------------------------------------------------------------------------
 // Storage access (localStorage with an in-memory fallback, mirrors safeLocalStorage)
@@ -97,7 +97,7 @@ const lootStorage = {
 // Ids, validation, normalization
 // ---------------------------------------------------------------------------
 
-export function newLootId(prefix: string): string {
+function newLootId(prefix: string): string {
   const uuid =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
@@ -163,7 +163,7 @@ export function normalizeCredential(raw: unknown): Credential | null {
   return cred;
 }
 
-export function normalizeCredAttempt(raw: unknown): CredAttempt | null {
+function normalizeCredAttempt(raw: unknown): CredAttempt | null {
   if (!isRecord(raw)) return null;
   const credId = optStr(raw.credId);
   const machineId = optStr(raw.machineId);
@@ -338,7 +338,7 @@ export function redactCredential(c: Credential): Credential {
   return out;
 }
 
-export function redactLootItem(l: LootItem): LootItem {
+function redactLootItem(l: LootItem): LootItem {
   const out: LootItem = { ...l };
   // Free-form note/file bodies are arbitrary user text; never trust the heuristic for them.
   out.value = (l.category === 'note' || l.category === 'file' ? REDACTED : scrubText(l.value)) ?? '';
@@ -451,6 +451,16 @@ export function parseLootPayload(raw: string): LootState | null {
   }
 }
 
+/** True when a stored v2 payload declares a schema newer than this build understands. */
+function isNewerLootPayload(raw: string): boolean {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isRecord(parsed) && typeof parsed.schemaVersion === 'number' && parsed.schemaVersion > LOOT_SCHEMA_VERSION;
+  } catch {
+    return false;
+  }
+}
+
 export function saveLootState(profileId: string, state: LootState): void {
   if (typeof window === 'undefined') return;
   try {
@@ -504,7 +514,7 @@ const LEGACY_DEFAULT_TITLES: Record<string, string> = {
  * and `secret` separately, so no "user:secret" splitting is attempted (it would corrupt passwords that
  * contain a colon).
  */
-export function migrateLegacyItems(items: unknown[]): LootState {
+function migrateLegacyItems(items: unknown[]): LootState {
   const out = emptyLootState();
   for (const raw of [...items].reverse()) {
     if (!isRecord(raw)) continue;
@@ -590,7 +600,14 @@ export function loadLootState(profileId: string): LootState {
     if (raw !== null) {
       const parsed = parseLootPayload(raw);
       if (parsed) return parsed;
-      // Corrupt or newer-schema payload: keep a copy, then reset so we neither crash nor re-migrate stale data.
+      if (isNewerLootPayload(raw)) {
+        // Written by a newer build: never overwrite or quarantine it. Engaging the gate makes storage read-only
+        // for this session (every writer checks it) and raises the existing "reload required" notice.
+        console.warn(`[ZeroBox] Loot payload in '${key}' comes from a newer schema. Read-only until reloaded.`);
+        engageSchemaWriteGate('newer-schema');
+        return emptyLootState();
+      }
+      // Corrupt payload: keep a copy, then reset so we neither crash nor re-migrate stale data.
       console.warn(`[ZeroBox] Unreadable loot payload in '${key}'. Quarantining and starting empty.`);
       lootStorage.set(`${key}_corrupted_backup_${Date.now()}`, raw);
       saveLootState(pid, emptyLootState());

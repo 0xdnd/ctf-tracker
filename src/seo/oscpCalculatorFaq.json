@@ -1,0 +1,18 @@
+[
+  {
+    "q": "How many points do you need to pass OSCP+ after December 1, 2026?",
+    "a": "For exams starting on or after 1 December 2026 at 08:00 GMT, OffSec reports an equated scaled score from 100 to 500 with 400 required to pass. Exams starting before that cutoff still use the 70 of 100 raw points rule."
+  },
+  {
+    "q": "How is the 40-point Active Directory set scored?",
+    "a": "Under the 100-point breakdown, the Active Directory set awards partial credit per compromised host: 10 points for the first machine, 10 points for the second, and 20 points for the domain controller (40 points total), alongside three 20-point standalone machines (10 for local.txt, 10 for proof.txt)."
+  },
+  {
+    "q": "Are OSCP bonus points still available?",
+    "a": "No. OffSec retired the 10 bonus points on 1 November 2024, so your exam score comes strictly from the flags captured during the 23h 45m exam."
+  },
+  {
+    "q": "Can raw points predict my exact scaled score after December 1, 2026?",
+    "a": "No. OffSec adjusts the raw-to-scaled mapping per exam set based on set difficulty and does not publish the exact conversion table, so 70 raw points is no longer a guaranteed pass cutoff on equated sets."
+  }
+]

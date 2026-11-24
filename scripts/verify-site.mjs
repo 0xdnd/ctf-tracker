@@ -167,6 +167,19 @@ for (const v of variants) {
     viewport: { width: v.w, height: 900 }, colorScheme: v.scheme,
     reducedMotion: v.rm ? 'reduce' : 'no-preference',
   });
+  // Cloudflare's RUM endpoint strips ephemeral localhost ports from Access-Control-Allow-Origin;
+  // mock only the beacon POST on local 127.0.0.1 runs so CSP still validates without polluting prod analytics.
+  await ctx.route('https://cloudflareinsights.com/cdn-cgi/rum*', (route) =>
+    route.fulfill({
+      status: route.request().method() === 'OPTIONS' ? 200 : 204,
+      headers: {
+        'access-control-allow-origin': base,
+        'access-control-allow-credentials': 'true',
+        'access-control-allow-methods': 'POST, OPTIONS',
+        'access-control-allow-headers': 'Content-Type',
+      },
+    })
+  );
   if (v.scheme === 'light') await ctx.addInitScript(() => { try { localStorage.setItem('zb-site-theme', 'light'); } catch { /* theme not storable */ } });
   await ctx.addInitScript(() => {
     window.__csp = [];
@@ -312,7 +325,8 @@ const staticNotes = [];
     const file = path.join(machinesDir, e.name, 'index.html');
     if (!e.isDirectory() || LIST_DIRS.has(e.name) || !fs.existsSync(file)) continue;
     const html = fs.readFileSync(file, 'utf8');
-    const lead = (html.match(/<p class="lead">([\s\S]*?)<\/p>/) || [])[1];
+    // The lead plus the plain paragraph right after it (a long lead keeps its first sentence and the rest follows as a paragraph).
+    const lead = (html.match(/<p class="lead">([\s\S]*?)<\/p>(?:\s*<p>([\s\S]*?)<\/p>)?/) || []).slice(1).join(' ') || undefined;
     if (lead === undefined) continue;
     const overview = (html.match(/<h2>Overview<\/h2>([\s\S]*?)(?=<h2|<table)/) || [])[1] || '';
     const explained = (html.match(/<h2>Techniques explained<\/h2>([\s\S]*?)(?=<h2|$)/) || [])[1] || '';
@@ -325,6 +339,30 @@ const staticNotes = [];
     checked++;
   }
   if (!checked) staticFails.push('machine pages: none found to check intro vs Techniques explained');
+
+  // Every page's lead paragraph and every list must have balanced tags (a lead shortened mid-element would break the markup).
+  const VOID = /^(?:br|img|hr|wbr|input|meta|link)$/i;
+  const balanced = (frag) => {
+    const stack = [];
+    for (const m of frag.matchAll(/<(\/?)([a-z0-9]+)[^>]*?(\/?)>/gi)) {
+      if (m[3] || VOID.test(m[2])) continue;
+      if (!m[1]) stack.push(m[2].toLowerCase());
+      else if (stack.pop() !== m[2].toLowerCase()) return false;
+    }
+    return stack.length === 0;
+  };
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : e.name === 'index.html' ? [path.join(d, e.name)] : []));
+  let balancedChecked = 0;
+  for (const file of fs.existsSync(DIST) ? walk(DIST) : []) {
+    const html = fs.readFileSync(file, 'utf8');
+    if (!html.includes('class="lead"')) continue;
+    const frags = [...html.matchAll(/<p class="lead">[\s\S]*?<\/p>/g), ...html.matchAll(/<(ul|ol)\b[^>]*>[\s\S]*?<\/\1>/g)].map((m) => m[0]);
+    balancedChecked++;
+    for (const f of frags) {
+      if (!balanced(f)) { staticFails.push(`${path.relative(DIST, file)}: unbalanced tags in a lead or list: ${f.slice(0, 90)}`); break; }
+    }
+  }
+  staticNotes.push(`lead/list tag balance: ${balancedChecked} pages checked`);
   staticNotes.push(`machine pages: ${checked} checked, intro hubs = Techniques explained hubs`);
 }
 

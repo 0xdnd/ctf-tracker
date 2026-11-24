@@ -39,6 +39,9 @@ const BT_SRC = '/back-to-top.js?v=' + crypto.createHash('sha1').update(BT_JS).di
 // Language filter and search for /revshells/ (public/revshells-filter.js), loaded only where renderPage gets shellFilter: true.
 const RF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'revshells-filter.js'), 'utf8');
 const RF_SRC = '/revshells-filter.js?v=' + crypto.createHash('sha1').update(RF_JS).digest('hex').slice(0, 8);
+// Topic filter box for /cheatsheet-library/ (public/cheatsheet-filter.js), loaded only where renderPage gets cardFilter: true.
+const CF_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'cheatsheet-filter.js'), 'utf8');
+const CF_SRC = '/cheatsheet-filter.js?v=' + crypto.createHash('sha1').update(CF_JS).digest('hex').slice(0, 8);
 // Live {TARGET_IP}/{LHOST}/{LPORT} fill-in bar for static cheatsheets, methodology and techniques (public/vars-bar.js).
 const VB_JS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'vars-bar.js'), 'utf8');
 const VB_SRC = '/vars-bar.js?v=' + crypto.createHash('sha1').update(VB_JS).digest('hex').slice(0, 8);
@@ -75,7 +78,11 @@ const LINKEDIN = 'https://www.linkedin.com/in/daniel-dayan-a66322352/';
 const FOOTER_LINKS = {
   Guides: [
     ['/machines/', 'Machines'],
+    ['/tj-null-list/', 'TJ Null OSCP list'],
     ['/oscp-like-machines/', 'OSCP-like machines'],
+    ['/cpts-like-machines/', 'CPTS-like machines'],
+    ['/active-directory-machines/', 'Active Directory machines'],
+    ['/oscp-vs-cpts/', 'OSCP vs CPTS'],
     ['/techniques/', 'Techniques'],
     ['/pentest-notes/', 'Pentest notes'],
   ],
@@ -92,6 +99,7 @@ const FOOTER_LINKS = {
   ZeroBox: [
     ['/tracker/', 'Open tracker'],
     ['/oscp-exam-simulator/', 'Exam simulator'],
+    ['/oscp-points-calculator/', 'OSCP points calculator'],
     [REPO, 'Source code'],
     [REPO + '/blob/main/LICENSE', 'License'],
     ['/privacy/', 'Privacy'],
@@ -121,13 +129,92 @@ const coffeeNote = () => `<p class="coffee-note">Found this useful? ${coffeeLink
  * Primary button goes to href (icon: 'arrow' into the app, 'ext' for off-site, '' for none).
  * Optional secondary link-arrow (always an off-site link): linkHref/linkLabel/linkRel.
  */
-function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', linkHref = '', linkLabel = '', linkRel = 'nofollow noopener', links = [] }) {
+function ctaBox({ title = '', body = '', href, label, icon = 'arrow', rel = '', linkHref = '', linkLabel = '', linkRel = 'nofollow noopener', links = [], cls = '' }) {
   const text = [title ? `<p><strong>${title}</strong></p>` : '', body ? `<p>${body}</p>` : ''].filter(Boolean).join('');
   const relAttr = rel ? ` rel="${esc(rel)}"` : '';
   const btn = href ? `<a class="btn" href="${esc(href)}"${relAttr}>${esc(label)}${ICON[icon] || ''}</a>` : '';
-  const link = linkHref ? `<a class="link-arrow" href="${esc(linkHref)}" rel="${esc(linkRel)}">${esc(linkLabel)}${ICON.ext}</a>` : '';
-  const extra = links.map((l) => `<a class="link-arrow" href="${esc(l.href)}"${l.rel === '' ? '' : ` rel="${esc(l.rel || 'nofollow noopener')}"`}>${esc(l.label)}${l.icon === undefined ? ICON.ext : l.icon}</a>`).join('');
-  return `<div class="cta-box">${text ? `<div class="cta-text">${text}</div>` : ''}<div class="cta-actions">${btn}${link}${extra}</div></div>`;
+  const link = linkHref ? `<a class="link-arrow" href="${esc(linkHref)}" rel="${esc(linkRel)}">${esc(linkLabel)}\u2060${ICON.ext}</a>` : '';
+  const extra = links.map((l) => `<a class="link-arrow" href="${esc(l.href)}"${l.rel === '' ? '' : ` rel="${esc(l.rel || 'nofollow noopener')}"`}>${esc(l.label)}\u2060${l.icon === undefined ? ICON.ext : l.icon}</a>`).join('');
+  return `<div class="cta-box${cls ? ' ' + cls : ''}">${text ? `<div class="cta-text">${text}</div>` : ''}<div class="cta-actions">${btn}${link}${extra}</div></div>`;
+}
+
+/**
+ * Uniform next-step strip for content pages: one line of text, a primary button into the app and an optional in-site secondary link.
+ * Same markup and tokens as ctaBox (it IS a ctaBox with the compact .cta-strip modifier). Place it once per page, after the intro or at the end.
+ * text is trusted HTML (callers escape); secondary: { href, label }.
+ */
+function ctaStrip({ title = '', text = '', href = '/tracker/', label = 'Open the tracker', secondary = null, rel = '' }) {
+  const links = secondary ? [{ href: secondary.href, label: secondary.label, rel: '', icon: ICON.arrow }] : [];
+  return ctaBox({ title, body: text, href, label, rel, links, cls: 'cta-strip' });
+}
+
+/**
+ * Compact figures row for list and hub pages (3-4 items). items: [value, label] pairs; both are plain text and escaped here.
+ * Sits right under the lead (ctaUnderLead keeps it ahead of the CTA); the sentence that carries the same counts stays in the body for readers and search.
+ */
+function statRow(items, label = 'At a glance') {
+  return `<ul class="stat-row" aria-label="${esc(label)}">${items.map(([v, l]) => `<li><strong>${esc(String(v))}</strong><span>${esc(l)}</span></li>`).join('')}</ul>`;
+}
+const STAT_ROW_RE = /<ul class="stat-row"[\s\S]*?<\/ul>/;
+
+const CTA_STRIP_RE = /<div class="cta-box cta-strip">(?:<div class="cta-text">[\s\S]*?<\/div>)?<div class="cta-actions">[\s\S]*?<\/div><\/div>/;
+const LEAD_RE = /<p class="lead">[\s\S]*?<\/p>(?:\s*<p class="muted">[\s\S]*?<\/p>)?/;
+/**
+ * Moves the page's closing ctaStrip (the one the generator already emitted, so there is never a second CTA) to sit right under the lead,
+ * where the primary button is visible without scrolling. A page with no strip, or no lead, is returned unchanged.
+ */
+function ctaUnderLead(body) {
+  const cta = CTA_STRIP_RE.exec(body);
+  if (!cta) return body;
+  let rest = body.slice(0, cta.index) + body.slice(cta.index + cta[0].length);
+  // A stat row (statRow) goes right under the lead, ahead of the CTA.
+  const stat = STAT_ROW_RE.exec(rest);
+  if (stat) rest = rest.slice(0, stat.index) + rest.slice(stat.index + stat[0].length);
+  const lead = LEAD_RE.exec(rest);
+  if (!lead) return body;
+  const at = lead.index + lead[0].length;
+  return rest.slice(0, at) + '\n' + (stat ? stat[0] + '\n' : '') + cta[0] + rest.slice(at);
+}
+
+// A sentence ends at . ! or ? before a capital letter, digit or tag, except after common abbreviations and single capitals.
+const ABBREV_RE = /(?:\b(?:e\.g|i\.e|vs|etc|approx|cf|incl|esp|resp|fig|st|mr|mrs|ms|dr|prof|sr|jr|inc|ltd|co|u\.s|a\.k\.a)\.|\b[A-Z]\.)$/i;
+/** Splits lead HTML into sentences, cutting only in text at tag depth 0 (never inside an element such as <a>...</a>) and never after an abbreviation. */
+function splitSentences(html) {
+  const out = [];
+  let depth = 0;
+  let start = 0;
+  const re = /<(\/?)([a-z0-9]+)[^>]*?(\/?)>|([.!?])(\s+)(?=[A-Z0-9<])/gi;
+  let m;
+  while ((m = re.exec(html))) {
+    if (m[2]) {
+      if (m[1]) depth = Math.max(0, depth - 1);
+      else if (!m[3] && !/^(?:br|img|hr|wbr|input)$/i.test(m[2])) depth++;
+    } else if (depth === 0 && !ABBREV_RE.test(html.slice(start, m.index + 1))) {
+      out.push(html.slice(start, m.index + 1));
+      start = m.index + 1 + m[5].length;
+    }
+  }
+  out.push(html.slice(start));
+  return out;
+}
+/**
+ * Long lead paragraph -> a 2-sentence lead plus the rest as a short list (or one plain paragraph when a single sentence is left).
+ * Leaves a lead alone when it is already short (3 sentences or fewer and under 260 characters of text) or when a list already follows it.
+ */
+function shortenLead(body) {
+  const m = /<p class="lead">([\s\S]*?)<\/p>(\s*)(?=(<[a-z0-9]+))/.exec(body);
+  if (!m || ((m[3] === '<ul' || m[3] === '<ol') && !body.startsWith('<ul class="stat-row"', m.index + m[0].length))) return body;
+  const sentences = splitSentences(m[1]);
+  const plain = m[1].replace(/<[^>]+>/g, '');
+  if (sentences.length < 2) return body;
+  // Two sentences that together run past 220 characters of text (about 5 lines on a phone) keep only the first as the lead.
+  const twoPlain = sentences.slice(0, 2).join(' ').replace(/<[^>]+>/g, '');
+  const keep = twoPlain.length > 220 ? 1 : 2;
+  if (sentences.length <= keep || (keep === 2 && sentences.length === 3 && plain.length <= 260)) return body;
+  const head = `<p class="lead">${sentences.slice(0, keep).join(' ')}</p>`;
+  const rest = sentences.slice(keep);
+  const tail = rest.length === 1 ? `<p>${rest[0]}</p>` : `<ul>${rest.map((s) => `<li>${s}</li>`).join('')}</ul>`;
+  return body.slice(0, m.index) + head + '\n' + tail + m[2] + body.slice(m.index + m[0].length);
 }
 
 /** current: path of the page being rendered; exact match gets aria-current="page", a parent section gets "true". */
@@ -353,7 +440,7 @@ function stampUpdated(html, modified) {
   return addByline(html, modified);
 }
 
-/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean, backToTop?: boolean, shellFilter?: boolean } */
+/** opts: { path, title, description, h1, body, crumbs: [[name, path]...], ld?: object[], preloadFonts?: boolean, tableFilter?: boolean, backToTop?: boolean, shellFilter?: boolean, ctaUnderLead?: boolean } */
 /** Make every <pre> keyboard-focusable (scrollable-region-focusable) and a labelled region, named after the nearest preceding heading. */
 function a11yPres(html) {
   let last = '';
@@ -374,6 +461,50 @@ function a11yPres(html) {
       a += ` aria-label="${esc(n > 1 ? base + ' (' + n + ')' : base)}"`;
     }
     return `<pre${a}>`;
+  });
+}
+
+/**
+ * Make every sideways-scrolling table keyboard-reachable: a table inside .tbl-scroll, or a bare table (which scrolls itself below 640px),
+ * ends up in a <div class="tbl-scroll" tabindex="0" role="region" aria-label="<heading> table, scrolls sideways">. Tables that never scroll
+ * (table.list rows stay put, table.rules stacks into labelled rows) are left alone. Names are unique per page (axe landmark-unique).
+ */
+function a11yScrollRegions(html) {
+  let last = '';
+  const seen = new Map();
+  let wrapped = false; // the next <table> already sits in a .tbl-scroll div
+  let closeWrap = false; // the table being read was wrapped here, so </table> must close the div
+  const re = /<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>|<div class="tbl-scroll"([^>]*)>|<table\b([^>]*)>|<\/table>/g;
+  const label = () => {
+    const base = (last ? last : 'Data') + ' table, scrolls sideways';
+    const n = (seen.get(base) || 0) + 1;
+    seen.set(base, n);
+    return esc(n > 1 ? base + ' (' + n + ')' : base);
+  };
+  const attrs = () => ` tabindex="0" role="region" aria-label="${label()}"`;
+  return html.replace(re, (m, h, divAttrs, tblAttrs) => {
+    if (h !== undefined) {
+      last = h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+      return m;
+    }
+    if (divAttrs !== undefined) {
+      wrapped = true;
+      return /\btabindex=/.test(divAttrs) ? m : `<div class="tbl-scroll"${divAttrs}${attrs()}>`;
+    }
+    if (tblAttrs !== undefined) {
+      if (wrapped) {
+        wrapped = false;
+        return m;
+      }
+      if (/class="[^"]*\b(list|rules)\b/.test(tblAttrs)) return m;
+      closeWrap = true;
+      return `<div class="tbl-scroll"${attrs()}>${m}`;
+    }
+    if (closeWrap) {
+      closeWrap = false;
+      return m + '</div>';
+    }
+    return m;
   });
 }
 
@@ -409,7 +540,8 @@ ${ICON_LINKS}
   <script src="${CC_SRC}" defer></script>` : ''}${opts.varsBar ? `
   <script src="${VB_SRC}" defer></script>` : ''}${opts.localProgress ? `
   <script src="${LP_SRC}" defer></script>` : ''}${opts.shellFilter ? `
-  <script src="${RF_SRC}" defer></script>` : ''}${opts.preloadFonts ? `
+  <script src="${RF_SRC}" defer></script>` : ''}${opts.cardFilter ? `
+  <script src="${CF_SRC}" defer></script>` : ''}${opts.preloadFonts !== false ? `
 ${fontPreloadTags()}` : ''}
   <meta property="og:type" content="${opts.ogType || 'article'}" />
   <meta property="og:site_name" content="ZeroBox" />
@@ -436,7 +568,7 @@ ${siteHeader({ current: opts.path })}
     <nav class="crumbs" aria-label="Breadcrumb">${crumbHtml}</nav>
     <main id="main" tabindex="-1">
       <h1>${esc(opts.h1)}</h1>
-${a11yPres(opts.body)}
+${a11yScrollRegions(a11yPres(opts.ctaUnderLead ? ctaUnderLead(shortenLead(opts.body)) : shortenLead(opts.body)))}
     </main>
   </div>
 ${siteFooter({ analyticsNote: analyticsNote() })}
@@ -492,7 +624,7 @@ ${siteHeader({ current: '' })}
         <div class="nf-search-row"><input id="nf-q" type="search" name="q" placeholder="Name or tag" autocomplete="off" spellcheck="false" maxlength="100" /><button class="btn" type="submit">Search</button></div>
       </form>
       <div class="nf-mean" data-nf-mean aria-live="polite"></div>
-      <div class="cta-actions"><a class="btn" href="/machines/">Machines</a><a class="btn btn-secondary" href="/methodology-guide/">Methodology</a></div>
+      <div class="cta-actions"><a class="btn btn-secondary" href="/machines/">Machines</a><a class="btn btn-secondary" href="/methodology-guide/">Methodology</a></div>
       <nav class="chips" aria-label="Popular destinations">${chips}</nav>
     </main>
   </div>
@@ -502,4 +634,4 @@ ${siteFooter({ analyticsNote: '' })}
 `;
 }
 
-module.exports = { render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, stampUpdated, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, coffeeLink, coffeeNote, COFFEE_URL, REPO, GITHUB_PROFILE, LINKEDIN };
+module.exports = { shortenLead, splitSentences, render404Page, NF_SRC, ORIGIN, esc, jsonLd, renderPage, truncate, fitTitle, organizationLd, websiteLd, personLd, webPageGraphLd, breadcrumbLd, PERSON_ID, ABOUT_PATH, techArticleLd, stampArticle, stampUpdated, STATIC_CSS, CSS_HREF, THEME_SCRIPT, NAV, siteHeader, siteFooter, fontPreloadTags, ICON, ctaBox, ctaStrip, statRow, coffeeLink, coffeeNote, COFFEE_URL, REPO, GITHUB_PROFILE, LINKEDIN };

@@ -115,8 +115,14 @@ jobs:
       - name: Validate Static HTML
         run: npm run check:html
 
+      - name: SEO Check (titles, descriptions, sitemap)
+        run: node scripts/check-seo.cjs
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Verify Built Site (CSP, console, links, axe)
+        run: node scripts/verify-site.mjs
 
       - name: Accessibility Scan of Static Pages (axe)
         run: npm run test:a11y:static

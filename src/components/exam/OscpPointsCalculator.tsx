@@ -22,11 +22,11 @@ const SOURCES: [string, string][] = [
   ['https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'OffSec OSCP+ Equated Scaled Scoring FAQ'],
 ];
 
-const cardClass = 'rounded-2xl border border-subtle bg-surface-card p-4 machined-edge';
+const cardClass = 'rounded-2xl border border-strong bg-surface-card p-4 machined-edge';
 const legendClass = 'text-sm font-semibold text-primary';
 const optionClass =
-  'flex min-h-[44px] items-center gap-3 rounded-lg border border-subtle bg-surface-sunken px-3 py-2 text-sm text-secondary cursor-pointer has-[:checked]:border-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent';
-const inputClass = 'h-4 w-4 flex-shrink-0 rounded border-strong bg-surface-sunken text-accent focus:ring-0';
+  'flex min-h-[44px] items-center gap-3 rounded-lg border border-strong bg-surface-card px-3 py-2 text-sm text-secondary cursor-pointer has-[:checked]:border-accent has-[:checked]:bg-accent-muted has-[:checked]:text-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent';
+const inputClass = 'h-6 w-6 flex-shrink-0 rounded border-strong bg-surface-card text-accent focus:ring-0';
 
 export interface OscpPointsCalculatorProps {
   /** Override the default scoring mode (otherwise picked from today's date). */
@@ -55,6 +55,23 @@ export const OscpPointsCalculator: React.FC<OscpPointsCalculatorProps> = ({ init
 
   return (
     <div className="space-y-4" data-testid="oscp-points-calculator">
+      {/* Compact running total that stays in view while ticking boxes; the Result card below is the accessible source of truth */}
+      <div
+        aria-hidden="true"
+        className="sticky top-0 z-20 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-xl border border-subtle bg-surface-card px-4 py-2.5 shadow-md"
+      >
+        <span className="font-mono text-2xl font-semibold tabular-nums text-primary">{result.total}</span>
+        <span className="text-xs text-muted">/ {OSCP_MAX_POINTS} points</span>
+        {fixed && (
+          <span className={`text-xs font-semibold ${result.passed ? 'text-callout-success-fg' : 'text-callout-warn-fg'}`}>
+            {result.passed ? 'Pass' : `${result.pointsNeeded} to pass`}
+          </span>
+        )}
+        <span className="ml-auto font-mono text-xs tabular-nums text-muted">
+          AD {result.adPoints}/40 · SA {result.standalonePoints}/60
+        </span>
+      </div>
+
       <fieldset className={cardClass}>
         <legend className={`${legendClass} px-1`}>Exam start time</legend>
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -84,7 +101,7 @@ export const OscpPointsCalculator: React.FC<OscpPointsCalculatorProps> = ({ init
       </fieldset>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <fieldset className={cardClass}>
+        <fieldset className={`${cardClass} self-start`}>
           <legend className={`${legendClass} px-1`}>Active Directory set (40 points)</legend>
           <p className="mt-1 text-xs text-muted">Each machine in the set scores on its own.</p>
           <div className="mt-3 space-y-2">
@@ -247,5 +264,3 @@ export const OscpPointsCalculator: React.FC<OscpPointsCalculatorProps> = ({ init
     </div>
   );
 };
-
-export default OscpPointsCalculator;

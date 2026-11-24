@@ -124,7 +124,7 @@ export const SyntaxHighlightedCommand: React.FC<SyntaxHighlightedCommandProps> =
   const tokens = React.useMemo(() => tokenizeCommand(command), [command]);
 
   return (
-    <span className={`font-mono inline-block break-all select-all rounded-md bg-surface-inverse px-2 py-1 text-on-inverse ${className}`}>
+    <span className={`font-mono inline-block break-all select-text rounded-md bg-surface-inverse px-2 py-1 text-on-inverse ${className}`}>
       {tokens.map((token, index) => {
         const colorClass = TOKEN_CLASS[token.type] ?? TOKEN_CLASS.default;
 
@@ -137,9 +137,3 @@ export const SyntaxHighlightedCommand: React.FC<SyntaxHighlightedCommandProps> =
     </span>
   );
 });
-
-export function getRawCommandText(command: string): string {
-  return command || '';
-}
-
-export default SyntaxHighlightedCommand;

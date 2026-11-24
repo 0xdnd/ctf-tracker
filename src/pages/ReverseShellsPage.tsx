@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Terminal } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { YourDetailsCard } from '../components/cheatsheet/YourDetailsCard';
@@ -7,7 +7,7 @@ import { ReverseShellGenerator } from '../components/cheatsheet/ReverseShellGene
 
 /** Reverse shell generator as its own section. LHOST / LPORT / TARGET are shared with the Snippets page. */
 export const ReverseShellsPage: React.FC = () => (
-  <motion.div
+  <m.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     transition={{ duration: 0.2 }}
@@ -19,10 +19,9 @@ export const ReverseShellsPage: React.FC = () => (
       description="A reverse shell makes a target machine connect back to yours, so you can control it. Pick a payload, copy it, and start your listener first."
     />
 
-    <YourDetailsCard tourAnchor="rs-details" />
+    <YourDetailsCard tourAnchor="rs-details" headingLevel="h2" />
 
     <ReverseShellGenerator />
-  </motion.div>
+  </m.div>
 );
 
-export default ReverseShellsPage;

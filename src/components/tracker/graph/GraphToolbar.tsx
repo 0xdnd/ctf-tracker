@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -12,7 +12,8 @@ import {
   Download,
   Undo2,
   Redo2,
-  Workflow
+  Workflow,
+  MoreHorizontal
 } from 'lucide-react';
 
 interface GraphToolbarProps {
@@ -30,6 +31,8 @@ interface GraphToolbarProps {
   handleAutoLayout: () => void;
   /** True when there are no nodes or the SHOW ALL layout is active. */
   autoLayoutDisabled: boolean;
+  /** Subnets are collapsed: auto layout arranges one open subnet at a time. */
+  autoLayoutNeedsSubnet?: boolean;
   showAllNodes: boolean;
   handleZoomIn: () => void;
   handleZoomOut: () => void;
@@ -54,6 +57,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   redoLabel,
   handleAutoLayout,
   autoLayoutDisabled,
+  autoLayoutNeedsSubnet = false,
   showAllNodes,
   handleZoomIn,
   handleZoomOut,
@@ -63,6 +67,9 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
   isFullscreen,
   setIsFullscreen,
 }) => {
+  // Phones keep zoom in/out and fit; the rest opens from the more button so the rail does not cover the graph.
+  const [moreOpen, setMoreOpen] = useState(false);
+  const secondary = `flex flex-col items-center gap-1 ${moreOpen ? '' : 'max-sm:hidden'}`;
   return (
     <div 
       data-testid="canvas-nav-toolbar"
@@ -72,6 +79,18 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         {Math.round(scale * 100)}%
       </span>
 
+      <button
+        type="button"
+        onClick={() => setMoreOpen((o) => !o)}
+        aria-expanded={moreOpen}
+        aria-label={moreOpen ? 'Fewer tools' : 'More tools'}
+        title={moreOpen ? 'Fewer tools' : 'More tools'}
+        className="sm:hidden p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary active:scale-[0.97] cursor-pointer"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      <div className={secondary}>
       {/* Interactive Pivot Vector Connection Mode Button */}
       <button
         data-testid="graph-connect-vector"
@@ -146,10 +165,18 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
         aria-disabled={autoLayoutDisabled ? true : undefined}
         aria-label="Auto layout"
         className="p-1.5 rounded-md hover:bg-surface-hover text-muted hover:text-primary transition-[transform,background-color,border-color,color] active:scale-[0.97] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted disabled:active:scale-100"
-        title={showAllNodes ? 'Auto layout is available in scoped view' : 'Auto layout: arrange nodes by attack path (undoable)'}
+        title={
+          showAllNodes
+            ? 'Auto layout is available in scoped view'
+            : autoLayoutNeedsSubnet
+            ? 'Open a subnet to auto-arrange its machines'
+            : 'Auto layout: arrange nodes by attack path (undoable)'
+        }
       >
         <Workflow className="w-4 h-4" />
       </button>
+
+      </div>
 
       <div className="h-px w-4 bg-border-subtle my-0.5" />
 
@@ -173,6 +200,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       >
         <ZoomOut className="w-4 h-4" />
       </button>
+      <div className={secondary}>
       <button
         type="button"
         data-testid="graph-reset-view"
@@ -183,6 +211,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       >
         <RotateCcw className="w-4 h-4" />
       </button>
+      </div>
       <button
         type="button"
         data-testid="graph-fit-screen"
@@ -193,6 +222,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       >
         <Focus className="w-4 h-4" />
       </button>
+      <div className={secondary}>
       <button
         type="button"
         data-testid="graph-center-selection"
@@ -215,6 +245,7 @@ export const GraphToolbar: React.FC<GraphToolbarProps> = ({
       >
         {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </button>
+      </div>
     </div>
   );
 };

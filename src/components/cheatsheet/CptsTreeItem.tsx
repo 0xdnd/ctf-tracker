@@ -61,7 +61,7 @@ export const CptsTreeItem: React.FC<CptsTreeItemProps> = ({
                 e.stopPropagation();
                 onToggleFolder(node.id);
               }}
-              className="p-0.5 max-md:p-1.5 rounded hover:bg-surface-hover text-tertiary hover:text-primary focus:outline-none transition-colors cursor-pointer active:scale-[0.97]"
+              className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-surface-hover text-tertiary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors cursor-pointer active:scale-[0.97]"
               title={isExpanded ? 'Collapse folder' : 'Expand folder'}
             >
               <ChevronRight

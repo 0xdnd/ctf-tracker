@@ -58,6 +58,12 @@ vi.mock('../utils/resilientStorage', async (importOriginal) => {
       if ((await currentGate()).isSchemaWriteGated()) return false;
       return idb.records.delete(key);
     },
+    clearWorkspacesForRestore: async () => {
+      for (const k of [...idb.records.keys()]) {
+        if (k.startsWith('zb:workspace:')) idb.records.delete(k);
+      }
+      return true;
+    },
     saveWorkspaceToIdb: async () => !(await currentGate()).isSchemaWriteGated(),
   };
 });
@@ -71,6 +77,10 @@ vi.mock('../utils/indexedDbDeepStorage', async (importOriginal) => {
     loadDeepProfileData: async (pid: string) => (deepDb.profiles.get(pid) ?? null) as never,
     restoreDeepProfileData: async (pid: string, payload: unknown) => {
       deepDb.profiles.set(pid, payload);
+      return true;
+    },
+    clearDeepProfileDataForRestore: async (pid: string) => {
+      deepDb.profiles.delete(pid);
       return true;
     },
   };
@@ -168,6 +178,34 @@ describe('pre-sync snapshot (reason)', () => {
     expect(localStorage.getItem('zerobox_operator_profile_guest')).toBe('{"machines":["before"]}');
     expect(localStorage.getItem('zerobox_loot_v2_guest')).toBe('{"before":true}');
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('restore purges all zb:workspace:* IDB copies (even while gated), removes post-sync orphaned keys, and clears post-sync deep writeups', async () => {
+    const tab = await boot();
+    // Pre-sync device had only a profile — NO graph, NO loot, NO sync baseline, NO deep writeups
+    localStorage.setItem('zerobox_operator_profile_guest', '{"machines":["before"]}');
+    expect(await tab.takePreSyncSnapshot('guest')).toBe('saved');
+    const [snap] = await tab.listPreMigrationBackups();
+
+    // Sync merge adds graph, loot, sync baseline, newer IDB workspace copies (for guest + alt), and deep writeup
+    localStorage.setItem('zerobox_operator_profile_guest', '{"machines":["merged"]}');
+    localStorage.setItem('zerobox-attack-graph-state', '{"graphEdges":[{"id":"e1"}]}');
+    localStorage.setItem('zerobox_loot_v2_guest', '{"credentials":[{"id":"c1"}]}');
+    localStorage.setItem('zerobox_sync_state_v1_guest', '{"baseHash":"abc"}');
+    idb.records.set('zb:workspace:guest', '{"machines":["merged"],"savedAt":"2026-11-23T14:41:32.735Z"}');
+    idb.records.set('zb:workspace:alt', '{"machines":["alt-merged"]}');
+    deepDb.profiles.set('guest', { writeups: { 'htb-a': { writeupMarkdown: '# merged' } }, customNotes: [], updatedAt: 'y' });
+
+    expect(await tab.restorePreMigrationBackup(snap.key, { reload: vi.fn(), settleMs: 0 })).toBe(true);
+
+    // Restored profile back, post-sync orphaned keys deleted, all zb:workspace:* IDB copies purged, post-sync deep cleared
+    expect(localStorage.getItem('zerobox_operator_profile_guest')).toBe('{"machines":["before"]}');
+    expect(localStorage.getItem('zerobox-attack-graph-state')).toBeNull();
+    expect(localStorage.getItem('zerobox_loot_v2_guest')).toBeNull();
+    expect(localStorage.getItem('zerobox_sync_state_v1_guest')).toBeNull();
+    expect(idb.records.has('zb:workspace:guest')).toBe(false);
+    expect(idb.records.has('zb:workspace:alt')).toBe(false);
+    expect(deepDb.profiles.has('guest')).toBe(false);
   });
 
   it('is skipped (never written) while the tab is gated', async () => {

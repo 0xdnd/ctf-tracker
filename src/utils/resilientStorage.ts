@@ -176,36 +176,6 @@ export async function deleteWorkspaceFromIdb(key: string): Promise<boolean> {
 }
 
 /**
- * Retrieve list of available rolling snapshots timestamps.
- */
-export async function listSnapshots(): Promise<string[]> {
-  const db = await openResilientDb();
-  if (!db) return [];
-
-  return new Promise<string[]>((resolve) => {
-    try {
-      const tx = db.transaction(SNAPSHOT_STORE, 'readonly');
-      const store = tx.objectStore(SNAPSHOT_STORE);
-      const req = store.getAllKeys();
-
-      req.onsuccess = () => {
-        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
-        const keys = (req.result as string[]).sort().reverse();
-        resolve(keys);
-      };
-
-      req.onerror = () => {
-        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
-        resolve([]);
-      };
-    } catch {
-      try { db?.close(); } catch { /* best-effort close; the connection may already be closed */ }
-      resolve([]);
-    }
-  });
-}
-
-/**
  * Request durable non-evictable persistent storage mode.
  */
 export async function ensurePersistence(): Promise<boolean> {
@@ -219,35 +189,6 @@ export async function ensurePersistence(): Promise<boolean> {
   } catch (err) {
     console.warn('[ZeroBox ResilientStore] Could not request persistence:', err);
     return false;
-  }
-}
-
-interface StorageHealth {
-  persisted: boolean;
-  usageMB: number;
-  quotaMB: number;
-  percentUsed: number;
-  risk: 'ok' | 'warn' | 'critical';
-}
-
-/**
- * Audit storage health: inspects persistence, usage, and quota limits.
- */
-export async function getStorageHealth(): Promise<StorageHealth> {
-  if (typeof navigator === 'undefined' || !navigator.storage) {
-    return { persisted: false, usageMB: 0, quotaMB: 0, percentUsed: 0, risk: 'warn' };
-  }
-  try {
-    const persisted = (await navigator.storage.persisted?.()) ?? false;
-    const { usage = 0, quota = 0 } = (await navigator.storage.estimate?.()) ?? {};
-    const ratio = quota ? usage / quota : 0;
-    const usageMB = +(usage / (1024 * 1024)).toFixed(1);
-    const quotaMB = +(quota / (1024 * 1024)).toFixed(1);
-    const percentUsed = +(ratio * 100).toFixed(1);
-    const risk: 'ok' | 'warn' | 'critical' = !persisted ? 'warn' : ratio > 0.8 ? 'critical' : ratio > 0.5 ? 'warn' : 'ok';
-    return { persisted, usageMB, quotaMB, percentUsed, risk };
-  } catch {
-    return { persisted: false, usageMB: 0, quotaMB: 0, percentUsed: 0, risk: 'warn' };
   }
 }
 
@@ -346,4 +287,51 @@ export function listResilientRecordKeys(prefix: string): Promise<string[]> {
 export function deleteResilientRecord(key: string): Promise<boolean> {
   if (isSchemaWriteGated()) return Promise.resolve(false);
   return runRawRequest('readwrite', (store) => { store.delete(key); }, () => true, false);
+}
+
+const WORKSPACE_KEY_PREFIX = 'zb:workspace:';
+
+/**
+ * Deletes every cached `zb:workspace:*` copy in IndexedDB while restoring a snapshot.
+ * Deliberately NOT write-gated: the restoring tab has engaged the `'restoring'` gate on itself,
+ * and stale workspace copies left in IndexedDB would otherwise overwrite the restored `localStorage`
+ * strings via `restoreFromResilientCopy()` on reload. Nothing outside snapshot restore may call this.
+ */
+export async function clearWorkspacesForRestore(): Promise<boolean> {
+  if (pendingWorkspaceSaves.size > 0) {
+    await Promise.allSettled(Array.from(pendingWorkspaceSaves));
+  }
+  const db = await openResilientDb();
+  if (!db) return false;
+  return new Promise<boolean>((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const keysReq = store.getAllKeys();
+      keysReq.onsuccess = () => {
+        const keys = (keysReq.result as IDBValidKey[]).filter(
+          (k): k is string => typeof k === 'string' && k.startsWith(WORKSPACE_KEY_PREFIX)
+        );
+        for (const k of keys) store.delete(k);
+      };
+      tx.oncomplete = () => {
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
+        resolve(true);
+      };
+      tx.onerror = () => {
+        console.warn('[ZeroBox ResilientStore] Restore workspace clear error:', tx.error);
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
+        resolve(false);
+      };
+      tx.onabort = () => {
+        console.warn('[ZeroBox ResilientStore] Restore workspace clear aborted:', tx.error);
+        try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
+        resolve(false);
+      };
+    } catch (err) {
+      console.warn('[ZeroBox ResilientStore] Restore workspace clear failed:', err);
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
+      resolve(false);
+    }
+  });
 }

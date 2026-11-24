@@ -27,7 +27,7 @@ export const OSCP_MAX_POINTS = 100;
 export const OSCP_EXAM_DURATION_SECONDS = 23 * 3600 + 45 * 60;
 export const OSCP_LOCAL_POINTS = 10;
 export const OSCP_PROOF_POINTS = 10;
-export const OSCP_STANDALONE_COUNT = 3;
+const OSCP_STANDALONE_COUNT = 3;
 /** Points for AD machine #1, #2 and #3, in order. */
 export const OSCP_AD_MACHINE_POINTS: readonly number[] = [10, 10, 20];
 /** Exams starting at or after this instant use equated scaled scoring (1 Dec 2026 08:00 GMT). */
@@ -38,7 +38,7 @@ export const OSCP_SCALED_MAX = 500;
 
 export type OscpScoringMode = 'fixed' | 'scaled';
 
-export interface OscpStandaloneState {
+interface OscpStandaloneState {
   local: boolean;
   proof: boolean;
 }
@@ -49,7 +49,7 @@ export interface OscpCalculatorInput {
   ad: boolean[];
 }
 
-export interface OscpOpenItem {
+interface OscpOpenItem {
   id: string;
   label: string;
   points: number;

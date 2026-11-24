@@ -5,13 +5,13 @@
 import { canNotify, readNotificationState, writeNotificationState } from './notificationPrefs';
 
 /** Seconds left at which exam alerts fire. 0 = time is up. */
-export const EXAM_ALERT_THRESHOLDS = [3600, 900, 0] as const;
+const EXAM_ALERT_THRESHOLDS = [3600, 900, 0] as const;
 /** A time-up alert older than this (for example after reopening the app much later) is skipped. */
-export const TIME_UP_GRACE_MS = 10 * 60 * 1000;
+const TIME_UP_GRACE_MS = 10 * 60 * 1000;
 
 export type Notifier = (title: string, body: string, tag: string) => void;
 
-export function defaultNotifier(title: string, body: string, tag: string): void {
+function defaultNotifier(title: string, body: string, tag: string): void {
   try {
     const n = new Notification(title, { body, tag });
     n.onclick = () => {

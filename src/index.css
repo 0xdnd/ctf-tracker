@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted variable fonts (same files the static site uses); names match tailwind.config.js fontFamily. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-latin-var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-var.woff2') format('woff2');
+}
+
 
 :root,
 [data-theme="obsidian"]:not(.dark),
@@ -16,8 +32,8 @@
 
   --border-subtle: 228 228 231;         /* #e4e4e7 - Sharp Zinc Divider */
   --border-strong: 180 180 188;         /* #b4b4bc - Hover/emphasis border, distinct from subtle */
-  --border-accent: 3 105 161;           /* #0369a1 - Deep Sky Accent (>=4.5:1 as text) */
-  --accent-fg: 255 255 255;             /* white on deep sky accent #0369a1 (~5.9:1) */
+  --border-accent: 7 89 133;            /* #075985 - Deep Sky-800 Accent (>=4.77:1 even on 15%-tinted sunken surface) */
+  --accent-fg: 255 255 255;             /* white on deep sky accent #075985 (7.56:1) */
 
   --text-primary: 9 9 11;               /* #09090b - Deep Contrast (>14:1) */
   --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
@@ -199,8 +215,8 @@
 
   --border-subtle: 203 213 225;         /* #cbd5e1 - Slate-300 Divider */
   --border-strong: 148 163 184;         /* #94a3b8 - Slate-400 High-Contrast Border */
-  --border-accent: 21 115 56;           /* #157338 - HTB Tactical Forest Lime (>=4.5:1 as text on all surfaces) */
-  --accent-fg: 255 255 255;             /* white on deep forest accent (5.93:1) */
+  --border-accent: 18 95 46;            /* #125f2e - HTB Tactical Forest Lime (>=5.03:1 even on 15%-tinted sunken surface) */
+  --accent-fg: 255 255 255;             /* white on deep forest accent (7.77:1) */
 
   --text-primary: 15 23 42;             /* #0f172a - Slate-900 (>15:1 WCAG AAA) */
   --text-secondary: 51 65 85;           /* #334155 - Slate-700 (>9:1 WCAG AAA) */
@@ -259,8 +275,8 @@
 
   --border-subtle: 39 39 48;  /* #272730 - Sharp 1px Structural Divider */
   --border-strong: 63 63 76;  /* #3f3f4c - High-Contrast Perimeter */
-  --border-accent: 255 70 70;  /* #ff4646 - Tactical Red (>=5.1:1 on all dark surfaces) */
-  --accent-fg: 0 0 0;  /* black on tactical red: 6.2:1 at rest, >=4.68:1 on the 85% hover mix */
+  --border-accent: 255 82 82;  /* #ff5252 - Tactical Red (>=4.60:1 even on 15%-tinted hover surface) */
+  --accent-fg: 0 0 0;  /* black on tactical red: 6.58:1 at rest, >=4.95:1 on the 85% hover mix */
 
   --text-primary: 244 244 245;  /* #f4f4f5 - High-Contrast Zinc-100 (>14:1) */
   --text-secondary: 228 228 231;  /* #e4e4e7 - Zinc-200 */
@@ -319,8 +335,8 @@
 
   --border-subtle: 203 213 225;  /* #cbd5e1 - Slate-300 Divider */
   --border-strong: 148 163 184;  /* #94a3b8 - Slate-400 High-Contrast Border */
-  --border-accent: 185 28 28;           /* #b91c1c - OffSec Deep Blood Red (>=5.25:1 on all light surfaces) */
-  --accent-fg: 255 255 255;             /* white on deep blood red accent (6.47:1) */
+  --border-accent: 153 27 27;           /* #991b1b - OffSec Deep Blood Red (>=5.21:1 even on 15%-tinted sunken surface) */
+  --accent-fg: 255 255 255;             /* white on deep blood red accent (8.31:1) */
 
   --text-primary: 15 23 42;  /* #0f172a - Slate-900 (>15:1 WCAG AAA) */
   --text-secondary: 51 65 85;  /* #334155 - Slate-700 (>9:1 WCAG AAA) */

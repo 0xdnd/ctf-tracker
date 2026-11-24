@@ -28,7 +28,7 @@
 export type IpRole = 'TARGET' | 'LHOST';
 export type IpClass = 'target' | 'lhost' | 'ambiguous' | 'unknown';
 
-export interface IpPosition {
+interface IpPosition {
   start: number;
   end: number;
 }
@@ -48,7 +48,7 @@ export interface IpChange {
   reason: string;
 }
 
-export interface KeptIp {
+interface KeptIp {
   ip: string;
   reason: string;
   count: number;
@@ -97,7 +97,7 @@ const FRONTMATTER_RE = /^\uFEFF?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
 
 /** Length of the YAML frontmatter block (0 when absent). */
-export function frontmatterLength(markdown: string): number {
+function frontmatterLength(markdown: string): number {
   const m = markdown.match(FRONTMATTER_RE);
   return m ? m[0].length : 0;
 }
@@ -297,11 +297,6 @@ export function defaultIpSelection(changes: readonly IpChange[]): IpSelection {
   const selection: IpSelection = {};
   for (const c of changes) selection[c.ip] = c.defaultOn ? c.role : false;
   return selection;
-}
-
-/** True when at least one IP is selected for replacement. */
-export function hasSelectedIps(selection: IpSelection): boolean {
-  return Object.values(selection).some(Boolean);
 }
 
 /**

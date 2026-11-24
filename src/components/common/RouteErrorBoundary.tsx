@@ -19,7 +19,7 @@ const CHUNK_ERROR_PATTERNS = [
   'error loading dynamically imported module',
 ];
 
-export function isChunkLoadError(error: Error | null): boolean {
+function isChunkLoadError(error: Error | null): boolean {
   if (!error) return false;
   if (error.name === 'ChunkLoadError') return true;
   const message = error.message || '';

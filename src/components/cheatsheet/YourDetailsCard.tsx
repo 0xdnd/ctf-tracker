@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { useCtfStore } from '../../store/useCtfStore';
 
 const inputBase =
-  'h-11 w-full min-w-0 rounded-lg border border-subtle bg-surface-sunken px-2.5 font-mono text-xs tabular-nums text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none sm:h-8';
+  'h-11 w-full min-w-0 rounded-lg border border-subtle bg-surface-sunken px-2.5 font-mono text-xs tabular-nums text-primary transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-8';
 
 interface YourDetailsCardProps {
   /** data-tour value for the card (first-visit guides). */
   tourAnchor: string;
+  /** Heading level of the card title; h2 on pages whose title is the only h1. */
+  headingLevel?: 'h2' | 'h3';
 }
 
 /**
  * LHOST / LPORT / TARGET fields backed by the global variables, shared by the Snippets page and the
  * Reverse shells page so a value typed on one shows on the other.
  */
-export const YourDetailsCard: React.FC<YourDetailsCardProps> = ({ tourAnchor }) => {
+export const YourDetailsCard: React.FC<YourDetailsCardProps> = ({ tourAnchor, headingLevel: Heading = 'h3' }) => {
   const globalVars = useCtfStore((s) => s.globalVars);
   const setGlobalVars = useCtfStore((s) => s.setGlobalVars);
   const allFilled = [globalVars.lhost, globalVars.lport, globalVars.targetIp].every((v) => (v ?? '').trim() !== '');
@@ -27,7 +29,7 @@ export const YourDetailsCard: React.FC<YourDetailsCardProps> = ({ tourAnchor }) 
         data-tour={tourAnchor}
         className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-subtle bg-surface-card px-4 py-2.5"
       >
-        <h3 className="text-sm font-semibold text-primary">Your details</h3>
+        <Heading className="text-sm font-semibold text-primary">Your details</Heading>
         <dl className="m-0 flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs tabular-nums text-primary">
           <div className="flex items-center gap-1.5">
             <dt className="font-sans text-muted">LHOST</dt>
@@ -55,7 +57,7 @@ export const YourDetailsCard: React.FC<YourDetailsCardProps> = ({ tourAnchor }) 
 
   return (
     <div data-tour={tourAnchor} className="rounded-xl border border-subtle bg-surface-card p-4">
-      <h3 className="text-sm font-semibold text-primary">Your details</h3>
+      <Heading className="text-sm font-semibold text-primary">Your details</Heading>
       <p className="mb-3 mt-0.5 text-xs text-secondary">
         LHOST is your own machine&apos;s IP address, LPORT is the port you listen on, and target is the machine you attack.
         Every command and payload uses them.

@@ -1,5 +1,6 @@
-import React, { forwardRef, useEffect, useState } from 'react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import React, { forwardRef } from 'react';
+import { m, type HTMLMotionProps } from 'framer-motion';
+import { NARROW_QUERY, matchesQuery, useMediaQuery } from '../hooks/useMediaQuery';
 
 /** Strong ease-out for things arriving. */
 export const EASE_OUT = [0.23, 1, 0.32, 1] as const;
@@ -18,24 +19,10 @@ export const CLOSE_MS = 180;
 /** The dim over the page. Dark in both color modes, so the lit target reads the same way in each. */
 export const DIM = 'rgb(0 0 0 / 0.72)';
 
-const PHONE_QUERY = '(max-width: 767px)';
-
-export const isPhoneWidth = (): boolean =>
-  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? Boolean(window.matchMedia(PHONE_QUERY)?.matches)
-    : false;
+export const isPhoneWidth = (): boolean => matchesQuery(NARROW_QUERY);
 
 export function useIsPhone(): boolean {
-  const [phone, setPhone] = useState(isPhoneWidth);
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia(PHONE_QUERY);
-    if (!mq) return;
-    const onChange = () => setPhone(mq.matches);
-    mq.addEventListener?.('change', onChange);
-    return () => mq.removeEventListener?.('change', onChange);
-  }, []);
-  return phone;
+  return useMediaQuery(NARROW_QUERY);
 }
 
 export const focusRing =
@@ -70,7 +57,7 @@ export const PressButton = forwardRef<HTMLButtonElement, HTMLMotionProps<'button
   { type = 'button', ...props },
   ref,
 ) {
-  return <motion.button ref={ref} type={type} whileTap={{ scale: 0.97 }} transition={{ duration: 0.1 }} {...props} />;
+  return <m.button ref={ref} type={type} whileTap={{ scale: 0.97 }} transition={{ duration: 0.1 }} {...props} />;
 });
 
 /** The grab bar on a phone sheet. The gesture is optional: Close and Escape do the same thing. */

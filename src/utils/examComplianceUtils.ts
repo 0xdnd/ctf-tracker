@@ -34,7 +34,7 @@ export type ExamScoringMode = 'official' | 'weighted';
 export const EXAM_SCORING_MODES: readonly ExamScoringMode[] = ['official', 'weighted'];
 
 /** Difficulty weights used by weighted mode. */
-export const EXAM_DIFFICULTY_WEIGHTS: Record<Difficulty, number> = {
+const EXAM_DIFFICULTY_WEIGHTS: Record<Difficulty, number> = {
   'Very Easy': 1,
   Easy: 1,
   Medium: 1.5,
@@ -145,7 +145,7 @@ export interface FlagValidationResult {
  * debrief outside the simulator). Objective weights only drive progress/pacing display; the track
  * passes when all objectives are complete.
  */
-export type ExamScoringModel = 'points' | 'objective';
+type ExamScoringModel = 'points' | 'objective';
 
 export interface ExamTrackConfig {
   id: ExamTrack;

@@ -5,19 +5,15 @@ import { NotFoundPage } from './NotFoundPage';
 import { useCtfStore } from '../store/useCtfStore';
 
 describe('NotFoundPage Component', () => {
-  it('renders calm 404 header and status information', () => {
+  it('renders a short 404 heading and one sentence', () => {
     render(
       <MemoryRouter initialEntries={['/non-existent-vector']}>
         <NotFoundPage />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /isn.t on the board/i })).toBeInTheDocument();
-    expect(screen.getByText('404')).toBeInTheDocument();
-    expect(screen.getByText('404.404.404.404')).toBeInTheDocument();
-    expect(screen.getByText('Not found')).toBeInTheDocument();
-    expect(screen.getByText('No foothold')).toBeInTheDocument();
-    expect(screen.getAllByText('/non-existent-vector').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { name: /isn.t here/i })).toBeInTheDocument();
+    expect(screen.getByText(/Nothing lives at this address/)).toBeInTheDocument();
   });
 
   it('detects suggestion for cheatsheet keywords', () => {
@@ -28,8 +24,7 @@ describe('NotFoundPage Component', () => {
     );
 
     expect(screen.getByText(/Did you mean/i)).toBeInTheDocument();
-    expect(screen.getAllByText('Cheatsheets').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole('link', { name: 'Cheatsheets' })[0]).toHaveAttribute('href', '/cheatsheets');
+    expect(screen.getByRole('link', { name: 'Cheatsheets' })).toHaveAttribute('href', '/cheatsheets');
   });
 
   it('detects suggestion for vault / loot keywords', () => {
@@ -40,11 +35,10 @@ describe('NotFoundPage Component', () => {
     );
 
     expect(screen.getByText(/Did you mean/i)).toBeInTheDocument();
-    expect(screen.getAllByText('Evidence Vault').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole('link', { name: 'Evidence Vault' })[0]).toHaveAttribute('href', '/vault');
+    expect(screen.getByRole('link', { name: 'Evidence Vault' })).toHaveAttribute('href', '/vault');
   });
 
-  it('renders primary recovery actions and directory grid', () => {
+  it('renders exactly two recovery actions', () => {
     render(
       <MemoryRouter initialEntries={['/random-unknown']}>
         <NotFoundPage />
@@ -53,13 +47,7 @@ describe('NotFoundPage Component', () => {
 
     expect(screen.getByText('Back to tracker')).toBeInTheDocument();
     expect(screen.getByText('Search (Ctrl+K)')).toBeInTheDocument();
-    expect(screen.getByText('Go back')).toBeInTheDocument();
-
-    // Section directory
-    expect(screen.getByText('Tracker')).toBeInTheDocument();
-    expect(screen.getByText('Evidence Vault')).toBeInTheDocument();
-    expect(screen.getByText('Exam Simulator')).toBeInTheDocument();
-    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
   it('opens command palette when Search button is clicked', () => {

@@ -71,7 +71,7 @@
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <h1 id="hero-title" class="display">Free offline CTF tracker and OSCP exam simulator</h1>
-        <p class="lead">Track your Hack The Box, TryHackMe, Proving Grounds and VulnHub machines across Kanban, table, grid and attack graph views, then rehearse OSCP, CPTS, CRTO, OSEP, CRTP, PNPT and OSWE exams. Your data stays in your browser.</p>
+        <p class="lead">Track your Hack The Box, TryHackMe, Proving Grounds and VulnHub machines across Kanban, table, grid and attack graph views, then rehearse {{EXAM_TRACKS_LIST}} exams. Your data stays in your browser.</p>
         <div class="cta-row">
           <a class="btn" href="/tracker/">Open tracker{{ICON_ARROW}}</a>
           <a class="btn btn-secondary" href="/exam/">Try the exam simulator{{ICON_ARROW}}</a>
@@ -79,7 +79,7 @@
         <p class="hero-social">
           <a class="social-link" href="{{LINKEDIN_HREF}}" rel="me noopener">{{ICON_LINKEDIN}}Built by Daniel Dayan</a>
           <a class="social-link" href="{{REPO_HREF}}" rel="noopener">{{ICON_GITHUB}}Source on GitHub</a>
-          <span class="social-note">Source available, non-commercial license</span>
+          <span class="social-note">Offline-first · Zero telemetry</span>
         </p>
       </div>
       <div class="hero-media">
@@ -202,8 +202,11 @@ Nmap scan report for 10.129.14.21
     <div class="wrap">
       <div class="sec-head">
         <h2 id="guides-title">Free CTF tools, cheatsheets and guides</h2>
-        <p>Free static references you can read without opening the app, from the <a href="/oscp-like-machines/">OSCP-like machine list</a> to the OSCP report template.</p>
+        <p>Free static references you can read without opening the app, from the <a href="/oscp-like-machines/">OSCP-like machine list</a> and <a href="/techniques/active-directory/">Active Directory</a> or <a href="/techniques/sql-injection/">SQL Injection</a> labs to the OSCP report template.</p>
       </div>
+      <nav class="chips" aria-label="Practice tracks">
+{{TRACK_CHIPS}}
+      </nav>
       <ul class="guides">
 {{BROWSE_CARDS}}
       </ul>

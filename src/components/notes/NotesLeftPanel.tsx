@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
+  ArrowLeft,
   ChevronsDownUp,
   ChevronsUpDown,
   FolderOpen,
@@ -12,6 +13,9 @@ import {
   Upload,
 } from 'lucide-react';
 import { OverflowMenu } from '../common/OverflowMenu';
+import { CompactIconButton } from '../common/CompactIconButton';
+import { CyberButton } from '../common/CyberButton';
+import { EmptyState } from '../common/EmptyState';
 import { confirmAction } from '../../store/useConfirmStore';
 import type { CptsNoteEntry, CptsTreeNode } from '../../utils/obsidianManualUtils';
 import { CptsTreeItem } from '../cheatsheet/CptsTreeItem';
@@ -59,14 +63,14 @@ export interface NotesLeftPanelProps {
   onShowCards: () => void;
   onShowTable: () => void;
   onBackToSnippets: () => void;
+  /** Optional top-of-rail shortcut back to the ZeroBox tracker. */
+  onBackToTracker?: () => void;
 }
 
 const PANEL_TITLES: Record<NotesRibbonPanel, string> = { files: 'Files', search: 'Search', tags: 'Tags' };
 
-const iconBtn =
-  'flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
-const footBtn =
-  'flex w-full cursor-pointer items-center gap-2 rounded-md border border-subtle px-2.5 py-1.5 text-xs text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
+const iconBtn = 'tap-target-sm inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+const footBtn = 'w-full justify-start';
 
 export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
   const {
@@ -74,7 +78,7 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
     onSelectNote, onDeleteNote, onAddNoteToFolder, langMode, activeNoteId, onExpandAll, onCollapseAll,
     onNewNote, onImport, activeTag, onClearTag, query, onQueryChange, results, onOpenResult, tags,
     onSelectTag, deletedCount, onRestoreDeleted, wipeCount, onWipeVault, onShowCards,
-    onShowTable, onBackToSnippets,
+    onShowTable, onBackToSnippets, onBackToTracker,
   } = props;
 
   const searchRef = useRef<HTMLInputElement>(null);
@@ -85,33 +89,44 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
   const snippetQuery = query.trim().length >= 2 ? query : '';
 
   return (
-    <div className="flex h-full w-[260px] flex-col overflow-hidden bg-surface-card">
-      <div className="flex h-10 flex-shrink-0 items-center justify-between gap-1 border-b border-subtle px-3">
+    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-card">
+      {onBackToTracker && (
+        <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-subtle bg-surface-sunken/50 px-3">
+          <button
+            type="button"
+            onClick={onBackToTracker}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondary transition-colors hover:text-primary cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+            title="Return to ZeroBox Tracker"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+            <span>ZeroBox Tracker</span>
+          </button>
+        </div>
+      )}
+      <div className="flex h-9 flex-shrink-0 items-center justify-between gap-1 border-b border-subtle px-3">
         <span className="truncate text-[11px] font-semibold uppercase tracking-[.06em] text-secondary">
           {PANEL_TITLES[view]}
         </span>
         <div className="flex items-center gap-0.5">
           {view === 'files' && (
             <>
-              <button type="button" className={iconBtn} onClick={onNewNote} title="Create new field note" aria-label="Create new field note">
+              <CompactIconButton onClick={onNewNote} title="Create new field note" aria-label="Create new field note">
                 <Plus className="h-4 w-4" aria-hidden={true} />
-              </button>
-              <button
-                type="button"
-                className={iconBtn}
+              </CompactIconButton>
+              <CompactIconButton
                 onClick={onImport}
                 title="Import notes directory"
                 aria-label="Import notes directory"
                 data-tour="notes-page-import"
               >
                 <Upload className="h-4 w-4" aria-hidden={true} />
-              </button>
-              <button type="button" className={iconBtn} onClick={onExpandAll} title="Expand all folders" aria-label="Expand all folders">
+              </CompactIconButton>
+              <CompactIconButton onClick={onExpandAll} title="Expand all folders" aria-label="Expand all folders">
                 <ChevronsUpDown className="h-4 w-4" aria-hidden={true} />
-              </button>
-              <button type="button" className={iconBtn} onClick={onCollapseAll} title="Collapse all folders" aria-label="Collapse all folders">
+              </CompactIconButton>
+              <CompactIconButton onClick={onCollapseAll} title="Collapse all folders" aria-label="Collapse all folders">
                 <ChevronsDownUp className="h-4 w-4" aria-hidden={true} />
-              </button>
+              </CompactIconButton>
             </>
           )}
           {view === 'files' && wipeCount > 0 && (
@@ -139,9 +154,9 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
               ]}
             />
           )}
-          <button type="button" className={iconBtn} onClick={onCollapse} title="Collapse explorer (Ctrl+B)" aria-label="Collapse sidebar">
+          <CompactIconButton onClick={onCollapse} title="Collapse explorer (Ctrl+B)" aria-label="Collapse sidebar">
             <PanelLeft className="h-4 w-4" aria-hidden={true} />
-          </button>
+          </CompactIconButton>
         </div>
       </div>
 
@@ -159,11 +174,12 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
               </button>
             )}
             {tree.length === 0 ? (
-              <div className="my-2 space-y-2.5 rounded-md border border-accent/40 bg-accent-muted p-4 text-center">
-                <FolderOpen className="mx-auto h-8 w-8 text-accent" aria-hidden={true} />
-                <div className="text-xs font-semibold text-primary">No notes here</div>
-                <p className="text-[10px] text-secondary">Import your notes directory from disk or create a note.</p>
-              </div>
+              <EmptyState
+                compact
+                icon={FolderOpen}
+                title="No notes here"
+                description="Import your notes directory from disk or create a note."
+              />
             ) : (
               tree.map((root) => (
                 <CptsTreeItem
@@ -195,13 +211,14 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
                 onChange={(e) => onQueryChange(e.target.value)}
                 aria-label="Search notes"
                 placeholder="Search notes…"
-                className="w-full rounded-md border border-subtle bg-surface-sunken py-1.5 pl-2.5 pr-7 text-xs text-primary placeholder:text-muted focus:border-accent focus:outline-none"
+                className="w-full rounded-lg border border-subtle bg-surface-sunken py-1.5 pl-2.5 pr-8 text-xs text-primary placeholder:text-muted focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
               {query && (
                 <button
                   type="button"
+                  aria-label="Clear search"
                   onClick={() => onQueryChange('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-xs text-muted hover:text-primary"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded cursor-pointer text-xs text-muted hover:text-primary"
                 >
                   ✕
                 </button>
@@ -239,14 +256,12 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
 
       <div className="flex flex-shrink-0 flex-col gap-1.5 border-t border-subtle bg-surface-sunken/40 p-2">
         <div className="flex gap-1.5">
-          <button type="button" className={footBtn} onClick={onShowCards} title="Cards Gallery">
-            <LayoutList className="h-3.5 w-3.5" aria-hidden={true} />
-            <span>Cards</span>
-          </button>
-          <button type="button" className={footBtn} onClick={onShowTable} title="Quick Index Table">
-            <Table className="h-3.5 w-3.5" aria-hidden={true} />
-            <span>Table</span>
-          </button>
+          <CyberButton variant="secondary" size="sm" className={footBtn} onClick={onShowCards} title="Cards Gallery" iconLeft={<LayoutList className="h-3.5 w-3.5" aria-hidden={true} />}>
+            Cards
+          </CyberButton>
+          <CyberButton variant="secondary" size="sm" className={footBtn} onClick={onShowTable} title="Quick Index Table" iconLeft={<Table className="h-3.5 w-3.5" aria-hidden={true} />}>
+            Table
+          </CyberButton>
         </div>
         {deletedCount > 0 && (
           <button
@@ -258,13 +273,10 @@ export const NotesLeftPanel: React.FC<NotesLeftPanelProps> = (props) => {
             ↺ {deletedCount} deleted · Restore
           </button>
         )}
-        <button type="button" className={footBtn} onClick={onBackToSnippets}>
-          <Terminal className="h-3.5 w-3.5" aria-hidden={true} />
-          <span>Snippets</span>
-        </button>
+        <CyberButton variant="secondary" size="sm" className={footBtn} onClick={onBackToSnippets} iconLeft={<Terminal className="h-3.5 w-3.5" aria-hidden={true} />}>
+          Snippets
+        </CyberButton>
       </div>
     </div>
   );
 };
-
-export default NotesLeftPanel;

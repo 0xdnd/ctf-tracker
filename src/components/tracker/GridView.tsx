@@ -1,41 +1,34 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEngageTarget } from '../../hooks/useEngageTarget';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { 
   Crosshair, 
   Flag, 
   Clock, 
-  Eye, 
-  EyeOff, 
-  FileText, 
-  ClipboardCheck,
-  ExternalLink,
   ListChecks,
-  Maximize2,
   MoreHorizontal,
-  Share2,
   Lock,
   Upload,
   Zap,
   AlertTriangle,
   Radio
 } from 'lucide-react';
-import { Machine } from '../../types';
+import { Machine, PipelineStatus } from '../../types';
 import { useCtfStore } from '../../store/useCtfStore';
+import { entersRootStage } from '../../utils/pipeline';
 import { applyScanTextToMachine } from '../../utils/scanCardHelper';
 import { useShallow } from 'zustand/react/shallow';
-import { formatDurationHuman, playCyberSound, triggerRootCelebration, sanitizeExternalUrl } from '../../utils/helpers';
-import { STARTING_POINT_HUB_LABEL, isStartingPointHubUrl } from '../../utils/roomLink';
-import { OsBadge } from '../common/OsBadge';
-import { PlatformBadge } from '../common/PlatformBadge';
+import { formatDurationHuman, playCyberSound, triggerRootCelebration } from '../../utils/helpers';
 import { CardIpBadge } from './CardIpBadge';
 import { BadgeOverflow } from '../common/BadgeOverflow';
-import { DifficultyBadge } from '../common/DifficultyBadge';
-import { OverflowMenu, type OverflowItem } from '../common/OverflowMenu';
-import { copyShareLink } from '../../utils/shareLink';
+import { OverflowMenu } from '../common/OverflowMenu';
+import { buildTargetMenuItems } from './targetMenuItems';
+import { machineChips } from './machineChips';
 import { TargetTypeBadge } from '../common/TargetTypeBadge';
 import { isTargetTypeTag } from '../../utils/targetType';
+import { useMediaQuery, PHONE_QUERY } from '../../hooks/useMediaQuery';
+import { GridCardCompact } from './GridCardCompact';
 
 const ICON_BTN =
   'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-primary transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11';
@@ -52,6 +45,9 @@ interface GridCardProps {
   onOpenReport: (id: string) => void;
   onOpenWriteup: (id: string) => void;
   onOpenDetail: (id: string) => void;
+  /** Read once in GridView and passed down, so no card subscribes to the store itself. */
+  soundEnabled: boolean;
+  onUpdateMachine: (id: string, patch: Partial<Machine>) => void;
 }
 
 const GridCard = React.memo<GridCardProps>(({
@@ -66,11 +62,11 @@ const GridCard = React.memo<GridCardProps>(({
   onOpenReport,
   onOpenWriteup,
   onOpenDetail,
+  soundEnabled,
+  onUpdateMachine,
 }) => {
   const hasUser = Boolean(m.userPwnedAt || m.userFlag);
   const hasRoot = Boolean(m.rootPwnedAt || m.rootFlag);
-  const updateMachine = useCtfStore((s) => s.updateMachine);
-  const soundEnabled = useCtfStore((s) => s.soundEnabled);
   const [isDragOver, setIsDragOver] = useState(false);
   const [scanToast, setScanToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
@@ -106,7 +102,7 @@ const GridCard = React.memo<GridCardProps>(({
       }
       const res = applyScanTextToMachine(m, content);
       if (res) {
-        updateMachine(m.id, res.updatedMachine);
+        onUpdateMachine(m.id, res.updatedMachine);
         if (soundEnabled) playCyberSound('engage');
         setScanToast({ message: `Ingested ${res.parsedCount} ports [${res.format.toUpperCase()}]` });
       } else {
@@ -137,74 +133,25 @@ const GridCard = React.memo<GridCardProps>(({
         : 'bg-surface-sunken border-subtle text-muted hover:text-primary'
     }`;
 
-  const roomHref = sanitizeExternalUrl(m.roomUrl);
-  const moreItems: OverflowItem[] = [
+  const moreItems = buildTargetMenuItems(
+    m,
     {
-      id: 'share',
-      label: 'Share link',
-      ariaLabel: `Share direct link to ${m.name}`,
-      icon: <Share2 className="h-3.5 w-3.5" />,
-      onSelect: () => {
-        void copyShareLink(`/target/${m.id}`).then((ok) => {
-          if (ok && soundEnabled) playCyberSound('copy');
-          setScanToast(ok ? { message: 'Link copied' } : { message: 'Could not copy link', isError: true });
-          setTimeout(() => setScanToast(null), 2000);
-        });
+      onToggleHint,
+      onOpenDetail,
+      onOpenReport,
+      onOpenWriteup,
+      onShareResult: (ok) => {
+        setScanToast(ok ? { message: 'Link copied' } : { message: 'Could not copy link', isError: true });
+        setTimeout(() => setScanToast(null), 2000);
       },
     },
-    {
-      id: 'dossier',
-      label: 'Mission dossier',
-      ariaLabel: `Open dedicated mission dossier for ${m.name}`,
-      icon: <Maximize2 className="h-3.5 w-3.5" />,
-      onSelect: () => onOpenDetail(m.id),
-    },
-    ...(m.isActive
-      ? []
-      : [
-          {
-            id: 'report',
-            label: 'Pre-report',
-            ariaLabel: `Open executive pentest pre-report for ${m.name}`,
-            icon: <ClipboardCheck className="h-3.5 w-3.5" />,
-            onSelect: () => onOpenReport(m.id),
-          },
-          {
-            id: 'writeup',
-            label: 'Writeup studio',
-            ariaLabel: `Open writeup studio for ${m.name}`,
-            icon: <FileText className="h-3.5 w-3.5" />,
-            onSelect: () => onOpenWriteup(m.id),
-          },
-        ]),
-    ...(roomHref
-      ? [
-          {
-            id: 'room',
-            label: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : 'Room link',
-            ariaLabel: isStartingPointHubUrl(m.roomUrl) ? STARTING_POINT_HUB_LABEL : `Open external room link for ${m.name}`,
-            icon: <ExternalLink className="h-3.5 w-3.5" />,
-            onSelect: () => {
-              window.open(roomHref, '_blank', 'noopener,noreferrer');
-            },
-          },
-        ]
-      : []),
-  ];
+    { isHintRevealed, soundEnabled },
+  );
 
-  const metaBadges: React.ReactNode[] = [
-    ...(m.platform ? [<PlatformBadge key="plat" platform={m.platform} size="sm" />] : []),
-    <OsBadge key="os" os={m.os} size="xs" />,
-    <DifficultyBadge key="diff" difficulty={m.difficulty} size="xs" />,
-    ...m.tags.filter((t) => !isTargetTypeTag(m, t)).map((t) => (
-      <span
-        key={`tag-${t}`}
-        className="inline-flex h-5 items-center rounded border border-subtle bg-surface-sunken px-1.5 text-xs font-medium text-secondary"
-      >
-        {t}
-      </span>
-    )),
-  ];
+  const { badges: metaBadges, labels: chipLabels } = machineChips(m, {
+    order: ['platform', 'os', 'difficulty'],
+    extras: m.tags.filter((t) => !isTargetTypeTag(m, t)),
+  });
 
   return (
     <div
@@ -294,25 +241,17 @@ const GridCard = React.memo<GridCardProps>(({
                     <span className="font-mono">{formatDurationHuman(m.timeSpentSeconds)}</span>
                   </>
                 )}
-                {m.hint ? (
-                  <button
-                    type="button"
-                    onClick={(e) => onToggleHint(e, m.id)}
-                    aria-expanded={isHintRevealed}
-                    className="inline-flex h-6 cursor-pointer items-center gap-1 rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium text-muted transition-colors hover:border-strong hover:text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11"
-                    title={isHintRevealed ? 'Hide Intel Hint' : 'Peek Intel Hint'}
-                    aria-label={isHintRevealed ? `Hide intel hint for ${m.name}` : `Peek intel hint for ${m.name}`}
-                  >
-                    {isHintRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    Hint
-                  </button>
-                ) : null}
               </div>
             </div>
 
             {/* Platform, OS and difficulty inline, rest behind +N */}
             <div className="mt-1">
-              <BadgeOverflow badges={metaBadges} max={3} inline />
+              <BadgeOverflow
+                badges={metaBadges}
+                labels={chipLabels}
+                max={3}
+                inline
+              />
             </div>
 
             {/* Hint spoiler: stays out of the card until asked for */}
@@ -415,13 +354,15 @@ const GridCard = React.memo<GridCardProps>(({
 
 interface GridViewProps {
   filteredMachines: Machine[];
+  /** Overrides the default stage move (store update plus the root celebration) used by the phone card's overflow menu. */
+  onStatusChange?: (id: string, status: PipelineStatus) => void;
 }
 
 /** Cards mounted in the first pass, and the batch size that follows. */
 const FIRST_REVEAL = 6;
 const REVEAL_STEP = 4;
 
-export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
+export const GridView: React.FC<GridViewProps> = ({ filteredMachines, onStatusChange }) => {
   const navigate = useNavigate();
   const {
     setSelectedMachineId,
@@ -432,6 +373,9 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     toggleUserFlag,
     toggleRootFlag,
     setReportMachineId,
+    updateMachineStatus,
+    updateMachine,
+    setAssignIpMachineId,
   } = useCtfStore(
     useShallow((s) => ({
       setSelectedMachineId: s.setSelectedMachineId,
@@ -442,9 +386,14 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
       toggleUserFlag: s.toggleUserFlag,
       toggleRootFlag: s.toggleRootFlag,
       setReportMachineId: s.setReportMachineId,
+      updateMachineStatus: s.updateMachineStatus,
+      updateMachine: s.updateMachine,
+      setAssignIpMachineId: s.setAssignIpMachineId,
     }))
   );
 
+  const compact = useMediaQuery(PHONE_QUERY);
+  const Card = compact ? GridCardCompact : GridCard;
   const [revealedHints, setRevealedHints] = useState<Record<string, boolean>>({});
   const [visibleCount, setVisibleCount] = useState(32);
   // Cards are mounted a few at a time: the first screenful at once, the rest one small batch per task, so a list swap
@@ -486,6 +435,21 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
     if (!hasRoot) triggerRootCelebration();
   }, [toggleRootFlag]);
 
+  const handleStatusChange = useCallback((id: string, status: PipelineStatus) => {
+    if (onStatusChange) {
+      onStatusChange(id, status);
+      return;
+    }
+    const prevStatus = useCtfStore.getState().machines.find((m) => m.id === id)?.status;
+    updateMachineStatus(id, status);
+    if (status === 'root' || status === 'completed') {
+      if (entersRootStage(prevStatus, status)) triggerRootCelebration();
+      if (soundEnabled) playCyberSound('root');
+    } else if (soundEnabled) {
+      playCyberSound('toggle');
+    }
+  }, [onStatusChange, updateMachineStatus, soundEnabled]);
+
   const engage = useEngageTarget();
   const handleEngageTarget = useCallback((id: string) => engage(id), [engage]);
 
@@ -505,14 +469,14 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-2 sm:gap-4">
         {visibleMachines.map((m, idx) => (
           <div
             key={m.id}
             className="card-enter h-full"
             style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
           >
-            <GridCard
+            <Card
               machine={m}
               isActiveTarget={activeTargetId === m.id}
               isHintRevealed={Boolean(revealedHints[m.id])}
@@ -524,6 +488,10 @@ export const GridView: React.FC<GridViewProps> = ({ filteredMachines }) => {
               onOpenReport={handleOpenReport}
               onOpenWriteup={handleOpenWriteup}
               onOpenDetail={handleOpenDetail}
+              soundEnabled={soundEnabled}
+              onUpdateMachine={updateMachine}
+              onSetAssignIp={setAssignIpMachineId}
+              {...(compact ? { onStatusChange: handleStatusChange } : {})}
             />
           </div>
         ))}

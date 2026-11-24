@@ -102,7 +102,18 @@ describe('AnalyticsView', () => {
     vi.useRealTimers();
   });
 
+  it('shows the shared empty state instead of a radar until a box is rooted', () => {
+    render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
+    expect(screen.queryByRole('img', { name: /offensive skill radar/i })).toBeNull();
+    expect(screen.getByText('No skill data yet')).toBeInTheDocument();
+  });
+
   it('exposes the radar as an image with an accessible name', () => {
+    useCtfStore.setState({
+      machines: [
+        { id: 'r1', name: 'Rooted', ip: '', os: 'Linux', platform: 'HTB', difficulty: 'Easy', status: 'root', tags: ['sqli'], certifications: [], timeSpentSeconds: 0 },
+      ] as never,
+    });
     render(<MemoryRouter><AnalyticsView /></MemoryRouter>);
     const radar = screen.getByRole('img', { name: /offensive skill radar/i });
     expect(radar).toBeInTheDocument();

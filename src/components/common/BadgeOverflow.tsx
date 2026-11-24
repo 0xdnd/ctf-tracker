@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { TACTICAL_SPRING } from '../../utils/motionTokens';
 import { EASE_OUT } from '../../utils/motion';
 
@@ -18,6 +18,12 @@ export interface BadgeOverflowProps {
   align?: 'left' | 'right';
   /** Expand the hidden badges inline (the row wraps, the pill becomes "Less") instead of a floating popover. */
   inline?: boolean;
+  /** Keep the "+N" pill 24px tall even under a coarse pointer (compact cards pad their own rows). */
+  dense?: boolean;
+  /** Inline pill only: a word after the count ("+3 more") so the pill explains itself without the tooltip. */
+  moreWord?: string;
+  /** Plain-text names for the badges, same order. Names the hidden ones in the pill's tooltip and accessible label. */
+  labels?: string[];
   className?: string;
 }
 
@@ -30,6 +36,9 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
   max = 2,
   align = 'left',
   inline = false,
+  dense = false,
+  moreWord,
+  labels,
   className = '',
 }) => {
   const [open, setOpen] = useState(false);
@@ -71,6 +80,8 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
   const limit = Math.max(0, max);
   const shown = visible.slice(0, limit);
   const rest = visible.slice(limit);
+  const restNames = labels && labels.length === visible.length ? labels.slice(limit).join(', ') : '';
+  const moreLabel = restNames ? `${rest.length} more: ${restNames}` : `${rest.length} more`;
 
   useEffect(() => {
     if (!open) return;
@@ -111,12 +122,13 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
         {rest.length > 0 && (
           <button
             type="button"
-            aria-label={expanded ? 'Show fewer' : `${rest.length} more`}
+            aria-label={expanded ? 'Show fewer' : moreLabel}
+            title={!expanded && restNames ? `Also: ${restNames}` : undefined}
             aria-expanded={expanded}
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex h-6 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-11 [@media(pointer:coarse)]:justify-center"
+            className={`inline-flex h-6 select-none items-center rounded border border-subtle bg-surface-sunken px-1.5 font-sans text-xs font-medium tabular-nums text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${dense ? 'min-w-6 justify-center' : '[@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-w-11 [@media(pointer:coarse)]:justify-center'}`}
           >
-            {expanded ? 'Less' : `+${rest.length}`}
+            {expanded ? 'Less' : moreWord ? `+${rest.length} ${moreWord}` : `+${rest.length}`}
           </button>
         )}
       </span>
@@ -141,7 +153,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
           <button
             ref={pillRef}
             type="button"
-            aria-label={`${rest.length} more`}
+            aria-label={moreLabel}
             aria-describedby={open ? popoverId : undefined}
             aria-expanded={open}
             onClick={openNow}
@@ -151,7 +163,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
           </button>
           <AnimatePresence>
             {open && (
-              <motion.span
+              <m.span
                 id={popoverId}
                 role="tooltip"
                 initial={skipMotion ? false : { opacity: 0, scale: 0.96 }}
@@ -167,7 +179,7 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
                     {badge}
                   </React.Fragment>
                 ))}
-              </motion.span>
+              </m.span>
             )}
           </AnimatePresence>
         </span>
@@ -175,5 +187,3 @@ export const BadgeOverflow: React.FC<BadgeOverflowProps> = ({
     </span>
   );
 };
-
-export default BadgeOverflow;

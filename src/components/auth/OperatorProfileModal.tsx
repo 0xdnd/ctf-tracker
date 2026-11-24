@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Trophy,
   Lock} from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, DEFAULT_DANIEL_PROFILE } from '../../store/useAuthStore';
 import { useCtfStore, safeLocalStorage, getProfileStorageKey } from '../../store/useCtfStore';
 import { confirmAction } from '../../store/useConfirmStore';
@@ -59,13 +60,16 @@ export const OperatorProfileModal: React.FC = () => {
     updateUserTrophies,
   } = useAuthStore();
 
-  const { 
-    machines, 
-    soundEnabled, 
-    userSolvesReset, 
-    resetSolvesToZero, 
-    restoreDanielSolves 
-  } = useCtfStore();
+  // Narrow selection: the whole store changes every second while the timer runs.
+  const { machines, soundEnabled, userSolvesReset, resetSolvesToZero, restoreDanielSolves } = useCtfStore(
+    useShallow((s) => ({
+      machines: s.machines,
+      soundEnabled: s.soundEnabled,
+      userSolvesReset: s.userSolvesReset,
+      resetSolvesToZero: s.resetSolvesToZero,
+      restoreDanielSolves: s.restoreDanielSolves,
+    }))
+  );
 
   const [activeTab, setActiveTab] = useState<'roster' | 'new' | 'trophies'>('roster');
   const [operatorName, setOperatorName] = useState('');
@@ -520,7 +524,7 @@ export const OperatorProfileModal: React.FC = () => {
             <div className="space-y-3">
               <div className="text-xs text-tertiary flex items-center justify-between">
                 <span>Select an operator to switch workspaces immediately:</span>
-                <span className="text-[11px]"><span className="font-mono tabular-nums">{profiles.length}</span> operator{profiles.length > 1 ? 's' : ''}</span>
+                <span className="text-[11px]"><span className="font-mono tabular-nums">{profiles.length}</span> operator{profiles.length === 1 ? '' : 's'}</span>
               </div>
 
               {profiles.length === 0 && (
@@ -1106,7 +1110,7 @@ export const OperatorProfileModal: React.FC = () => {
           <div className="p-3 rounded-xl bg-surface-base border border-subtle text-[11px] text-tertiary flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-callout-success-fg flex-shrink-0" />
             <span>
-              <strong className="font-medium">Local-first. No telemetry.</strong> Profiles and progress live in local browser storage. Optional AI uses your own key and only runs when you send.
+              <strong className="font-medium">Local-first. No telemetry.</strong> Profiles and progress live in local browser storage.
             </span>
           </div>
         </div>

@@ -80,7 +80,8 @@ describe('PasteImportPanel', () => {
     render(<PasteImportPanel />);
     type('Retro');
     expect(screen.getByRole('list', { name: 'Matched boxes' })).toHaveTextContent('THM');
-    fireEvent.change(screen.getByLabelText('Platform for names without one'), { target: { value: 'HTB' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Platform for names without one/ }));
+    fireEvent.click(screen.getByRole('option', { name: 'Hack The Box' }));
     expect(screen.getByRole('list', { name: 'Matched boxes' })).toHaveTextContent('HTB');
   });
 

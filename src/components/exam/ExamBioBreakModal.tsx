@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Coffee,
   Clock,
@@ -98,7 +98,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <m.div
           key="exam-bio-break"
           className="fixed inset-0 z-modal overflow-y-auto flex items-center justify-center p-4 sm:p-6 font-sans"
           data-testid="exam-bio-break-dialog-container"
@@ -115,7 +115,7 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
           />
 
           {/* Modal Dialog */}
-          <motion.div
+          <m.div
             ref={trapRef}
             role="dialog"
             aria-modal="true"
@@ -347,8 +347,8 @@ export const ExamBioBreakModal: React.FC<ExamBioBreakModalProps> = ({
                 Close
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>,
     document.body

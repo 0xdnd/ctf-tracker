@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { EASE_OUT } from '../../utils/motion';
 
-export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
+type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
 export interface TooltipProps {
   content: React.ReactNode;
@@ -190,7 +190,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       {open &&
         typeof document !== 'undefined' &&
         createPortal(
-          <motion.div
+          <m.div
             ref={tipRef}
             id={id}
             role="tooltip"
@@ -207,11 +207,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
             transition={{ duration: instant ? 0 : 0.125, ease: EASE_OUT }}
           >
             {content}
-          </motion.div>,
+          </m.div>,
           document.body
         )}
     </>
   );
 };
-
-export default Tooltip;

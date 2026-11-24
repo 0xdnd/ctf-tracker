@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ScrollFade } from '../common/ScrollFade';
 import { Check } from 'lucide-react';
 
-export interface PhaseNavEntry {
+interface PhaseNavEntry {
   id: string;
   phaseNumber: number;
   title: string;
+  tooltip?: string;
 }
 
-export interface PhaseNavProgress {
+interface PhaseNavProgress {
   done: number;
   total: number;
 }
@@ -29,7 +31,7 @@ export interface PhaseNavProps {
 export const phaseSectionId = (phaseId: string): string => `phase-section-${phaseId}`;
 
 const entryBase =
-  'inline-flex min-h-11 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-md border px-3 text-[13px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] sm:min-h-8 cursor-pointer lg:flex lg:w-full lg:min-w-0 lg:items-start lg:justify-between lg:text-left';
+  'inline-flex min-h-11 flex-shrink-0 items-center gap-2 max-sm:max-w-[13rem] max-sm:py-1 rounded-md border px-3 text-[13px] font-medium transition-[transform,background-color,border-color,color] active:scale-[0.97] sm:min-h-8 cursor-pointer lg:flex lg:w-full lg:min-w-0 lg:items-start lg:justify-between lg:py-1.5 lg:text-left';
 const entryOn = 'border-accent bg-accent-muted text-primary';
 const entryOff = 'border-subtle bg-surface-card text-secondary hover:border-strong hover:text-primary';
 
@@ -107,7 +109,7 @@ export const PhaseNav: React.FC<PhaseNavProps> = ({
               0{entry.phaseNumber}
             </span>
           )}
-          <span title={entry === 'all' ? undefined : entry.title} className="truncate lg:leading-snug">{entry === 'all' ? 'All phases' : entry.title}</span>
+          <span title={entry === 'all' ? undefined : (entry.tooltip ?? entry.title)} className="line-clamp-2 whitespace-normal break-words text-left leading-tight lg:line-clamp-none lg:leading-snug">{entry === 'all' ? 'All phases' : entry.title}</span>
         </span>
         {mode === 'checklist' && stats && (
           <span className="inline-flex flex-shrink-0 items-center gap-1 lg:leading-snug text-[11px] font-mono tabular-nums text-muted">
@@ -122,12 +124,12 @@ export const PhaseNav: React.FC<PhaseNavProps> = ({
   return (
     <nav aria-label="Phase navigator" className={`${className ?? ""} lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto`}>
       {/* Mobile / tablet: horizontally scrollable chip row with fade mask */}
-      <div className="lg:hidden -mx-4 overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
+      <ScrollFade fadeSize="3.5rem" className="lg:hidden -mx-4 px-4 sm:mx-0 sm:px-0 max-sm:pr-14">
         <div className="flex min-w-max items-center gap-1.5 py-0.5">
           {renderEntry('all')}
           {phases.map((p) => renderEntry(p))}
         </div>
-      </div>
+      </ScrollFade>
 
       {/* Desktop: sticky vertical list in the left column */}
       <div className="hidden lg:flex lg:flex-col lg:gap-1">
@@ -137,5 +139,3 @@ export const PhaseNav: React.FC<PhaseNavProps> = ({
     </nav>
   );
 };
-
-export default PhaseNav;

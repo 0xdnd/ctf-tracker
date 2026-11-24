@@ -27,7 +27,7 @@ export interface LabFinding {
 export type NewLabFindingInput = Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'>;
 export type LabFindingPatch = Partial<Omit<LabFinding, 'id' | 'createdAt' | 'updatedAt'>>;
 
-export type TimelineEventKind =
+type TimelineEventKind =
   | 'status_change'
   | 'user_pwned'
   | 'root_pwned'

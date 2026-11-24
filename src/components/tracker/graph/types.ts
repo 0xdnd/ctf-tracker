@@ -78,6 +78,7 @@ export interface AttackNodeCardProps {
   isSelected: boolean;
   isHovered: boolean;
   isConnectingSource?: boolean;
+  isDark?: boolean;
   tokens: CanvasThemeTokens;
   onSelect: (node: GraphNode) => void;
   onHover: (nodeId: string | null) => void;

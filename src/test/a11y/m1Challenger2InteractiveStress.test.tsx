@@ -6,6 +6,7 @@ import { CyberSelect, CyberMultiSelect } from '../../components/common/CyberSele
 import { ToastContainer } from '../../components/common/ToastContainer';
 import { useToastStore, toast } from '../../store/useToastStore';
 import { UnifiedHeader } from '../../components/layout/UnifiedHeader';
+import { openSessionPanel } from '../layout/openSessionPanel';
 import { useCtfStore, applyThemePreset, ThemePreset } from '../../store/useCtfStore';
 import { applyThemeToDOM } from '../../hooks/useTheme';
 
@@ -293,47 +294,46 @@ describe('Milestone 1 Challenger 2: Accessibility & Interactive Invariants Adver
       expect(computedAria).toContain('Filter Vulnerabilities (2)');
     });
 
-    it('UnifiedHeader: variable inputs and action buttons comply with Label-in-Name', () => {
+    it('UnifiedHeader: variable inputs and action buttons comply with Label-in-Name', async () => {
       render(
         <MemoryRouter>
           <UnifiedHeader />
         </MemoryRouter>
       );
 
+      // The RHOST chip's accessible name contains its visible text.
+      expect(screen.getByRole('button', { name: /^Copy RHOST / })).toBeInTheDocument();
+
+      await openSessionPanel();
+
       // 1. Attacker IP (LHOST)
       const lhostInput = screen.getByLabelText('Attacker IP (LHOST)');
       expect(lhostInput).toBeInTheDocument();
-      expect(screen.getByText('L')).toBeInTheDocument();
+      expect(screen.getByText('LHOST')).toBeInTheDocument();
 
       // 2. Target IP (RHOST)
       const rhostInput = screen.getByLabelText('Target IP (RHOST)');
       expect(rhostInput).toBeInTheDocument();
-      expect(screen.getByText('R')).toBeInTheDocument();
+      expect(screen.getByText('RHOST', { selector: 'label' })).toBeInTheDocument();
 
       // 3. Listener Port (LPORT)
       const lportInput = screen.getByLabelText('Listener Port (LPORT)');
       expect(lportInput).toBeInTheDocument();
-      expect(screen.getByText('P')).toBeInTheDocument();
+      expect(screen.getByText('LPORT')).toBeInTheDocument();
 
       // 4. Copy buttons have clear accessible names
       expect(screen.getByRole('button', { name: 'Copy LHOST' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy Target IP' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy LPORT' })).toBeInTheDocument();
 
-      // 5. RevShell button accessible name includes visible text "RevShell"
-      const revShellBtn = screen.getByRole('button', { name: /RevShell/i });
-      expect(revShellBtn).toBeInTheDocument();
-      expect(revShellBtn.getAttribute('aria-label')).toContain('RevShell');
+      // 5. Reverse shell tool: visible text is the accessible name
+      expect(screen.getByRole('button', { name: /Reverse Shell Crafter/i })).toBeInTheDocument();
 
-      // 6. Snippets button accessible name includes visible text "Snippets"
-      const snippetsBtn = screen.getByRole('button', { name: /Snippets/i });
-      expect(snippetsBtn).toBeInTheDocument();
-      expect(snippetsBtn.getAttribute('aria-label')).toContain('Snippets');
+      // 6. Snippets tool
+      expect(screen.getByRole('button', { name: /Snippets/i })).toBeInTheDocument();
 
-      // 7. Deploy Box button accessible name includes visible text "Deploy Box"
-      const deployBoxBtn = screen.getByRole('button', { name: /Deploy Box/i });
-      expect(deployBoxBtn).toBeInTheDocument();
-      expect(deployBoxBtn.getAttribute('aria-label')).toContain('Deploy Box');
+      // 7. Add target button accessible name is its visible text "Add target"
+      expect(screen.getByRole('button', { name: /Add target/i })).toBeInTheDocument();
     });
   });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { 
   X, 
@@ -151,7 +151,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-drawer overflow-hidden font-sans">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -160,7 +160,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             className="fixed inset-0 bg-surface-inverse/50"
             onClick={onClose}
           />
-          <motion.div
+          <m.div
             key="export-loot-drawer"
             ref={trapRef}
             variants={DRAWER_RIGHT_VARIANTS}
@@ -179,9 +179,9 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                   <Database className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-primary">
+                  <h2 className="text-sm font-semibold text-primary">
                     Export evidence
-                  </h3>
+                  </h2>
                   <p className="text-[11px] text-muted">
                     Package artifacts as portable reports and tables
                   </p>
@@ -200,7 +200,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
             </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 text-xs">
             {/* Scope Selection Box */}
             <div className="p-3 rounded-xl bg-surface-sunken border border-subtle space-y-2 machined-edge">
               <div className="text-[11px] font-semibold text-muted flex items-center gap-1.5">
@@ -218,7 +218,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
  }`}
                 >
                   <div className="font-semibold">All artifacts</div>
-                  <div className="text-[11px] font-mono tabular-nums opacity-75 mt-0.5">
+                  <div className="text-[11px] font-mono tabular-nums mt-0.5">
                     {items.length} records
                   </div>
                 </button>
@@ -233,7 +233,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
  }`}
                 >
                   <div className="font-semibold">Filtered scope</div>
-                  <div className="text-[11px] font-mono tabular-nums opacity-75 mt-0.5">
+                  <div className="text-[11px] font-mono tabular-nums mt-0.5">
                     {filteredItems.length} records
                   </div>
                 </button>
@@ -248,7 +248,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                     <FileJson className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-primary">JSON package (.json)</h4>
+                    <h3 className="text-xs font-semibold text-primary">JSON package (.json)</h3>
                     <p className="text-[11px] text-muted">Complete ZeroBox vault schema</p>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                     <FileSpreadsheet className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-primary">CSV spreadsheet (.csv)</h4>
+                    <h3 className="text-xs font-semibold text-primary">CSV spreadsheet (.csv)</h3>
                     <p className="text-[11px] text-muted">RFC 4180, opens in Excel or Sheets</p>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-primary">Markdown table (.md)</h4>
+                    <h3 className="text-xs font-semibold text-primary">Markdown table (.md)</h3>
                     <p className="text-[11px] text-muted">For Obsidian, GitBook and writeups</p>
                   </div>
                 </div>
@@ -350,7 +350,7 @@ export const ExportLootDrawer: React.FC<ExportLootDrawerProps> = ({
               Done
             </button>
           </div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>,

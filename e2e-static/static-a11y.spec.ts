@@ -16,6 +16,8 @@ const PAGES = [
   '/oscp-exam-scoring-and-time-budget/',
   '/oscp-points-calculator/',
   '/oscp-exam-simulator/',
+  '/oscp-vs-cpts/',
+  '/htb-vs-tryhackme/',
   // Machine list pages with the search/filter/sort toolbar (public/table-filter.js).
   '/machines/',
   '/machines/page/2/',

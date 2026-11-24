@@ -4,11 +4,16 @@ import * as tauriUpdater from '@tauri-apps/plugin-updater';
 import { DesktopUpdateProvider, AUTO_CHECK_DELAY_MS } from './DesktopUpdateContext';
 import { UpdateControl } from '../components/common/OperatorDossierModal';
 import { useToastStore } from '../store/useToastStore';
+import { useUpdateUiStore } from '../store/useUpdateUiStore';
+import { useExamStore } from '../store/examStore';
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn().mockResolvedValue('2.5.2') }));
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn().mockResolvedValue(undefined) }));
-vi.mock('../store/useCtfStore', () => ({ checkpointTimerAndFlush: vi.fn() }));
+vi.mock('../store/useCtfStore', () => ({
+  checkpointTimerAndFlush: vi.fn(),
+  useCtfStore: { getState: () => ({}) },
+}));
 
 const tree = (
   <DesktopUpdateProvider>
@@ -32,6 +37,8 @@ describe('DesktopUpdateProvider', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     useToastStore.setState({ toasts: [] });
+    useUpdateUiStore.setState({ updateAvailableOpen: false, webUpdateWaiting: false, webReloadAction: null });
+    useExamStore.setState({ status: 'idle' });
     delete (window as unknown as Record<string, unknown>).electronAPI;
     setTauri(false);
   });
@@ -56,21 +63,36 @@ describe('DesktopUpdateProvider', () => {
     expect(screen.getByText('Check for updates')).toBeTruthy();
   });
 
-  it('shows a notice and the restart button when an update is ready', async () => {
+  it('opens the Update Available modal and shows the restart button when idle and an update is ready', async () => {
     setTauri(true);
     vi.mocked(tauriUpdater.check).mockResolvedValue({
       version: '2.6.0',
+      body: '- Improved pivot graph',
       download: vi.fn().mockResolvedValue(undefined),
       install: vi.fn(),
     } as never);
     render(tree);
     await advance();
-    const toasts = useToastStore.getState().toasts;
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0].message).toContain('2.6.0');
-    expect(toasts[0].action?.label).toBe('Update and restart');
+    expect(useUpdateUiStore.getState().updateAvailableOpen).toBe(true);
     expect(screen.getByText('Update and restart')).toBeTruthy();
     expect(screen.getByText('Version 2.6.0 is available')).toBeTruthy();
+  });
+
+  it('defers the modal to a non-blocking toast when an exam is running', async () => {
+    setTauri(true);
+    useExamStore.setState({ status: 'running' });
+    vi.mocked(tauriUpdater.check).mockResolvedValue({
+      version: '2.6.1',
+      download: vi.fn().mockResolvedValue(undefined),
+      install: vi.fn(),
+    } as never);
+    render(tree);
+    await advance();
+    expect(useUpdateUiStore.getState().updateAvailableOpen).toBe(false);
+    const toasts = useToastStore.getState().toasts;
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0].message).toContain('2.6.1');
+    expect(toasts[0].action?.label).toBe('View update');
   });
 
   it('reports the latest version after a manual check', async () => {

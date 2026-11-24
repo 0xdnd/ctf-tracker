@@ -4,9 +4,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
 
-import { generateTtyStabilizationSteps, TtyUpgradeStep } from '../../utils/offensiveTransferUtils';
-
-export type TtyStep = TtyUpgradeStep;
+import { generateTtyStabilizationSteps } from '../../utils/offensiveTransferUtils';
 
 export const TtyStabilizationCheatsheet: React.FC = () => {
   const { soundEnabled } = useCtfStore();
@@ -83,7 +81,7 @@ export const TtyStabilizationCheatsheet: React.FC = () => {
 
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <div className="flex-1 md:flex-none">
-                  <pre className="px-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle font-mono text-xs text-primary select-all whitespace-nowrap">
+                  <pre className="px-3 py-1.5 rounded-lg bg-surface-sunken border border-subtle font-mono text-xs text-primary select-text whitespace-nowrap">
                     {s.command}
                   </pre>
                 </div>
@@ -115,10 +113,10 @@ export const TtyStabilizationCheatsheet: React.FC = () => {
             <span>Alternative PTY Spawns (If Python fails)</span>
           </div>
           <div className="space-y-1.5 font-mono text-[11px] text-secondary">
-            <div className="p-2 rounded bg-surface-sunken border border-subtle select-all">
+            <div className="p-2 rounded bg-surface-sunken border border-subtle select-text">
               /usr/bin/script -qc /bin/bash /dev/null
             </div>
-            <div className="p-2 rounded bg-surface-sunken border border-subtle select-all">
+            <div className="p-2 rounded bg-surface-sunken border border-subtle select-text">
               perl -e 'use POSIX qw(setsid); setsid(); exec "/bin/bash"'
             </div>
           </div>
@@ -133,7 +131,7 @@ export const TtyStabilizationCheatsheet: React.FC = () => {
             Catching via Socat instantly gives full TTY without needing stty raw:
           </p>
           <div className="space-y-1.5 font-mono text-[11px] text-secondary">
-            <div className="p-2 rounded bg-surface-sunken border border-subtle select-all">
+            <div className="p-2 rounded bg-surface-sunken border border-subtle select-text">
               socat file:`tty`,raw,echo=0 tcp-listen:4444
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { CyberSelect } from '../common/CyberSelect';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, FileSpreadsheet, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,6 +14,7 @@ import {
   type ColumnMap,
   type ImportResult,
 } from '../../utils/machinesCsvImport';
+import { formatMb } from '../../utils/importLimits';
 import type { PipelineStatus, Platform } from '../../types';
 
 const MAX_SHOWN_ROWS = 200;
@@ -115,7 +117,7 @@ export const CsvImportPanel: React.FC<CsvImportPanelProps> = ({ onApplied, focus
     }
     setFileName(file.name);
     if (file.size > MAX_CSV_BYTES) {
-      setError(`That file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. The limit is 2 MB; split it and import the parts.`);
+      setError(`That file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. The limit is ${formatMb(MAX_CSV_BYTES)}; split it and import the parts.`);
       return;
     }
     try {
@@ -144,26 +146,26 @@ export const CsvImportPanel: React.FC<CsvImportPanelProps> = ({ onApplied, focus
 
   const fileId = `${uid}-file`;
   const optionLabel = (h: string, i: number) => h || `Column ${i + 1}`;
-  const selectClass =
-    'w-full h-10 px-2 rounded-xl bg-surface-sunken border border-subtle text-sm text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
   const columnSelect = (field: 'name' | 'platform' | 'status', label: string, optional: boolean) => {
     if (!parsed || !mapping) return null;
     const id = `${uid}-col-${field}`;
     return (
       <div className="space-y-1">
-        <label htmlFor={id} className="text-xs font-medium text-secondary">{label}</label>
-        <select
+        <CyberSelect
           id={id}
-          value={mapping[field]}
-          onChange={(e) => setPicked((p) => ({ ...p, [field]: Number(e.target.value) }))}
-          className={selectClass}
-        >
-          <option value={-1}>{optional ? 'Not in this file' : 'Choose a column'}</option>
-          {parsed.headers.map((h, i) => (
-            <option key={i} value={i}>{optionLabel(h, i)}</option>
-          ))}
-        </select>
+          label={label}
+          value={String(mapping[field])}
+          onChange={(v) => setPicked((p) => ({ ...p, [field]: Number(v) }))}
+          options={[
+            { value: '-1', label: optional ? 'Not in this file' : 'Choose a column' },
+            ...parsed.headers.map((h, i) => ({ value: String(i), label: optionLabel(h, i) })),
+          ]}
+          variant="card"
+          size="md"
+          className="w-full"
+          triggerClassName="w-full"
+        />
       </div>
     );
   };
@@ -306,4 +308,3 @@ export const CsvImportPanel: React.FC<CsvImportPanelProps> = ({ onApplied, focus
   );
 };
 
-export default CsvImportPanel;

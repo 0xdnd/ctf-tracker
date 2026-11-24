@@ -256,5 +256,3 @@ export const NoteMoreMenu: React.FC<NoteMoreMenuProps> = ({
     </div>
   );
 };
-
-export default NoteMoreMenu;

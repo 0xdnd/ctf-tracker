@@ -22,6 +22,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { recordCatalogChanges } from './lib/record-catalog-changes.mjs';
 
 const require = createRequire(import.meta.url);
 const { unpackRows } = require('./lib/vulnhub-pack.cjs');
@@ -323,6 +324,13 @@ async function main() {
   writeFileSync(MAP_FILE, pretty(idMap));
   writeFileSync(OUT_FILE, lines(packRows(rows))); // compact rows, one per line (scripts/lib/pg-pack.cjs)
   console.log(`Wrote ${MAP_FILE}\nWrote ${OUT_FILE}`);
+  if (stats.added.length > 0) {
+    const addedSet = new Set(stats.added);
+    const addedItems = rows
+      .filter((r) => addedSet.has(r.name))
+      .map((r) => ({ name: r.name, platform: 'PG', os: r.os, difficulty: r.difficulty }));
+    recordCatalogChanges({ date: new Date().toISOString().slice(0, 10), platform: 'PG', added: addedItems });
+  }
   const r = spawnSync(process.execPath, [COUNTS_SCRIPT], { stdio: 'inherit' });
   if (r.status !== 0) throw new Error('update-catalog-counts.mjs failed');
 }

@@ -25,6 +25,7 @@ import {
   ExamScoreResult,
 } from './examComplianceUtils';
 import { parseMarkdownToHtml, escapeHtml } from './writeupHtmlExporter';
+import { sanitizeHtml } from './securityUtils';
 import type { Finding } from '../types/findings';
 import { sortFindingsBySeverity } from './cvss';
 
@@ -199,7 +200,7 @@ The assessment adhered to the official OffSec PEN-200 examination standards:
  * Track-specific submission/declaration section appended after the methodology.
  * Returns '' for tracks that have none (their reports are unchanged).
  */
-export function getTrackSubmissionSection(track: ExamTrack): string {
+function getTrackSubmissionSection(track: ExamTrack): string {
   if (track === 'PNPT') {
     return `### 4.2 PNPT Submission Checklist (Report, Tool Disclosure & Debrief)
 Modeled on the published PNPT rules; confirm the current requirements on the official certification page before your real attempt.
@@ -443,7 +444,7 @@ export function generateExamReportMarkdown(
  * - Complete neutralization of XSS attempts.
  */
 export function exportStandaloneHtmlReport(markdownReport: string, title?: string): string {
-  const parsedBody = parseMarkdownToHtml(markdownReport);
+  const parsedBody = sanitizeHtml(parseMarkdownToHtml(markdownReport));
   const safeTitle = escapeHtml(title || 'ZeroBox Tactical Certification Exam Report');
 
   return `<!DOCTYPE html>

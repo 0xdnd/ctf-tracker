@@ -1,4 +1,4 @@
-export interface ReadinessCheck {
+interface ReadinessCheck {
   id: string;
   label: string;
   ok: boolean;

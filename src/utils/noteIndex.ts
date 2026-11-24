@@ -17,7 +17,7 @@ export const INLINE_TAG_RE = /(?:^|\s)#([\p{L}][\p{L}\p{N}_/-]*)/gu;
 const LINK_RE = /\[\[([^\]\n]+?)\]\]/g;
 const NUMERIC_PREFIX_RE = /^0*(\d+)[\s_.-]+(.*)$/;
 
-export function normalizeNoteKey(s: string): string {
+function normalizeNoteKey(s: string): string {
   return (s ?? '')
     .trim()
     .toLowerCase()

@@ -168,6 +168,16 @@ describe('BackupModal: merge import', () => {
     expect(importBackup).not.toHaveBeenCalled();
   });
 
+  it('resets file input value after reading a valid JSON file so re-selecting the same file still fires onChange', async () => {
+    render(<BackupModal />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    const file = new File([PLAINTEXT], 'backup.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(input.value).toBe('');
+    await waitFor(() => expect(screen.getByLabelText('Paste JSON backup content')).toHaveValue(PLAINTEXT));
+  });
+
   it.each([
     ['busy', /Another ZeroBox tab is merging/],
     ['gated', /Writes are blocked in this tab/],

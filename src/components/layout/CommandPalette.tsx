@@ -32,6 +32,7 @@ import { useCtfStore } from '../../store/useCtfStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotesWorkspaceStore } from '../../store/useNotesWorkspaceStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
+import { PHASE_COUNT } from '../../data/catalogStats';
 import { useShallow } from 'zustand/react/shallow';
 import { safeCopyToClipboard, playCyberSound } from '../../utils/helpers';
 import { parseSearchQuery, matchesSearchQuery } from '../../utils/searchQuery';
@@ -70,6 +71,24 @@ const SEARCH_SECTIONS: { key: SearchSection; label: string }[] = [
   { key: 'writeups', label: 'Writeups' },
   { key: 'vault', label: 'Evidence Vault' },
 ];
+
+const ACTION_GROUP_ORDER = ['Pages', 'Actions', 'Appearance and help'] as const;
+type ActionGroup = (typeof ACTION_GROUP_ORDER)[number];
+const ACTION_GROUPS: Record<string, ActionGroup> = {
+  'action-exam': 'Pages',
+  'action-vault': 'Pages',
+  'action-reverse-shells': 'Pages',
+  'action-methodology': 'Pages',
+  'action-writeup': 'Pages',
+  'action-oscp-points-calculator': 'Pages',
+  'theme-offsec': 'Appearance and help',
+  'theme-htb': 'Appearance and help',
+  'theme-obsidian': 'Appearance and help',
+  'action-settings': 'Appearance and help',
+  'action-shortcuts': 'Appearance and help',
+  'action-replay-tour': 'Appearance and help',
+};
+const groupOfAction = (id: string): ActionGroup => ACTION_GROUPS[id] ?? 'Actions';
 
 interface PaletteItem {
   id: string;
@@ -250,7 +269,8 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-notes-workspace',
-        label: 'Toggle Field Notes Workspace Sidecar (Alt+N)',
+        label: 'Open or close the notes panel (Alt+N)',
+        keywords: ['field notes', 'workspace', 'sidecar', 'notes'],
         icon: NotebookText,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -273,6 +293,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-exam',
         label: 'Jump to Exam Simulator (Alt+E)',
+        keywords: ['oscp','cpts','simulator'],
         icon: Timer,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -284,6 +305,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-vault',
         label: 'Jump to Evidence & Loot Vault',
+        keywords: ['evidence','loot'],
         icon: KeyRound,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -294,7 +316,8 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-switch-operator',
-        label: 'Switch Operator / Log In Profile (Alt+O)',
+        label: 'Switch profile or log in (Alt+O)',
+        keywords: ['operator', 'profile', 'login'],
         icon: Users,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -305,7 +328,8 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-dossier',
-        label: 'View Creator Dossier (Daniel Dayan)',
+        label: 'About ZeroBox and its creator',
+        keywords: ['dossier', 'daniel', 'dayan', 'creator', 'about'],
         icon: Terminal,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -339,6 +363,7 @@ export const CommandPalette: React.FC = () => {
       {
         id: 'action-reverse-shells',
         label: 'Reverse Shells',
+        keywords: ['forge','payloads','listener','revshell'],
         icon: SquareTerminal,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -349,7 +374,7 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-methodology',
-        label: 'Attack Methodology (8-Phases)',
+        label: `Attack Methodology (${PHASE_COUNT}-Phases)`,
         icon: Route,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -372,7 +397,8 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-backup',
-        label: 'Backup / Restore JSON',
+        label: 'Backup and restore',
+        keywords: ['json', 'export', 'import', 'backup'],
         icon: Database,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -383,7 +409,8 @@ export const CommandPalette: React.FC = () => {
       },
       {
         id: 'action-settings',
-        label: 'Open Operator Settings & Themes',
+        label: 'Open settings and themes',
+        keywords: ['operator', 'settings', 'themes', 'preferences'],
         icon: Settings,
         colorClass: 'text-muted',
         bgHoverClass: 'hover:bg-surface-hover',
@@ -426,17 +453,6 @@ export const CommandPalette: React.FC = () => {
         },
       },
       {
-        id: 'action-revshell-forge',
-        label: 'Reverse shell forge (payloads and listener)',
-        icon: SquareTerminal,
-        colorClass: 'text-muted',
-        bgHoverClass: 'hover:bg-surface-hover',
-        execute: () => {
-          setCommandPaletteOpen(false);
-          navigate('/reverse-shell');
-        },
-      },
-      {
         id: 'action-flexcard',
         label: 'Export operator flex card (PNG)',
         icon: Award,
@@ -457,29 +473,6 @@ export const CommandPalette: React.FC = () => {
         execute: () => {
           setCommandPaletteOpen(false);
           setFlexCardModalOpen(true, 'passed');
-        },
-      },
-      {
-        id: 'action-vault-view',
-        label: 'Evidence and loot vault',
-        icon: KeyRound,
-        colorClass: 'text-muted',
-        bgHoverClass: 'hover:bg-surface-hover',
-        execute: () => {
-          setCommandPaletteOpen(false);
-          setActiveTab('vault');
-          navigate('/vault');
-        },
-      },
-      {
-        id: 'action-exam-view',
-        label: 'Exam Simulator (OSCP / CPTS)',
-        icon: Timer,
-        colorClass: 'text-muted',
-        bgHoverClass: 'hover:bg-surface-hover',
-        execute: () => {
-          setCommandPaletteOpen(false);
-          navigate('/exam');
         },
       },
       {
@@ -523,9 +516,12 @@ export const CommandPalette: React.FC = () => {
 
   // Filter actions based on search
   const filteredActions = useMemo(() => {
-    if (!query.trim()) return quickActions;
-    const q = query.toLowerCase();
-    return quickActions.filter((a) => a.label.toLowerCase().includes(q) || a.keywords?.some((k) => k.includes(q)));
+    const q = query.trim().toLowerCase();
+    const matched = q
+      ? quickActions.filter((a) => a.label.toLowerCase().includes(q) || a.keywords?.some((k) => k.includes(q)))
+      : quickActions;
+    // Sorted by group so keyboard order matches the grouped display
+    return [...matched].sort((a, b) => ACTION_GROUP_ORDER.indexOf(groupOfAction(a.id)) - ACTION_GROUP_ORDER.indexOf(groupOfAction(b.id)));
   }, [query, quickActions]);
 
   // Unified items list for keyboard navigation
@@ -637,7 +633,7 @@ export const CommandPalette: React.FC = () => {
             className="w-full max-w-2xl rounded-xl border border-subtle bg-surface-elevated shadow-xl overflow-hidden machined-edge"
           >
             {/* Search Input Bar */}
-            <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card">
+            <div className="flex items-center gap-3 border-b border-subtle px-4 py-3 bg-surface-card focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent/60">
           <Search className="w-5 h-5 text-muted flex-shrink-0" />
           <input
             id="command-palette-search-input"
@@ -646,14 +642,16 @@ export const CommandPalette: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search commands, machines, notes, writeups..."
+            placeholder="Search commands, targets, notes"
             className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
           {query && (
-            <button 
-              onClick={() => setQuery('')} 
-              className="text-muted hover:text-primary"
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
               title="Clear search"
+              aria-label="Clear search"
             >
               <X className="w-4 h-4" />
             </button>
@@ -664,46 +662,50 @@ export const CommandPalette: React.FC = () => {
         </div>
 
         {/* Results Container */}
-        <div ref={containerRef} className="max-h-[60vh] overflow-y-auto p-3 space-y-4 text-xs">
+        <div ref={containerRef} className="max-h-[60vh] overflow-y-auto overscroll-contain p-3 space-y-4 text-xs">
           
-          {/* Quick Actions */}
-          {filteredActions.length > 0 && (
-            <div>
-              <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center gap-1.5">
-                <Sliders className="w-3 h-3" /> Quick actions
+          {/* Quick actions, grouped under headings */}
+          {ACTION_GROUP_ORDER.map((group) => {
+            const groupActions = filteredActions.filter((a) => groupOfAction(a.id) === group);
+            if (groupActions.length === 0) return null;
+            return (
+              <div key={group} role="group" aria-label={group}>
+                <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center gap-1.5">
+                  <Sliders className="w-3 h-3" aria-hidden="true" /> {group}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {groupActions.map((action) => {
+                    const itemIndex = itemIndexById.get(action.id) ?? -1;
+                    const isSelected = itemIndex === selectedIndex;
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={action.id}
+                        data-palette-index={itemIndex}
+                        onClick={() => action.execute()}
+                        className={`flex items-center gap-2 p-2 rounded-lg text-left transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer ${
+                          isSelected
+                            ? 'bg-surface-hover ring-1 ring-accent border-transparent'
+                            : `bg-transparent border border-transparent ${action.bgHoverClass}`
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${action.colorClass}`} />
+                        <span className="font-medium text-primary">
+                          {action.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {filteredActions.map((action) => {
-                  const itemIndex = itemIndexById.get(action.id) ?? -1;
-                  const isSelected = itemIndex === selectedIndex;
-                  const Icon = action.icon;
-                  return (
-                    <button
-                      key={action.id}
-                      data-palette-index={itemIndex}
-                      onClick={() => action.execute()}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-left transition-[transform,background-color,border-color,color] active:scale-[0.97] group cursor-pointer ${
-                        isSelected 
-                          ? 'bg-surface-hover ring-1 ring-accent border-transparent' 
-                          : `bg-transparent border border-transparent ${action.bgHoverClass}`
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 ${action.colorClass}`} />
-                      <span className="font-medium text-primary">
-                        {action.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+            );
+          })}
 
           {/* Machine Hits */}
           <div>
             <div className="px-2 pb-1.5 text-[11px] font-medium text-muted flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <ShieldAlert className="w-3 h-3" /> Lab machines
+                <ShieldAlert className="w-3 h-3" /> Targets
               </span>
               <span className="text-[10px] text-muted tabular-nums">{filteredMachines.length} matches</span>
             </div>

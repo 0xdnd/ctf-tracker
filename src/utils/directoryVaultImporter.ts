@@ -6,12 +6,12 @@ import {
   VaultZipImportResult
 } from './zipVaultImporter';
 
-export { isIgnoredVaultPath, isSafeRelativePath };
+export { isIgnoredVaultPath };
 
 /**
  * Recursively traverses a FileSystemEntry (standard HTML5 directory drag-and-drop entry)
  */
-export async function traverseFileSystemEntry(
+async function traverseFileSystemEntry(
   entry: FileSystemEntry,
   currentPath = ''
 ): Promise<{ path: string; file: File }[]> {

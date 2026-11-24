@@ -1,6 +1,6 @@
 import type { Credential, CredAttempt, CredService, LootItem, LootState } from '../types/loot';
 
-export type HostCredGroup = 'works' | 'failed' | 'triedNoResult' | 'tryHere';
+type HostCredGroup = 'works' | 'failed' | 'triedNoResult' | 'tryHere';
 export type HostCredLevel = 'admin' | 'user' | 'unknown';
 
 export interface HostCredEntry {

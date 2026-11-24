@@ -4,8 +4,9 @@ import DOMPurify from 'dompurify';
 DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
   if (data.attrName === 'src' && node.tagName === 'IMG') {
     const val = (data.attrValue || '').trim();
-    // Allow only relative local paths, local filenames, or safe base64 image data URIs
-    const isSafeSource = /^(\/|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,|[a-zA-Z0-9_.-]+\.(png|jpe?g|gif|webp|svg))/i.test(val);
+    // Allow only relative local paths, local filenames, or safe base64 image data URIs.
+    // A leading "//" (or "/\") is protocol-relative and resolves to another host, so it is not a local path.
+    const isSafeSource = /^(\/(?![/\\])|\.\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,|[a-zA-Z0-9_.-]+\.(png|jpe?g|gif|webp|svg))/i.test(val);
     if (!isSafeSource) {
       data.attrValue = ''; // Neutralize remote tracking beacon
     }

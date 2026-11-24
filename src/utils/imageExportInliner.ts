@@ -30,12 +30,12 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
 /**
  * Regex matching zerobox-img://<id> references in Markdown or HTML.
  */
-export const ZEROBOX_IMG_REGEX = /zerobox-img:\/\/([a-zA-Z0-9_-]+)/g;
+const ZEROBOX_IMG_REGEX = /zerobox-img:\/\/([a-zA-Z0-9_-]+)/g;
 
 /** DoS guard: at most this many distinct images are inlined into one export. */
 export const MAX_INLINE_IMAGES = 20;
 /** DoS guard: stop inlining once the estimated total of inlined bytes exceeds this. */
-export const MAX_INLINE_TOTAL_BYTES = 8 * 1024 * 1024;
+const MAX_INLINE_TOTAL_BYTES = 8 * 1024 * 1024;
 
 /**
  * Replaces `zerobox-img://<id>` references in markdown with inlined

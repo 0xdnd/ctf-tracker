@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * Standalone TypeScript Playwright 360-Degree E2E & Full Route Crawl Suite
  *
  * Requirements addressed:
- * - Crawls all 11 primary HashRouter routes with zero console/page errors.
+ * - Crawls all 11 primary path routes with zero console/page errors.
  * - Validates interactive UI elements (Attack Graph canvas, Kanban/Table/Grid views, zoom controls, export triggers).
  * - Tests search/filter boundaries, empty states, and reset recovery.
  * - Tests Target Detail dossier tabs (Recon, Flags Vault, Attack Methodology Checklist).
@@ -14,20 +14,20 @@ import { test, expect } from '@playwright/test';
  * - Tests Persistent Header LHOST/RHOST/LPORT variables and Reverse Shell crafter modal.
  */
 
-// All core HashRouter application routes
+// All core application routes (path routes; the web app uses BrowserRouter)
 const ALL_ROUTES = [
-  '/#/',
-  '/#/tracker',
-  '/#/target/thm-rootme',
-  '/#/cheatsheets',
-  '/#/field-manual',
-  '/#/methodology',
-  '/#/vault',
-  '/#/loot',
-  '/#/analytics',
-  '/#/exam-simulator',
-  '/#/writeup',
-  '/#/theme-demo',
+  '/',
+  '/tracker',
+  '/target/thm-rootme',
+  '/cheatsheets',
+  '/field-manual',
+  '/methodology',
+  '/vault',
+  '/loot',
+  '/analytics',
+  '/exam-simulator',
+  '/writeup',
+  '/theme-demo',
 ];
 
 test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
@@ -71,12 +71,13 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(400);
 
-      // Verify header presence and title. The field manual is an intentional full-screen workspace with no
-      // global app header (see getShellChrome / fullscreenNotesChrome.test.tsx), so there it must be absent instead.
+      // Verify header presence and title. The field manual is an intentional full-screen workspace without the
+      // global app header (see getShellChrome / fullscreenNotesChrome.test.tsx); its only header is the slim notes bar.
       const header = page.locator('header').first();
-      if (route === '/#/field-manual') {
-        await expect(page.getByText('Field manual', { exact: true }).first()).toBeVisible();
-        await expect(header).toHaveCount(0);
+      if (route === '/field-manual') {
+        await expect(page.getByTestId('notes-empty-state')).toBeVisible();
+        await expect(page.locator('header')).toHaveCount(1);
+        await expect(page.getByTestId('notes-app-bar')).toBeVisible();
       } else {
         await expect(header).toBeVisible();
       }
@@ -95,7 +96,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 2: Tracker Views & Attack Graph Canvas
   // --------------------------------------------------------------------------
   test('TC-02: Tracker view switching and Attack Graph Canvas interactions', async ({ page }) => {
-    await page.goto('/#/tracker', { waitUntil: 'domcontentloaded' });
+    await page.goto('/tracker', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
 
     // Switch to Kanban View
@@ -141,7 +142,12 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     await expect(exportCanvas).toBeVisible();
     await expect(exportSvg).toBeVisible();
 
-    // Verify active attack nodes exist in graph
+    // Subnet hubs start collapsed: open one, then its machines show as cards
+    const hubs = page.locator("[data-hub-interactive]");
+    if ((await hubs.count()) > 0) {
+      await hubs.first().click();
+      await page.waitForTimeout(400);
+    }
     const nodes = page.locator("[data-testid^='attack-node-']");
     const count = await nodes.count();
     expect(count).toBeGreaterThan(0);
@@ -157,7 +163,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 3: Search & Filter Boundary Handling
   // --------------------------------------------------------------------------
   test('TC-03: Filter input boundary stress and empty-state recovery', async ({ page }) => {
-    await page.goto('/#/tracker', { waitUntil: 'domcontentloaded' });
+    await page.goto('/tracker', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(500);
 
     const searchInput = page.locator('#tracker-search-input');
@@ -185,7 +191,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 4: Target Detail Dossier & Multi-Tab Exploration
   // --------------------------------------------------------------------------
   test('TC-04: Target Detail dossier navigation and tab switching', async ({ page }) => {
-    await page.goto('/#/target/thm-rootme', { waitUntil: 'domcontentloaded' });
+    await page.goto('/target/thm-rootme', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
 
     // Poll instead of reading once: on a cold dev server the lazy dossier chunk can take longer than the fixed wait.
@@ -214,8 +220,8 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   test('TC-05: Field manual notes search and multi-tab viewer', async ({ page }) => {
     // A fresh profile starts with an empty field manual by design (it only shows the user's own notes), so seed a
     // small vault straight into the app's IndexedDB store, then reload so the app hydrates it.
-    await page.goto('/#/field-manual', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('Your field manual is empty').first()).toBeVisible({ timeout: 30_000 });
+    await page.goto('/field-manual', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('notes-empty-state')).toBeVisible({ timeout: 30_000 });
     await page.evaluate(async () => {
       const mk = (id: string, title: string, category: string, md: string) => ({
         id, title, titleEn: title, category, rawCategory: category, subCategory: 'General', tags: ['privilege'],
@@ -277,7 +283,7 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 6: Exam Simulator Lifecycle & Bio-Break Modal
   // --------------------------------------------------------------------------
   test('TC-06: Exam Simulator cockpit pre-flight, HUD pacing, and report modal', async ({ page }) => {
-    await page.goto('/#/exam-simulator', { waitUntil: 'domcontentloaded' });
+    await page.goto('/exam-simulator', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
 
     // Check setup screen or active cockpit
@@ -318,10 +324,12 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
   // TEST 7: Reverse Shell Modal & Persistent Header Variables
   // --------------------------------------------------------------------------
   test('TC-07: Persistent Header LHOST/RHOST/LPORT variables and RevShell Crafter', async ({ page }) => {
-    await page.goto('/#/tracker', { waitUntil: 'domcontentloaded' });
+    await page.goto('/tracker', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
 
-    // Header variable inputs
+    // Header variable inputs live in the Session popover (opened from the bar)
+    const sessionBtn = page.getByRole('button', { name: /^Session/ });
+    await sessionBtn.click();
     const lhostInput = page.locator('#unified-lhost');
     const rhostInput = page.locator('#unified-target-ip');
     const lportInput = page.locator('#unified-lport');
@@ -335,10 +343,17 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
     await page.waitForTimeout(100);
     await expect(lportInput).toHaveValue('4444');
 
+    // Focus moved into the popover; Escape closes it and returns focus to the trigger
+    await expect(page.getByRole('dialog', { name: 'Session' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Session' })).toHaveCount(0);
+    await expect(sessionBtn).toBeFocused();
+
     // Stopwatch controls render once a target is engaged; engage the first match
     await page.getByRole('button', { name: 'Engage target', exact: true }).click();
     await page.getByPlaceholder('Search target name or IP...').fill('RootMe');
-    await page.locator('header button:has-text("RootMe")').first().click();
+    // The target list lives in a popover portaled to <body>, next to the search field (not inside <header>).
+    await page.getByPlaceholder('Search target name or IP...').locator('xpath=..').getByRole('button', { name: /RootMe/ }).first().click();
     await page.waitForTimeout(300);
 
     // Engaging a target without a live IP opens the "Assign spawned target IP" modal; dismiss it
@@ -348,7 +363,8 @@ test.describe('ZEROBOX Comprehensive 360° E2E & Route Crawl Suite', () => {
       await expect(assignIpDialog).not.toBeVisible();
     }
 
-    // Stopwatch timer controls
+    // Stopwatch timer controls live in the Session popover
+    await sessionBtn.click();
     const timerToggle = page.locator("button[title$='Stopwatch']").first();
     const timerReset = page.locator("button[title='Reset Stopwatch']");
     await expect(timerToggle).toBeVisible();

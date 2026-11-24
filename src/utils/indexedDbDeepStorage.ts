@@ -233,6 +233,34 @@ export async function restoreDeepProfileData(profileId: string, payload: DeepPro
 }
 
 /**
+ * Deletes a deep profile record while restoring a snapshot that had no deep record before sync.
+ * Deliberately NOT gated (same contract as `restoreDeepProfileData`).
+ */
+export async function clearDeepProfileDataForRestore(profileId: string): Promise<boolean> {
+  const db = await openDeepDatabase();
+  if (!db) return false;
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+    const done = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      try { db.close(); } catch { /* best-effort close; the connection may already be closed */ }
+      resolve(ok);
+    };
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.oncomplete = () => done(true);
+      tx.onerror = () => done(false);
+      tx.onabort = () => done(false);
+      tx.objectStore(STORE_NAME).delete(profileId || 'guest');
+    } catch (err) {
+      console.warn('[ZeroBox Deep Storage] Restore clear failed:', err);
+      done(false);
+    }
+  });
+}
+
+/**
  * Asynchronously loads deep profile payloads from IndexedDB. Resolves null only when there is no record (or no
  * IndexedDB in this environment, so nothing can live there); REJECTS when the database can't be opened or read,
  * so callers can tell "nothing stored" from "couldn't look" and never treat a failed read as an empty record.

@@ -15,8 +15,10 @@ export interface NotesRibbonProps {
   onOpenSwitcher: () => void;
   /** Full-screen "Back to app". Ignored when `footer` is given. */
   onBack?: () => void;
-  /** Replaces the default bottom buttons (open in new tab, back). */
+  /** Replaces the default bottom buttons (open in new tab, back). `null` shows none. */
   footer?: React.ReactNode;
+  /** One row of buttons for the app bar (phones) instead of a column. It never has a footer. */
+  horizontal?: boolean;
   /** Extra attributes per panel button (test ids, tour anchors). */
   panelButtonProps?: Partial<Record<NotesRibbonPanel, Record<string, string>>>;
 }
@@ -28,7 +30,7 @@ const PANELS: { id: NotesRibbonPanel; label: string; Icon: LucideIcon }[] = [
 ];
 
 const btn =
-  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
+  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
 
 export const NotesRibbon: React.FC<NotesRibbonProps> = ({
   activePanel,
@@ -36,13 +38,18 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
   onOpenSwitcher,
   onBack,
   footer,
+  horizontal = false,
   panelButtonProps,
 }) => (
   <nav
     aria-label="Notes ribbon"
     data-testid="notes-ribbon"
     data-tour="notes-ribbon"
-    className="flex w-11 flex-shrink-0 flex-col items-center gap-1 border-r border-subtle bg-surface-sunken py-2"
+    className={
+      horizontal
+        ? 'flex flex-shrink-0 items-center gap-0.5 [&>button]:h-9 [&>button]:w-9'
+        : 'flex w-11 flex-shrink-0 flex-col items-center gap-1 border-r border-subtle bg-surface-sunken py-2'
+    }
   >
     {PANELS.map(({ id, label, Icon }) => {
       const active = activePanel === id;
@@ -70,8 +77,8 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
     >
       <Zap className="h-[18px] w-[18px]" aria-hidden={true} />
     </button>
-    <div className="flex-1" />
-    {footer ?? (
+    {!horizontal && <div className="flex-1" />}
+    {horizontal ? null : footer === undefined ? (
       <>
         <button
           type="button"
@@ -93,8 +100,8 @@ export const NotesRibbon: React.FC<NotesRibbonProps> = ({
           </button>
         </Tooltip>
       </>
+    ) : (
+      footer
     )}
   </nav>
 );
-
-export default NotesRibbon;

@@ -26,6 +26,8 @@ import {
 import { useCtfStore, type MergeBackupResult } from '../../store/useCtfStore';
 import { Modal } from '../common/Modal';
 import { confirmAction } from '../../store/useConfirmStore';
+import { toast } from '../../store/useToastStore';
+import { assertJsonFileWithinLimit } from '../../utils/importLimits';
 import PreUpdateSnapshots from './PreUpdateSnapshots';
 import SyncConflictReview from './SyncConflictReview';
 import type { ConflictChoice, SyncConflict, SyncMergeSummary } from '../../utils/syncMerge';
@@ -371,6 +373,13 @@ export const BackupModal: React.FC = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    try {
+      assertJsonFileWithinLimit(file);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err), 'File too large to import');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
@@ -379,6 +388,8 @@ export const BackupModal: React.FC = () => {
       }
     };
     reader.readAsText(file);
+    // Reset file input so re-selecting the same file path (e.g. after Merge -> switching to Replace) fires onChange.
+    e.target.value = '';
   };
 
   const handleExecuteImport = async () => {
@@ -1409,7 +1420,11 @@ export const BackupModal: React.FC = () => {
                   <div className="text-xs font-medium text-muted">
                     Matched catalog targets ({parseResult.allMatches.length})
                   </div>
-                  <div className="max-h-36 overflow-y-auto space-y-1 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] scrollbar-thin">
+                  <div
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- scrollable region must be keyboard-focusable (WCAG 2.1.1)
+                    tabIndex={0}
+                    className="max-h-36 overflow-y-auto space-y-1 p-2 rounded-lg bg-surface-card border border-subtle text-[11px] scrollbar-thin focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
                     {parseResult.allMatches.map((m) => {
                       const isAlready = m.currentStatus === 'completed' || m.currentStatus === 'root';
                       return (

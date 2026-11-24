@@ -149,7 +149,7 @@ describe('WriteupStudio: pasted images, lab summary, backlinks', () => {
     fireEvent.change(editor, { target: { value: 'HeadTail' } });
     editor.setSelectionRange(4, 4);
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Insert lab summary/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Insert summary/ }));
     });
     expect(editor.value.startsWith('Head\n\n## Open ports and services')).toBe(true);
     expect(editor.value).toContain('### Samba RCE');

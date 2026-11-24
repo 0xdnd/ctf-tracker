@@ -326,7 +326,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
           </h1>
           <div data-testid="note-meta" className="mb-7 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-tertiary">
             {note.tags?.map((t) => {
-              const chipClass = 'rounded-sm bg-accent-muted px-2 py-0.5 text-accent max-md:inline-flex max-md:min-h-6 max-md:items-center';
+              const chipClass = 'rounded-sm bg-accent-muted px-2 py-0.5 text-primary inline-flex min-h-6 items-center';
               return onTagClick ? (
                 <button
                   key={t}
@@ -398,7 +398,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               <button
                 type="button"
                 onClick={handleCopyNote}
-                className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
+                className="active:scale-[0.97] min-h-6 px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
                 title="Copy entire note markdown"
               >
                 <Copy className="w-2.5 h-2.5" />
@@ -407,7 +407,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadNote}
-                className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
+                className="active:scale-[0.97] min-h-6 px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken hover:bg-surface-hover text-secondary hover:text-primary border border-subtle transition-interactive flex items-center gap-1 cursor-pointer"
                 title="Download note as .md"
               >
                 <Download className="w-2.5 h-2.5" />
@@ -418,7 +418,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                 onClick={handleOpenWriteupReport}
                 data-testid="export-writeup-report-btn"
                 aria-label="Generate full writeup report"
-                className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-sunken hover:bg-surface-hover text-callout-success-fg border border-callout-success-border transition-interactive flex items-center gap-1 cursor-pointer"
+                className="active:scale-[0.97] min-h-6 px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-sunken hover:bg-surface-hover text-callout-success-fg border border-callout-success-border transition-interactive flex items-center gap-1 cursor-pointer"
                 title="Sync note to engaged target & open full Pentest Writeup Report"
               >
                 <FileCheck2 className="w-2.5 h-2.5" />
@@ -432,7 +432,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
                     onViewModeChange(isMobile ? 'raw' : 'split');
                     if (soundEnabled) playCyberSound('click');
                   }}
-                  className="active:scale-[0.97] px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-interactive flex items-center gap-1 cursor-pointer"
+                  className="active:scale-[0.97] min-h-6 px-2 py-0.5 rounded text-[11px] font-semibold bg-accent-muted hover:bg-accent-muted text-accent border border-accent/40 hover:border-accent transition-interactive flex items-center gap-1 cursor-pointer"
                   title="Switch to Edit View"
                 >
                   <Edit3 className="w-2.5 h-2.5" />
@@ -448,7 +448,7 @@ export const ObsidianTabContent: React.FC<ObsidianTabContentProps> = ({
               {note.tags && note.tags.length > 0 && (
                 <div className="flex items-center gap-1 flex-wrap">
                   {note.tags.map((t) => {
-                    const chipClass = 'text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-accent max-md:inline-flex max-md:min-h-6 max-md:items-center';
+                    const chipClass = 'text-[10px] px-2 py-0.5 rounded bg-accent-muted border border-accent/40 text-primary inline-flex min-h-6 items-center';
                     return onTagClick ? (
                       <button
                         key={t}

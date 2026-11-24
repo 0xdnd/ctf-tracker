@@ -53,7 +53,7 @@ function build({ model, esc }) {
 <table><thead><tr><th>Pro Lab</th><th>Difficulty</th><th>Hosts</th><th>Flags</th><th>Exam Alignment</th><th class="hide-sm">Focus</th></tr></thead><tbody>${rows}</tbody></table>
 <h2>Recommended order by certification goal</h2>
 <ul>
-<li><strong>CPTS and OSCP preparation:</strong> Start with <strong>Genesis</strong> to solidify foundational Active Directory enumeration, then move to <strong>Dante</strong> and <strong>Mayhem</strong> to practise multi-subnet pivoting (Ligolo-ng, Chisel, SSH dynamic forwarding) across Linux and Windows targets. Pair these with the <a href="/cpts-like-machines/">CPTS-like machines</a>, <a href="/ippsec-cpts-machines/">Unofficial IppSec CPTS machines</a>, and <a href="/oscp-like-machines/">OSCP-like machines</a> lists, and read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> for the exam itself.</li>
+<li><strong>CPTS and OSCP preparation:</strong> Start with <strong>Genesis</strong> to solidify foundational Active Directory enumeration, then move to <strong>Dante</strong> and <strong>Mayhem</strong> to practice multi-subnet pivoting (Ligolo-ng, Chisel, SSH dynamic forwarding) across Linux and Windows targets. Pair these with the <a href="/cpts-like-machines/">CPTS-like machines</a>, <a href="/ippsec-cpts-machines/">Unofficial IppSec CPTS machines</a>, and <a href="/oscp-like-machines/">OSCP-like machines</a> lists, and read the <a href="/cpts-exam-guide/">HTB CPTS exam guide</a> for the exam itself.</li>
 <li><strong>CRTO and CRTP (Active Directory Red Team):</strong> Work through <strong>Zephyr</strong> for Kerberos delegation and ACL abuse, <strong>Offshore</strong> for multi-forest trust relationships, <strong>RastaLabs</strong> for operational security and C2 tradecraft, and <strong>Halcyon</strong> for hybrid Azure AD / Entra ID environments. Drill individual domain techniques first on the <a href="/active-directory-machines/">Active Directory machines</a> and <a href="/crto-like-machines/">CRTO-like machines</a> pages.</li>
 <li><strong>OSEP (PEN-300) and Advanced Red Teaming:</strong> Tackle <strong>Cybernetics</strong>, <strong>AptLabs</strong>, and <strong>Blizzard</strong> once you are comfortable bypassing modern endpoint protections and managing deep pivot chains. Rehearse standalone evasion boxes first on the <a href="/osep-like-machines/">OSEP-like machines</a> hub.</li>
 </ul>
@@ -66,16 +66,16 @@ function build({ model, esc }) {
     title: 'HTB Pro Labs Guide: Dante, Zephyr, Offshore Compared',
     description: `Compare all ${labs.length} Hack The Box Pro Labs (Genesis, Dante, Zephyr, Offshore, RastaLabs, Cybernetics) by hosts, flags, difficulty and CPTS, OSCP or CRTO fit.`,
     h1: 'Hack The Box Pro Labs guide: difficulty, hosts, flags and exam fit',
-    lead: esc(`Hack The Box Pro Labs simulate multi-host enterprise networks where you chain footholds, pivot across subnets, and attack Active Directory domains. This guide compares the ${labs.length} Pro Labs in ZeroBox by host count, flag count, difficulty, and which certification (CPTS, OSCP, CRTO, CRTP, OSEP) each lab prepares you for.`),
+    lead: esc(`Hack The Box Pro Labs simulate multi-host enterprise networks where you chain footholds, pivot and attack Active Directory domains. This guide compares the ${labs.length} Pro Labs in ZeroBox by host count, flags, difficulty and the certification each prepares you for.`),
     directAnswer: `<h2>Which HTB Pro Lab should you start with?</h2>
-<p>Start with <strong>Genesis</strong> (${hosts('Genesis')}, ${lab('Genesis').difficulty}) if you want a focused introduction to Active Directory, or <strong>Dante</strong> (${hosts('Dante')}, ${lab('Dante').difficulty}) if you are preparing for CPTS or OSCP and want to practise pivoting across mixed Linux and Windows subnets. Move to <strong>Zephyr</strong>, <strong>Offshore</strong>, and <strong>Halcyon</strong> for CRTO-style Active Directory attacks, and save <strong>Cybernetics</strong>, <strong>AptLabs</strong>, and <strong>Blizzard</strong> for OSEP-level evasion.</p>`,
-    topCta: { body: 'Track your Pro Lab hosts, flags and pivot notes offline in ZeroBox.', href: '/tracker/', label: 'Open tracker' },
+<p>Start with <strong>Genesis</strong> (${hosts('Genesis')}, ${lab('Genesis').difficulty}) if you want a focused introduction to Active Directory, or <strong>Dante</strong> (${hosts('Dante')}, ${lab('Dante').difficulty}) if you are preparing for CPTS or OSCP and want to practice pivoting across mixed Linux and Windows subnets. Move to <strong>Zephyr</strong>, <strong>Offshore</strong>, and <strong>Halcyon</strong> for CRTO-style Active Directory attacks, and save <strong>Cybernetics</strong>, <strong>AptLabs</strong>, and <strong>Blizzard</strong> for OSEP-level evasion.</p>`,
     body,
     cta: {
       title: 'Track every host, flag and pivot offline.',
       body: `ZeroBox includes built-in presets for all ${labs.length} HTB Pro Labs so you can log progress and credentials in your browser.`,
       href: '/tracker/',
-      label: 'Open tracker',
+      label: 'Open the tracker',
+      secondary: { href: '/active-directory-machines/', label: 'Browse AD machines' },
     },
     faq,
     related: ['/cpts-like-machines/', '/ippsec-cpts-machines/', '/oscp-like-machines/', '/crto-like-machines/', '/cpts-exam-guide/'],

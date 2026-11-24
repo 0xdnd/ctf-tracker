@@ -1,3 +1,4 @@
+import { ScrollFade } from '../common/ScrollFade';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Copy,
@@ -40,7 +41,6 @@ const LISTENER_TYPES = [
 // Interpreter / template compatibility (pure, unit-tested in revshellInterpreterCompat.test.ts)
 // ---------------------------------------------------------------------------
 export const SHELL_BINARIES = ['/bin/bash', '/bin/sh', 'powershell', 'cmd.exe'] as const;
-export type ShellBinary = (typeof SHELL_BINARIES)[number];
 
 /** Whether `{shell}` is actually substituted into this template's command. */
 export function templateUsesShellToken(template: Pick<ShellItem, 'command'>): boolean {
@@ -421,9 +421,9 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
   const segOff = 'text-muted hover:text-primary';
 
   return (
-    <div className="flex flex-col gap-4 text-xs">
+    <div className="flex flex-col gap-3.5 text-xs">
       {/* 1. Attacker configuration */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-subtle pb-4">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-b border-subtle pb-3">
         {/* LHOST / LPORT / TARGET are edited once in the page header; presets only here */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-muted">LPORT preset</span>
@@ -484,286 +484,297 @@ export const ReverseShellGenerator: React.FC<ReverseShellGeneratorProps> = () =>
       </div>
 
       {compatNotice && (
-        <p role="status" data-testid="revshell-compat-notice" className="-mt-2 text-[11px] text-callout-warn-fg">
+        <p role="status" data-testid="revshell-compat-notice" className="-mt-1.5 text-[11px] text-callout-warn-fg">
           {compatNotice}
         </p>
       )}
 
-      {/* 2. Platform filters and search */}
-      <div data-tour="revshell-filters" className="flex flex-wrap items-center justify-between gap-2">
-        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto no-scrollbar px-4 sm:mx-0 sm:max-w-full sm:px-0 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] max-sm:pr-14">
-          <div className="flex min-w-max items-center gap-1">
-            {(
-              [
-                { id: 'All', label: 'All', count: availableShellItems.length },
-                { id: 'Linux', label: 'Linux' },
-                { id: 'Windows', label: 'Windows' },
-                { id: 'Web', label: 'Web/PHP' },
-                { id: 'PentestMonkey', label: 'PentestMonkey' },
-                { id: 'MSFVenom', label: 'MSFVenom' },
-                { id: 'HoaxShell', label: 'HoaxShell' },
-                { id: 'TTY', label: 'TTY' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setPlatformFilter(tab.id);
-                  if (soundEnabled) playCyberSound('toggle');
-                }}
-                className={`inline-flex min-h-8 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2.5 text-xs font-medium transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
-                  platformFilter === tab.id
-                    ? 'border-accent bg-accent-muted text-primary'
-                    : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
-                }`}
-              >
-                {tab.label}
-                {'count' in tab && <span className="ml-1 tabular-nums text-muted">({tab.count})</span>}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Desktop 2-column split: Payload + Listener stay pinned above the fold beside payload filters & chips */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-5">
+        {/* Right on desktop / top on mobile: Payload terminal + Listener output */}
+        <div className="order-first flex flex-col gap-3 lg:order-2 lg:col-span-7 lg:sticky lg:top-4">
+          {/* 4. Payload terminal: the one intentionally dark panel */}
+          <div data-tour="rs-payload-box" className="overflow-hidden rounded-xl border border-subtle bg-surface-card shadow-lg">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-subtle bg-surface-sunken px-3.5 py-2.5">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="truncate text-xs font-semibold text-primary">{activeShell.name}</span>
+                <span
+                  className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary"
+                  title={activeShell.platform === 'Both' ? 'Works on both Linux and Windows targets' : undefined}
+                >
+                  {activeShell.platform === 'Both' ? 'Linux + Windows' : activeShell.platform}
+                </span>
+                <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
+                  {activeShell.language}
+                </span>
+                {activeShell.notes && (
+                  <span className="hidden truncate text-[11px] text-muted xl:inline">
+                    ({activeShell.notes})
+                  </span>
+                )}
+                {unresolvedVars.length > 0 && (
+                  <span
+                    className="text-[11px] px-1.5 py-0.5 rounded border border-syntax-number/50 text-syntax-number font-medium flex items-center gap-1"
+                    title={`Unresolved variable: ${unresolvedVars.join(', ')} — check LHOST/Target IP in cockpit header`}
+                  >
+                    <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
+                    <span>Missing: <span className="font-mono">{unresolvedVars.join(', ')}</span></span>
+                  </span>
+                )}
+              </div>
 
-        <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
-          <input
-            type="text"
-            id="revshell-search-input"
-            name="revshell-search"
-            aria-label="Filter reverse shell payloads"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Filter ${availableFilteredCount} payloads...`}
-            className="h-8 w-full rounded-lg border border-subtle bg-surface-card pl-8 pr-8 text-xs text-primary placeholder:text-muted transition-colors focus:border-accent focus:outline-none [@media(pointer:coarse)]:h-11"
-          />
-          {searchQuery && (
-            <button aria-label="Clear filter"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center text-muted hover:text-primary"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 3. Payload selector chips */}
-      <div data-tour="rs-payloads" className="flex flex-col gap-2.5">
-        {filteredShells.length === 0 ? (
-          <div className="p-2 text-xs text-muted">No reverse shells matched your query.</div>
-        ) : (
-          <>
-            {groupedShells.map(([language, shells]) => (
-              <div key={language} role="group" aria-label={language} className="space-y-1">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">{language}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {shells.map((shell) => {
-                    const isSelected = shell.id === selectedShellId;
-                    return (
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                <div className="max-w-full overflow-x-auto no-scrollbar">
+                  <div className={segWrap}>
+                    <span className="hidden select-none px-1 text-[11px] text-muted sm:inline">Encoding</span>
+                    {availableEncodings.map((enc) => (
                       <button
-                        key={shell.id}
+                        key={enc}
                         onClick={() => {
-                          handleSelectShell(shell);
-                          if (soundEnabled) playCyberSound('click');
+                          setEncoding(enc);
+                          if (soundEnabled) playCyberSound('toggle');
                         }}
-                        aria-pressed={isSelected}
-                        className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
-                          isSelected
-                            ? 'border-accent bg-accent-muted font-medium text-primary'
-                            : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
-                        }`}
-                        title={shell.unavailable ? `${shell.name} - unavailable` : `${shell.name} (${shell.language}) - ${shell.platform}`}
+                        className={`${segBtn} font-mono ${encoding === enc ? segOn : segOff}`}
+                        title={`Encode payload with ${enc.replace('_', ' ')}`}
                       >
-                        <span>{shell.name}</span>
-                        {shell.unavailable ? (
-                          <span className="rounded px-1 text-[11px] font-medium text-callout-warn-fg">Unavailable</span>
-                        ) : (
-                          shell.isFullScript && (
-                            <span className="rounded px-1 text-[11px] font-medium text-muted">File</span>
-                          )
-                        )}
+                        {enc.replace('_', ' ')}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`hidden xl:inline-flex ${segWrap}`}>
+                  <span className="select-none px-1 text-[11px] text-muted">Wrap</span>
+                  {(['none', 'bash -c', 'cmd /c'] as CommandWrapper[]).map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => {
+                        setWrapper(w);
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                      className={`${segBtn} font-mono ${wrapper === w ? segOn : segOff}`}
+                      title={w === 'none' ? 'Direct execution without shell wrapper' : `Wrap payload in ${w}`}
+                    >
+                      {w === 'none' ? 'Direct' : w}
+                    </button>
+                  ))}
+                </div>
+
+                {isUsable && (activeShell.isFullScript || activeShell.extension) && (
+                  <button
+                    onClick={handleDownload}
+                    className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-2.5 text-xs font-medium text-primary transition-[transform,background-color] hover:bg-surface-hover active:scale-[0.97] [@media(pointer:coarse)]:h-11"
+                    title={`Download as ${activeShell.extension || '.sh'} file`}
+                  >
+                    <Download className="h-3.5 w-3.5 text-muted" />
+                    <span className="hidden sm:inline">Save {activeShell.extension}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleCopyPayload}
+                  disabled={!isUsable}
+                  className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed [@media(pointer:coarse)]:h-11 ${
+                    copiedPayload
+                      ? 'border border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                      : 'border border-accent bg-accent text-on-accent hover:brightness-105'
+                  }`}
+                >
+                  {copiedPayload ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy payload</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-36 overflow-x-auto overflow-y-auto bg-surface-inverse p-3.5 font-mono md:max-h-60 text-xs text-on-inverse scrollbar-thin">
+              {activeShell.unavailable ? (
+                <p data-testid="revshell-unavailable" className="text-on-inverse/70">
+                  <span className="font-semibold">Unavailable.</span> The original command for{' '}
+                  {activeShell.name} was never recovered, so no content can be shown here.
+                </p>
+              ) : isCompatible ? (
+                <pre className="whitespace-pre-wrap break-all leading-relaxed select-text">
+                  <SyntaxHighlightedCommand command={resolvedPayload} className="!bg-transparent !p-0" />
+                </pre>
+              ) : (
+                <p data-testid="revshell-no-compatible" className="text-on-inverse/70">
+                  {activeShell.name} needs a {shellBinaryFamily(shellBinary) === 'Windows' ? 'Linux' : 'Windows'}{' '}
+                  interpreter; {shellBinary} is not compatible, so no payload is shown.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* 5. Listener (paired directly under Payload so both are immediately visible above the fold) */}
+          <div data-tour="rs-listener" className="flex flex-col gap-2.5 rounded-xl border border-subtle bg-surface-card p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex-shrink-0 text-xs font-semibold text-primary">Listener</span>
+              <div className="-mx-1 max-w-full overflow-x-auto no-scrollbar px-1">
+                <div className="flex items-center gap-1">
+                  {LISTENER_TYPES.map((l) => (
+                    <button
+                      key={l.id}
+                      onClick={() => {
+                        setListenerType(l.id);
+                        if (soundEnabled) playCyberSound('toggle');
+                      }}
+                      className={`inline-flex min-h-7 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2 font-mono text-xs transition-colors cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                        listenerType === l.id
+                          ? 'border-accent bg-accent-muted font-medium text-primary'
+                          : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                      }`}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
-            {filteredShells.length > visibleShellCount && (
-              <button
-                type="button"
-                onClick={() => setVisibleShellCount((n) => n + SHELL_PAGE_SIZE)}
-                className="inline-flex min-h-8 items-center rounded-md border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary cursor-pointer [@media(pointer:coarse)]:min-h-11"
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2">
+              <code className="min-w-0 flex-1 overflow-x-auto rounded-md bg-surface-inverse px-3 py-2 text-xs text-on-inverse select-text">
+                <SyntaxHighlightedCommand command={listenerCommand} className="!bg-transparent !p-0" />
+              </code>
+              <button aria-label="Copy listener command"
+                onClick={handleCopyListener}
+                className={`inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-[transform,background-color,color] active:scale-[0.97] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 ${
+                  copiedListener
+                    ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
+                    : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                }`}
+                title="Copy listener command"
               >
-                Show more ({filteredShells.length - visibleShellCount} left)
+                {copiedListener ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* 4. Payload terminal: the one intentionally dark panel */}
-      <div data-tour="rs-payload-box" className="overflow-hidden rounded-xl border border-subtle max-md:order-first">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-subtle bg-surface-sunken px-3.5 py-2.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs font-semibold text-primary">{activeShell.name}</span>
-            <span
-              className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary"
-              title={activeShell.platform === 'Both' ? 'Works on both Linux and Windows targets' : undefined}
-            >
-              {activeShell.platform === 'Both' ? 'Linux + Windows' : activeShell.platform}
-            </span>
-            <span className="rounded border border-subtle bg-surface-card px-1.5 text-[11px] font-medium text-secondary">
-              {activeShell.language}
-            </span>
-            {activeShell.notes && (
-              <span className="hidden truncate text-[11px] text-muted md:inline">
-                ({activeShell.notes})
-              </span>
-            )}
-            {unresolvedVars.length > 0 && (
-              <span
-                className="text-[11px] px-1.5 py-0.5 rounded border border-syntax-number/50 text-syntax-number font-medium flex items-center gap-1"
-                title={`Unresolved variable: ${unresolvedVars.join(', ')} — check LHOST/Target IP in cockpit header`}
-              >
-                <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" />
-                <span>Missing: <span className="font-mono">{unresolvedVars.join(', ')}</span></span>
-              </span>
-            )}
+            </div>
           </div>
+        </div>
 
-          <div className="flex min-w-0 max-w-full items-center gap-2">
-            <div className="max-w-full overflow-x-auto no-scrollbar">
-              <div className={segWrap}>
-                <span className="hidden select-none px-1 text-[11px] text-muted sm:inline">Encoding</span>
-                {availableEncodings.map((enc) => (
+        {/* Left on desktop / below output on mobile: Platform filters, search & payload chips */}
+        <div className="flex min-w-0 flex-col gap-3 lg:order-1 lg:col-span-5">
+          {/* 2. Platform filters and search */}
+          <div data-tour="revshell-filters" className="flex flex-col gap-2">
+            <div className="relative w-full">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+              <input
+                type="text"
+                id="revshell-search-input"
+                name="revshell-search"
+                aria-label="Filter reverse shell payloads"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Filter ${availableFilteredCount} payloads...`}
+                className="h-8 w-full rounded-lg border border-subtle bg-surface-card pl-8 pr-8 text-xs text-primary placeholder:text-muted transition-colors focus:border-accent focus:outline-none [@media(pointer:coarse)]:h-11"
+              />
+              {searchQuery && (
+                <button aria-label="Clear filter"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center text-muted hover:text-primary"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <ScrollFade className="-mx-4 max-w-[calc(100%+2rem)] px-4 sm:mx-0 sm:max-w-full sm:px-0">
+              <div className="flex min-w-max items-center gap-1 lg:min-w-0 lg:flex-wrap">
+                {(
+                  [
+                    { id: 'All', label: 'All', count: availableShellItems.length },
+                    { id: 'Linux', label: 'Linux' },
+                    { id: 'Windows', label: 'Windows' },
+                    { id: 'Web', label: 'Web/PHP' },
+                    { id: 'PentestMonkey', label: 'PentestMonkey' },
+                    { id: 'MSFVenom', label: 'MSFVenom' },
+                    { id: 'HoaxShell', label: 'HoaxShell' },
+                    { id: 'TTY', label: 'TTY' },
+                  ] as const
+                ).map((tab) => (
                   <button
-                    key={enc}
+                    key={tab.id}
                     onClick={() => {
-                      setEncoding(enc);
+                      setPlatformFilter(tab.id);
                       if (soundEnabled) playCyberSound('toggle');
                     }}
-                    className={`${segBtn} font-mono ${encoding === enc ? segOn : segOff}`}
-                    title={`Encode payload with ${enc.replace('_', ' ')}`}
+                    className={`inline-flex min-h-8 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2.5 text-xs font-medium transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                      platformFilter === tab.id
+                        ? 'border-accent bg-accent-muted text-primary'
+                        : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                    }`}
                   >
-                    {enc.replace('_', ' ')}
+                    {tab.label}
+                    {'count' in tab && <span className="ml-1 tabular-nums text-muted">({tab.count})</span>}
                   </button>
                 ))}
               </div>
-            </div>
+            </ScrollFade>
+          </div>
 
-            <div className={`hidden lg:inline-flex ${segWrap}`}>
-              <span className="select-none px-1 text-[11px] text-muted">Wrap</span>
-              {(['none', 'bash -c', 'cmd /c'] as CommandWrapper[]).map((w) => (
-                <button
-                  key={w}
-                  onClick={() => {
-                    setWrapper(w);
-                    if (soundEnabled) playCyberSound('toggle');
-                  }}
-                  className={`${segBtn} font-mono ${wrapper === w ? segOn : segOff}`}
-                  title={w === 'none' ? 'Direct execution without shell wrapper' : `Wrap payload in ${w}`}
-                >
-                  {w === 'none' ? 'Direct' : w}
-                </button>
-              ))}
-            </div>
-
-            {isUsable && (activeShell.isFullScript || activeShell.extension) && (
-              <button
-                onClick={handleDownload}
-                className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg border border-subtle bg-surface-card px-2.5 text-xs font-medium text-primary transition-[transform,background-color] hover:bg-surface-hover active:scale-[0.97] [@media(pointer:coarse)]:h-11"
-                title={`Download as ${activeShell.extension || '.sh'} file`}
-              >
-                <Download className="h-3.5 w-3.5 text-muted" />
-                <span className="hidden sm:inline">Save {activeShell.extension}</span>
-              </button>
+          {/* 3. Payload selector chips */}
+          <div data-tour="rs-payloads" className="flex flex-col gap-2.5">
+            {filteredShells.length === 0 ? (
+              <div className="p-2 text-xs text-muted">No reverse shells matched your query.</div>
+            ) : (
+              <>
+                {groupedShells.map(([language, shells]) => (
+                  <div key={language} role="group" aria-label={language} className="space-y-1.5 border-t border-subtle pt-2 first:border-t-0 first:pt-0">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      <span>{language}</span>
+                      <span className="rounded-full bg-surface-sunken px-1.5 font-mono font-normal tabular-nums normal-case">{shells.length}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {shells.map((shell) => {
+                        const isSelected = shell.id === selectedShellId;
+                        return (
+                          <button
+                            key={shell.id}
+                            onClick={() => {
+                              handleSelectShell(shell);
+                              if (soundEnabled) playCyberSound('click');
+                            }}
+                            aria-pressed={isSelected}
+                            className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
+                              isSelected
+                                ? 'border-accent bg-accent-muted font-medium text-primary'
+                                : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
+                            }`}
+                            title={shell.unavailable ? `${shell.name} - unavailable` : `${shell.name} (${shell.language}) - ${shell.platform}`}
+                          >
+                            <span>{shell.name}</span>
+                            {shell.unavailable ? (
+                              <span className="rounded px-1 text-[11px] font-medium text-callout-warn-fg">Unavailable</span>
+                            ) : (
+                              shell.isFullScript && (
+                                <span className="rounded px-1 text-[11px] font-medium text-muted">File</span>
+                              )
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {filteredShells.length > visibleShellCount && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleShellCount((n) => n + SHELL_PAGE_SIZE)}
+                    className="inline-flex min-h-8 items-center rounded-md border border-subtle bg-surface-card px-3 text-xs font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary cursor-pointer [@media(pointer:coarse)]:min-h-11"
+                  >
+                    Show more ({filteredShells.length - visibleShellCount} left)
+                  </button>
+                )}
+              </>
             )}
-
-            <button
-              onClick={handleCopyPayload}
-              disabled={!isUsable}
-              className={`inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-[transform,background-color,color] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed [@media(pointer:coarse)]:h-11 ${
-                copiedPayload
-                  ? 'border border-callout-success-border bg-callout-success-bg text-callout-success-fg'
-                  : 'border border-accent bg-accent text-on-accent hover:brightness-105'
-              }`}
-            >
-              {copiedPayload ? (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>Copy payload</span>
-                </>
-              )}
-            </button>
           </div>
-        </div>
-
-        <div className="max-h-72 overflow-x-auto bg-surface-inverse p-3.5 font-mono text-xs text-on-inverse scrollbar-thin">
-          {activeShell.unavailable ? (
-            <p data-testid="revshell-unavailable" className="text-on-inverse/70">
-              <span className="font-semibold">Unavailable.</span> The original command for{' '}
-              {activeShell.name} was never recovered, so no content can be shown here.
-            </p>
-          ) : isCompatible ? (
-            <pre className="whitespace-pre-wrap break-all leading-relaxed select-all">
-              <SyntaxHighlightedCommand command={resolvedPayload} className="!bg-transparent !p-0" />
-            </pre>
-          ) : (
-            <p data-testid="revshell-no-compatible" className="text-on-inverse/70">
-              {activeShell.name} needs a {shellBinaryFamily(shellBinary) === 'Windows' ? 'Linux' : 'Windows'}{' '}
-              interpreter; {shellBinary} is not compatible, so no payload is shown.
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* 5. Listener */}
-      <div data-tour="rs-listener" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex-shrink-0 text-xs font-medium text-muted">Listener</span>
-
-          <div className="-mx-1 max-w-full overflow-x-auto no-scrollbar px-1">
-            <div className="flex items-center gap-1">
-              {LISTENER_TYPES.map((l) => (
-                <button
-                  key={l.id}
-                  onClick={() => {
-                    setListenerType(l.id);
-                    if (soundEnabled) playCyberSound('toggle');
-                  }}
-                  className={`inline-flex min-h-7 flex-shrink-0 items-center whitespace-nowrap rounded-md border px-2 font-mono text-xs transition-colors cursor-pointer [@media(pointer:coarse)]:min-h-11 ${
-                    listenerType === l.id
-                      ? 'border-accent bg-accent-muted font-medium text-primary'
-                      : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
-                  }`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex min-w-0 items-center gap-2">
-          <code className="min-w-0 overflow-x-auto rounded-md bg-surface-inverse px-2.5 py-1.5 text-xs text-on-inverse select-all">
-            <SyntaxHighlightedCommand command={listenerCommand} className="!bg-transparent !p-0" />
-          </code>
-          <button aria-label="Copy listener command"
-            onClick={handleCopyListener}
-            className={`inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-[transform,background-color,color] active:scale-[0.97] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 ${
-              copiedListener
-                ? 'border-callout-success-border bg-callout-success-bg text-callout-success-fg'
-                : 'border-subtle bg-surface-card text-secondary hover:bg-surface-hover hover:text-primary'
-            }`}
-            title="Copy listener command"
-          >
-            {copiedListener ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          </button>
         </div>
       </div>
     </div>

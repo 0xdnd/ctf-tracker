@@ -17,6 +17,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   isSelected,
   isHovered,
   isConnectingSource,
+  isDark: isDarkProp,
   tokens,
   onSelect,
   onHover,
@@ -41,7 +42,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   const nameMaxChars = Math.max(6, Math.floor((160 - nameOffset) / 8.6));
   const displayName = node.name.length > nameMaxChars ? `${node.name.slice(0, nameMaxChars - 1)}…` : node.name;
   const displayIp = node.ip && node.ip.length > 15 ? `${node.ip.slice(0, 14)}…` : node.ip;
-  const isDark = typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true;
+  const isDark = isDarkProp ?? (typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : true);
   const diffColors = getDifficultyColors(node.difficulty, isDark);
   const ports = extractMachinePorts(node.machine);
 
@@ -54,7 +55,15 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
   const compactName = node.name.length > 10 ? `${node.name.slice(0, 9)}…` : node.name;
   const tier = isSelected || isHovered || isConnectingSource || isFocused ? 'full' : lod;
 
+  const maxPortBadges = 4;
+  const needsPortOverflow = ports.length > maxPortBadges;
+  const displayPorts = needsPortOverflow ? ports.slice(0, 3) : ports.slice(0, 4);
+  const portBadgeW = 38;
+  const portBadgeH = 18;
+  const portGap = 4;
+
   return (
+    <g>
     <g
       id={`attack-node-${node.id}`}
       data-testid={`attack-node-${node.id}`}
@@ -98,7 +107,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         />
       ) : tier === 'compact' ? (
         <>
-          {/* LOD: same 180x84 footprint, status-colored outline, name only */}
+          {/* LOD: same 180x84 footprint, status-colored outline, name rendered in sibling text group */}
           <rect
             x={cardX}
             y={cardY}
@@ -109,18 +118,6 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
             stroke={statusColor}
             strokeWidth="1.5"
           />
-          <text
-            x={x}
-            y={y + 6}
-            fill={tokens.textPrimary}
-            fontSize="16"
-            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-            fontWeight="600"
-            textAnchor="middle"
-            className="pointer-events-none select-none"
-          >
-            {compactName}
-          </text>
         </>
       ) : (
       <>
@@ -133,7 +130,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
           height="94"
           rx="12"
           fill="none"
-          stroke="#00F0FF"
+          stroke={tokens.accent}
           strokeWidth="2.5"
           strokeDasharray="8 4"
           className="pointer-events-none"
@@ -203,29 +200,16 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         y1={cardY + 1}
         x2={cardX + 176}
         y2={cardY + 1}
-        stroke="rgba(255, 255, 255, 0.07)"
+        stroke={isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(15, 23, 42, 0.06)'}
         strokeWidth="1"
         className="pointer-events-none"
       />
 
-      {/* Row 1: Header (OS Icon, Machine Name, Status Beacon) */}
-      {/* OS Vector Icon */}
+      {/* Row 1: Platform Chip & OS Vector Icon */}
       {node.platform && (
-        <g className="pointer-events-none" aria-label={`Platform: ${platformFullName(node.platform)}`}>
+        <g aria-hidden="true" aria-label={`Platform: ${platformFullName(node.platform)}`} className="pointer-events-none">
           <title>{`Platform: ${platformFullName(node.platform)}`}</title>
           <rect x={cardX + 8} y={cardY + 7} width={platformChipW} height="18" rx="3" fill={tokens.codeBg} stroke={tokens.codeBorder} strokeWidth="0.8" />
-          <text
-            x={cardX + 8 + platformChipW / 2}
-            y={cardY + 19.5}
-            fill={tokens.accent}
-            fontSize="11"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            fontWeight="700"
-            textAnchor="middle"
-            className="select-none"
-          >
-            {node.platform}
-          </text>
         </g>
       )}
       <g transform={`translate(${cardX + (node.platform ? 8 + platformChipW + 4 : 10)}, ${cardY + 8})`}>
@@ -256,21 +240,6 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
           </svg>
         )}
       </g>
-
-      {/* Target Hostname */}
-      <text
-        x={cardX + nameOffset}
-        y={cardY + 20}
-        fill={isSelected ? tokens.accent : tokens.textPrimary}
-        fontSize="14"
-        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-        fontWeight="600"
-        letterSpacing="-0.01em"
-        textAnchor="start"
-        className="pointer-events-none select-none"
-      >
-        {displayName}
-      </text>
 
       {/* Status Beacon (Hardware-grade concentric LED beacon with subtle pulse) */}
       <g transform={`translate(${cardX + 168}, ${cardY + 16})`} className="pointer-events-none">
@@ -313,8 +282,7 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         opacity="0.4"
       />
 
-      {/* Row 2: IP Address Pill & Difficulty Badge */}
-      {/* IP Badge */}
+      {/* Row 2: IP Address Pill & Difficulty Badge Backgrounds */}
       <rect
         x={cardX + 8}
         y={cardY + 35}
@@ -325,21 +293,6 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         stroke={tokens.codeBorder}
         strokeWidth="0.8"
       />
-      <text
-        x={cardX + 58}
-        y={cardY + 48.5}
-        fill={tokens.accent}
-        fontSize="11"
-        fontFamily="'JetBrains Mono', monospace"
-        fontWeight="600"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
-        textAnchor="middle"
-        className="pointer-events-none select-none"
-      >
-        {displayIp}
-      </text>
-
-      {/* Difficulty Pill */}
       <rect
         x={cardX + 112}
         y={cardY + 35}
@@ -350,106 +303,41 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
         stroke={diffColors.stroke}
         strokeWidth="0.8"
       />
-      <text
-        x={cardX + 142}
-        y={cardY + 48.5}
-        fill={diffColors.text}
-        fontSize="11"
-        fontFamily="system-ui, -apple-system, sans-serif"
-        fontWeight="700"
-        letterSpacing="0.02em"
-        textAnchor="middle"
-        className="pointer-events-none select-none"
-      >
-        {String(node.difficulty || 'Easy').toUpperCase()}
-      </text>
 
-      {/* Row 3: Active Open Ports Preview */}
-      {ports.length === 0 ? (
-        <text
-          x={x}
-          y={cardY + 72}
-          fill={tokens.textMuted}
-          fontSize="11"
-          fontFamily="monospace"
-          textAnchor="middle"
-          opacity="0.6"
-          className="pointer-events-none select-none"
-        >
-          No open ports
-        </text>
-      ) : (
+      {/* Row 3: Active Open Ports Badge Rects */}
+      {ports.length > 0 && (
         <g transform={`translate(${cardX + 8}, ${cardY + 58})`}>
-          {(() => {
-            // Render up to 4 port badges, or 3 + overflow badge
-            const maxBadges = 4;
-            const needsOverflow = ports.length > maxBadges;
-            const displayPorts = needsOverflow ? ports.slice(0, 3) : ports.slice(0, 4);
-            const badgeW = 38;
-            const badgeH = 18;
-            const gap = 4;
-
+          {displayPorts.map((p, idx) => {
+            const pColors = getPortColor(p, isDark);
             return (
-              <>
-                {displayPorts.map((p, idx) => {
-                  const pColors = getPortColor(p, isDark);
-                  return (
-                    <g key={p} transform={`translate(${idx * (badgeW + gap)}, 0)`}>
-                      <rect
-                        width={badgeW}
-                        height={badgeH}
-                        rx="3"
-                        fill={pColors.bg}
-                        stroke={pColors.stroke}
-                        strokeWidth="0.7"
-                      />
-                      <text
-                        x={badgeW / 2}
-                        y="13"
-                        fill={pColors.text}
-                        fontSize="11"
-                        fontFamily="'JetBrains Mono', monospace"
-                        fontWeight="600"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                        textAnchor="middle"
-                        className="pointer-events-none select-none"
-                      >
-                        {p > 9999 ? p : `:${p}`}
-                      </text>
-                    </g>
-                  );
-                })}
-                {needsOverflow && (
-                  <g transform={`translate(${3 * (badgeW + gap)}, 0)`}>
-                    <rect
-                      width={badgeW}
-                      height={badgeH}
-                      rx="3"
-                      fill={tokens.codeBg}
-                      stroke={tokens.codeBorder}
-                      strokeWidth="0.7"
-                    />
-                    <text
-                      x={badgeW / 2}
-                      y="13"
-                      fill={tokens.textMuted}
-                      fontSize="11"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      className="pointer-events-none select-none"
-                    >
-                      +{ports.length - 3}
-                    </text>
-                  </g>
-                )}
-              </>
+              <g key={p} transform={`translate(${idx * (portBadgeW + portGap)}, 0)`}>
+                <rect
+                  width={portBadgeW}
+                  height={portBadgeH}
+                  rx="3"
+                  fill={pColors.bg}
+                  stroke={pColors.stroke}
+                  strokeWidth="0.7"
+                />
+              </g>
             );
-          })()}
+          })}
+          {needsPortOverflow && (
+            <g transform={`translate(${3 * (portBadgeW + portGap)}, 0)`}>
+              <rect
+                width={portBadgeW}
+                height={portBadgeH}
+                rx="3"
+                fill={tokens.codeBg}
+                stroke={tokens.codeBorder}
+                strokeWidth="0.7"
+              />
+            </g>
+          )}
         </g>
       )}
 
-      {/* Cardinal Docking Anchors (Top, Right, Bottom, Left) - Ready for Milestone 3 Edges */}
+      {/* Cardinal Docking Anchors (Top, Right, Bottom, Left) */}
       <circle cx={x} cy={cardY} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
       <circle cx={cardX + 180} cy={y} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
       <circle cx={x} cy={cardY + 84} r="2.5" fill={tokens.cardBorder} opacity="0.6" className="pointer-events-none" />
@@ -459,6 +347,123 @@ export const AttackNodeCard: React.FC<AttackNodeCardProps> = React.memo(({
       <title>{`${node.name} (${node.ip}) · ${node.os} · ${node.difficulty} · ${node.status}`}</title>
       </>
       )}
+    </g>
+
+    {/* Visible text sits outside role="button" so WCAG label-in-name never compares against joined SVG text. */}
+    {tier === 'compact' ? (
+      <g aria-hidden="true" className="pointer-events-none select-none">
+        <text
+          x={x}
+          y={y + 6}
+          fill={tokens.textPrimary}
+          fontSize="16"
+          fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          fontWeight="600"
+          textAnchor="middle"
+        >
+          {compactName}
+        </text>
+      </g>
+    ) : tier === 'full' ? (
+      <g aria-hidden="true" className="pointer-events-none select-none">
+        {node.platform && (
+          <text
+            x={cardX + 8 + platformChipW / 2}
+            y={cardY + 19.5}
+            fill={tokens.accent}
+            fontSize="11"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {node.platform}
+          </text>
+        )}
+        <text
+          x={cardX + nameOffset}
+          y={cardY + 20}
+          fill={isSelected ? tokens.accent : tokens.textPrimary}
+          fontSize="14"
+          fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          fontWeight="600"
+          letterSpacing="-0.01em"
+          textAnchor="start"
+        >
+          {displayName}
+        </text>
+        <text
+          x={cardX + 58}
+          y={cardY + 48.5}
+          fill={tokens.accent}
+          fontSize="11"
+          fontFamily="'JetBrains Mono', monospace"
+          fontWeight="600"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+          textAnchor="middle"
+        >
+          {displayIp}
+        </text>
+        <text
+          x={cardX + 142}
+          y={cardY + 48.5}
+          fill={diffColors.text}
+          fontSize="11"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          fontWeight="700"
+          letterSpacing="0.02em"
+          textAnchor="middle"
+        >
+          {String(node.difficulty || 'Easy').toUpperCase()}
+        </text>
+        {ports.length === 0 ? (
+          <text
+            x={x}
+            y={cardY + 72}
+            fill={tokens.textMuted}
+            fontSize="11"
+            fontFamily="monospace"
+            textAnchor="middle"
+            opacity="0.6"
+          >
+            No open ports
+          </text>
+        ) : (
+          <g transform={`translate(${cardX + 8}, ${cardY + 58})`}>
+            {displayPorts.map((p, idx) => {
+              const pColors = getPortColor(p, isDark);
+              return (
+                <text
+                  key={p}
+                  x={idx * (portBadgeW + portGap) + portBadgeW / 2}
+                  y="13"
+                  fill={pColors.text}
+                  fontSize="11"
+                  fontFamily="'JetBrains Mono', monospace"
+                  fontWeight="600"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                  textAnchor="middle"
+                >
+                  {p > 9999 ? p : `:${p}`}
+                </text>
+              );
+            })}
+            {needsPortOverflow && (
+              <text
+                x={3 * (portBadgeW + portGap) + portBadgeW / 2}
+                y="13"
+                fill={tokens.textMuted}
+                fontSize="11"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                +{ports.length - 3}
+              </text>
+            )}
+          </g>
+        )}
+      </g>
+    ) : null}
     </g>
   );
 });

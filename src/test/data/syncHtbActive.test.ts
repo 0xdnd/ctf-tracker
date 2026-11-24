@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 // @ts-expect-error plain ESM script without types
-import { normalizeMachines, checkCeiling, MIN_ACTIVE, MAX_ACTIVE } from '../../../scripts/sync-htb-active.mjs';
+import { normalizeMachines, checkCeiling, archiveRetiredMachines, baseNameSlug, MIN_ACTIVE, MAX_ACTIVE } from '../../../scripts/sync-htb-active.mjs';
+import { appendRetiredHtbMachines, RETIRED_HTB } from '../../data/retiredHtb';
+import { ACTIVE_MACHINES, appendActiveMachines } from '../../data/activeMachines';
+import { STATIC_INITIAL_MACHINES } from '../../data/machinesCatalog';
+import { LIST_BASED_TRACK_IDS, PRACTICE_TRACKS, TRACK_BY_ID, TRACK_NAME_LISTS, trackNameSlug } from '../../data/tracksData';
+import type { Machine } from '../../types';
 
 type Row = { name: string; releasedAt: string };
 
@@ -75,5 +80,130 @@ describe('sync-htb-active guards', () => {
   it('strips backticks and newlines from names', () => {
     const out: Row[] = normalizeMachines([{ data: [mk(1, { name: 'Ev`il\nBox' })] }]);
     expect(out[0].name).toBe('Ev il Box');
+  });
+});
+
+describe('sync-htb-active archiveRetiredMachines & appendRetiredHtbMachines', () => {
+  const pingPong = { name: 'PingPong', os: 'Windows' as const, difficulty: 'Insane' as const, releasedAt: '2026-04-25' };
+  const handler = { name: 'Handler', os: 'Linux' as const, difficulty: 'Medium' as const, releasedAt: '2026-11-21' };
+  const connected = { name: 'Connected', os: 'Linux' as const, difficulty: 'Easy' as const, releasedAt: '2026-06-06' };
+
+  it('archives retired HTB boxes as metadata-only rows without duplicating static or parenthetical names', () => {
+    const res = archiveRetiredMachines(
+      [connected, pingPong, { name: 'Active', os: 'Windows', difficulty: 'Easy', releasedAt: '2018-07-28' }],
+      [handler, connected],
+      [],
+      new Set(['Active (2018 Retired)', 'Lame']),
+      '2026-11-23',
+    );
+    expect(res.archived).toEqual(['PingPong']);
+    expect(res.pruned).toEqual([]);
+    expect(res.machines).toEqual([
+      { name: 'PingPong', os: 'Windows', difficulty: 'Insane', releasedAt: '2026-04-25', retiredAt: '2026-11-23' },
+    ]);
+    expect(baseNameSlug('Active (2018 Retired)')).toBe('active');
+  });
+
+  it('prunes retired entries that re-appear in nextActive or later join static catalog', () => {
+    const res = archiveRetiredMachines(
+      [handler],
+      [handler, pingPong],
+      [
+        { name: 'PingPong', os: 'Windows', difficulty: 'Insane', releasedAt: '2026-04-25', retiredAt: '2026-11-23' },
+        { name: 'Lame', os: 'Linux', difficulty: 'Easy', releasedAt: '2017-03-14', retiredAt: '2026-11-20' },
+        { name: 'OlderRetired', os: 'Linux', difficulty: 'Medium', releasedAt: '2026-01-01', retiredAt: '2026-11-01' },
+      ],
+      new Set(['Lame']),
+      '2026-11-30',
+    );
+    expect(res.archived).toEqual([]);
+    expect(res.pruned).toEqual(['PingPong', 'Lame']);
+    expect(res.machines.map((m: { name: string }) => m.name)).toEqual(['OlderRetired']);
+  });
+
+  it('keeps retired AD track machines resolvable with explicit isActive: false, zero spoilers, and collision-safe ids', () => {
+    const base: Machine[] = [
+      {
+        id: 'htb-pingpong',
+        name: 'OtherBox',
+        ip: '10.10.10.x',
+        os: 'Linux',
+        platform: 'THM',
+        difficulty: 'Easy',
+        status: 'backlog',
+        tags: [],
+        certifications: [],
+        roomUrl: 'https://tryhackme.com/room/other',
+        timeSpentSeconds: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    const withRetired = appendRetiredHtbMachines(base, {
+      asOf: '2026-11-23',
+      source: 'test',
+      machines: [{ ...pingPong, retiredAt: '2026-11-23' }],
+    });
+    const full = appendActiveMachines(withRetired, {
+      asOf: '2026-11-23',
+      source: 'test',
+      machines: [handler, connected],
+    });
+    const row = full.find((m) => m.platform === 'HTB' && trackNameSlug(m.name) === 'pingpong');
+    expect(row).toBeDefined();
+    expect(row!.id).toBe('htb-retired-pingpong');
+    expect(row!.isActive).toBe(false);
+    expect(row!.tags).toEqual([]);
+    expect(row!.hint).toBeUndefined();
+    expect(row!.writeupUrl).toBeUndefined();
+    expect(TRACK_BY_ID.get('crto-ad')!.filterFn(row!)).toBe(true);
+    expect(full.filter((m) => m.isActive)).toHaveLength(2);
+  });
+
+  it('end-to-end simulation: retiring the oldest active HTB box keeps every practice track and id invariant green', () => {
+    const oldest = ACTIVE_MACHINES.machines[ACTIVE_MACHINES.machines.length - 1];
+    const nextActive = [
+      { name: 'SimulatedFreshBox', os: 'Linux' as const, difficulty: 'Medium' as const, releasedAt: '2026-11-24' },
+      ...ACTIVE_MACHINES.machines.slice(0, -1),
+    ];
+    const staticHtbNames = new Set(
+      STATIC_INITIAL_MACHINES.filter((m) => m.platform === 'HTB').map((m) => baseNameSlug(m.name)),
+    );
+    const archived = archiveRetiredMachines(
+      ACTIVE_MACHINES.machines,
+      nextActive,
+      RETIRED_HTB.machines,
+      staticHtbNames,
+      '2026-11-24',
+    );
+    expect(archived.archived).toContain(oldest.name);
+
+    const nextInitial = appendRetiredHtbMachines(STATIC_INITIAL_MACHINES, {
+      asOf: '2026-11-24',
+      source: 'test-sim',
+      machines: archived.machines,
+    });
+    const nextFull = appendActiveMachines(nextInitial, {
+      asOf: '2026-11-24',
+      source: 'test-sim',
+      machines: nextActive,
+    });
+
+    // Unique ids across full HTB+THM catalog
+    expect(new Set(nextFull.map((m) => m.id)).size).toBe(nextFull.length);
+    // Every practice track name resolves to exactly 1 row (guards against the Nov 23 PingPong failure)
+    for (const [key, list] of Object.entries(TRACK_NAME_LISTS)) {
+      for (const platform of ['HTB', 'THM'] as const) {
+        for (const name of list[platform]) {
+          const hits = nextFull.filter((m) => m.platform === platform && trackNameSlug(m.name) === trackNameSlug(name));
+          expect(hits, `${key} ${platform} ${name}`).toHaveLength(1);
+        }
+      }
+    }
+    // No active machine enters any list-based track
+    const activeRows = nextFull.filter((m) => m.isActive);
+    for (const t of PRACTICE_TRACKS.filter((tr) => LIST_BASED_TRACK_IDS.has(tr.id))) {
+      expect(activeRows.filter(t.filterFn).map((m) => m.name), t.id).toEqual([]);
+    }
   });
 });

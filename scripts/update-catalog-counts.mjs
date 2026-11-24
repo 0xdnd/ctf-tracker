@@ -14,11 +14,22 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const check = process.argv.includes('--check');
 
-const { htbThm, ctf } = require('./lib/content-model.cjs').getModel().catalogCounts;
+const model = require('./lib/content-model.cjs').getModel();
+const { htbThm, ctf } = model.catalogCounts;
 const nf = (n) => n.toLocaleString('en-US');
 
 const FILES = [
-  { file: 'src/data/catalogStats.ts', rules: [[/(export const CATALOG_TOTAL = )\d+(;)/, String(ctf)]] },
+  {
+    file: 'src/data/catalogStats.ts',
+    rules: [
+      [/(export const CATALOG_TOTAL = )\d+(;)/, String(ctf)],
+      [/(export const PHASE_COUNT = )\d+(;)/, String(model.phaseCount)],
+      [/(export const PHASE_COUNT_WORD = ')[^']+(';)/, model.phaseCountWord],
+      [/(export const EXAM_TRACK_COUNT = )\d+(;)/, String(model.examTrackCount)],
+      [/(export const EXAM_TRACKS_LIST = ')[^']+(';)/, model.examTracksList],
+      [/(export const SHELL_COUNT = )\d+(;)/, String(model.shellAvailableCount)],
+    ],
+  },
   {
     file: 'public/llms.txt',
     rules: [

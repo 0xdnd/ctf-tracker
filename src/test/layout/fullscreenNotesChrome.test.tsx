@@ -49,6 +49,13 @@ describe('full-screen field manual route gating', () => {
       header: true, sidebar: true, mobileNav: true, payloadBar: true, notesDock: true, mainLayout: 'default',
     }));
 
+  it.each(['/methodology', '/reverse-shell', '/oscp-points-calculator', '/analytics'])(
+    'hides floating payload bar on %s so bottom-right controls stay unobstructed',
+    (pathname) => {
+      expect(getShellChrome({ pathname, isPopout: false, focusMode: false }).payloadBar).toBe(false);
+    },
+  );
+
   it('tour excludes notes paths', () => {
     expect(isFirstRunTourExcludedPath('/field-manual')).toBe(true);
     expect(isFirstRunTourExcludedPath('/notes/')).toBe(true);

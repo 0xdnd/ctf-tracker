@@ -100,7 +100,7 @@ tags:
   indexContent += `
 ---
 
-## 📚 Master Methodology Framework (8 Phases)
+## 📚 Master Methodology Framework (${MASTER_METHODOLOGY_FRAMEWORK.length} Phases)
 `;
   MASTER_METHODOLOGY_FRAMEWORK.forEach((phase) => {
     const cleanTitle = phase.title.replace(/^Phase\s*\d+:\s*/i, '').replace(/[^a-zA-Z0-9_\- ]/g, '').trim();

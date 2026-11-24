@@ -114,10 +114,9 @@ describe('Persistent Multi-Tab Notes Workspace Engine', () => {
     // Note content is rendered (not "no active note selected" fallback)
     expect(screen.getAllByText(/Network Discovery/i).length).toBeGreaterThan(0);
 
-    // Sizing and language buttons
-    const langBtn = screen.getAllByTitle(/toggle english \/ hebrew/i)[0];
-    expect(langBtn).toBeInTheDocument();
-    fireEvent.click(langBtn);
+    // Sizing and language tools sit in the phone sheet's tools menu
+    fireEvent.click(screen.getByRole('button', { name: 'More workspace tools' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Switch to Hebrew' }));
     expect(useNotesWorkspaceStore.getState().language).toBe('he');
   });
 

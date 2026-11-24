@@ -9,5 +9,3 @@ export const LegacyNotesRedirect: React.FC = () => {
   const { search, hash } = useLocation();
   return <Navigate to={{ pathname: '/notes', search, hash }} replace />;
 };
-
-export default LegacyNotesRedirect;

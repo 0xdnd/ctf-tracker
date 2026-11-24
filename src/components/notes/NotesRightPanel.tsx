@@ -1,5 +1,6 @@
 import React from 'react';
 import { PanelRightClose } from 'lucide-react';
+import { CompactIconButton } from '../common/CompactIconButton';
 import type { CptsNoteEntry } from '../../utils/obsidianManualUtils';
 import { getBacklinkSnippet, type NoteOutlineItem } from '../../utils/noteMeta';
 
@@ -17,7 +18,7 @@ export interface NotesRightPanelProps {
 const sectionTitle = 'px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[.06em] text-tertiary';
 const emptyText = 'px-3 py-1 text-xs text-muted';
 const rowBase =
-  'block w-full cursor-pointer rounded-sm text-left transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
+  'block w-full cursor-pointer rounded-md text-left transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent';
 
 export const NotesRightPanel: React.FC<NotesRightPanelProps> = ({
   note,
@@ -29,22 +30,19 @@ export const NotesRightPanel: React.FC<NotesRightPanelProps> = ({
   className = 'w-[260px]',
 }) => (
   <div className={`flex h-full ${className} flex-col text-[13px]`}>
-    <div className="flex h-10 flex-shrink-0 items-center justify-between border-b border-subtle px-3">
+    <div className="flex h-9 flex-shrink-0 items-center justify-between border-b border-subtle px-3">
       <span className="text-[11px] font-semibold uppercase tracking-[.06em] text-tertiary">Details</span>
-      <button
-        type="button"
-        aria-label="Collapse details"
-        onClick={onCollapse}
-        className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted transition-colors duration-150 motion-reduce:transition-none hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
-      >
+      <CompactIconButton aria-label="Collapse details" onClick={onCollapse}>
         <PanelRightClose className="h-4 w-4" aria-hidden="true" />
-      </button>
+      </CompactIconButton>
     </div>
     <div className="min-h-0 flex-1 overflow-y-auto pb-4">
       <section data-testid="right-panel-backlinks" aria-label="Backlinks">
         <h2 className={sectionTitle}>Backlinks ({backlinks.length})</h2>
         {backlinks.length === 0 ? (
-          <div className={emptyText}>No backlinks yet.</div>
+          <div className={emptyText}>
+            No backlinks yet. Type <code className="rounded-sm bg-surface-sunken px-1 font-mono">[[</code> in another note to link here.
+          </div>
         ) : (
           <div className="px-1">
             {backlinks.map((b) => {
@@ -63,7 +61,7 @@ export const NotesRightPanel: React.FC<NotesRightPanelProps> = ({
         <h2 className={sectionTitle}>Outline</h2>
         {outline.length === 0 ? (
           <div className={emptyText}>
-            {note ? 'Only a title, no sections yet' : 'Open a note to see its outline'}
+            {note ? 'No headings yet. Start a line with ## to add a section and it will appear here.' : 'Open a note to see its outline'}
           </div>
         ) : (
           <div className="px-1">
@@ -84,5 +82,3 @@ export const NotesRightPanel: React.FC<NotesRightPanelProps> = ({
     </div>
   </div>
 );
-
-export default NotesRightPanel;

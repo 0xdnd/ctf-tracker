@@ -15,7 +15,7 @@
 import type { Difficulty, Machine, OperatingSystem } from '../types';
 import type { ExamTrack } from './examComplianceUtils';
 
-export type SelectionTier =
+type SelectionTier =
   | 'cert-unsolved'
   | 'cert-solved'
   | 'catalog-unsolved'
@@ -124,7 +124,7 @@ export function shuffleWithRng<T>(items: readonly T[], rng: () => number): T[] {
 }
 
 const SEED_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export const EXAM_SEED_LENGTH = 6;
+const EXAM_SEED_LENGTH = 6;
 
 /** A fresh short seed code (uppercase, no ambiguous characters). */
 export function generateExamSeed(): string {

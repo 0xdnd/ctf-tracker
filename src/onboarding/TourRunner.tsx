@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   AnimatePresence,
   animate,
-  motion,
+  m,
   useMotionValue,
   useReducedMotion,
   useSpring,
@@ -131,13 +131,13 @@ const CORNERS = [
  * the target changes. A hairline holds the shape while the corners tighten onto each new target.
  */
 const Spotlight: React.FC<SpotlightProps> = ({ top, left, width, height, stepId, reduced }) => (
-  <motion.div
+  <m.div
     aria-hidden="true"
     data-testid="tour-spotlight"
     className="pointer-events-none absolute rounded-lg"
     style={{ top, left, width, height, boxShadow: `0 0 0 9999px ${DIM}` }}
   >
-    <motion.span
+    <m.span
       className="absolute inset-0 rounded-lg"
       style={{ background: DIM }}
       initial={{ opacity: 1 }}
@@ -145,7 +145,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ top, left, width, height, stepId,
       exit={{ opacity: 1 }}
       transition={{ duration: 0.2, ease: EASE_OUT }}
     />
-    <motion.span
+    <m.span
       className="absolute inset-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -154,7 +154,7 @@ const Spotlight: React.FC<SpotlightProps> = ({ top, left, width, height, stepId,
     >
       <span className="absolute inset-0 rounded-lg border border-accent/45" />
       {CORNERS.map((corner, i) => (
-        <motion.span
+        <m.span
           key={`${stepId}-${i}`}
           className={`absolute h-3 w-3 border-accent ${corner.className}`}
           initial={reduced ? { opacity: 0 } : { opacity: 0, x: corner.x, y: corner.y }}
@@ -162,8 +162,8 @@ const Spotlight: React.FC<SpotlightProps> = ({ top, left, width, height, stepId,
           transition={{ duration: 0.24, delay: reduced ? 0 : 0.14, ease: EASE_OUT }}
         />
       ))}
-    </motion.span>
-  </motion.div>
+    </m.span>
+  </m.div>
 );
 
 interface RunnerViewProps {
@@ -682,7 +682,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
 
   const caretNode =
     !isMobile && cardPos?.caret && spot ? (
-      <motion.span
+      <m.span
         aria-hidden="true"
         data-testid="tour-caret"
         className={`absolute h-3 w-3 border-subtle bg-surface-card ${
@@ -718,7 +718,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
   const handle = isSheet ? <SheetHandle className={effectiveDock === 'top' ? 'mt-3' : 'mb-3'} /> : null;
 
   return (
-    <motion.div
+    <m.div
       className={`fixed inset-0 z-critical overflow-hidden ${handsOnLive || closing ? 'pointer-events-none' : ''}`}
       data-testid="tour-overlay"
       data-guide-surface=""
@@ -727,13 +727,13 @@ const RunnerView: React.FC<RunnerViewProps> = ({
       transition={{ duration: closing ? CLOSE_MS / 1000 : 0.16, ease: EASE_OUT }}
     >
       {/* The dim. It lifts a little as a sheet is dragged away, and drops out at once for a launch's shield. */}
-      <motion.div
+      <m.div
         className={`pointer-events-none absolute inset-0 ${closing && handoff ? 'invisible' : ''}`}
         style={isSheet ? { opacity: dimOpacity } : undefined}
         aria-hidden="true"
       >
         <AnimatePresence initial={false} mode="wait">
-          {!spot && <motion.div key="scrim" className="absolute inset-0" style={{ background: DIM }} />}
+          {!spot && <m.div key="scrim" className="absolute inset-0" style={{ background: DIM }} />}
           {spot && (
             <Spotlight
               key="spot"
@@ -746,7 +746,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
             />
           )}
         </AnimatePresence>
-      </motion.div>
+      </m.div>
 
       {/* Click shield. Modal steps block the whole page; hands-on steps leave a hole over the anchor. */}
       {!handsOnLive && <div className="absolute inset-0" aria-hidden="true" />}
@@ -759,7 +759,7 @@ const RunnerView: React.FC<RunnerViewProps> = ({
         </>
       )}
 
-      <motion.div
+      <m.div
         key={isSheet ? 'sheet' : 'card'}
         ref={cardRef}
         role={handsOnLive ? 'region' : 'dialog'}
@@ -819,8 +819,8 @@ const RunnerView: React.FC<RunnerViewProps> = ({
           />
         )}
         {effectiveDock === 'top' && handle}
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 };
 
@@ -840,7 +840,7 @@ interface RunnerSnapshot {
 }
 
 /** Spotlight runner for the main tour and the per-section mini-tours. Lazy-loaded. */
-export const TourRunner: React.FC<TourRunnerProps> = ({ mode, closing = false, handoff = false, landed = false }) => {
+const TourRunner: React.FC<TourRunnerProps> = ({ mode, closing = false, handoff = false, landed = false }) => {
   const tourIndex = useOnboardingStore((s) => s.stepIndex);
   const tourStepIds = useOnboardingStore((s) => s.tourStepIds);
   const tourSteps = useMemo(() => tourStepsFor(tourStepIds), [tourStepIds]);

@@ -21,7 +21,7 @@ export function getPortCount(machine: Machine): number {
   return machine.openPorts?.length ?? 0;
 }
 
-export type HostAccessLevel = 'none' | 'user' | 'root';
+type HostAccessLevel = 'none' | 'user' | 'root';
 export interface HostAccess {
   level: HostAccessLevel;
   source: 'flags' | 'credential' | null;
@@ -35,7 +35,7 @@ export function getHostAccess(machine: Machine, bestCredLevel: 'none' | 'user' |
   return { level: tier === 2 ? 'root' : 'user', source: flagTier >= credTier ? 'flags' : 'credential' };
 }
 
-export type StillNeededKey = 'userFlag' | 'rootFlag' | 'ports' | 'checklistInProgress';
+type StillNeededKey = 'userFlag' | 'rootFlag' | 'ports' | 'checklistInProgress';
 export interface StillNeededItem {
   key: StillNeededKey;
   count?: number;

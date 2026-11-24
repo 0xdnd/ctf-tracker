@@ -78,30 +78,6 @@ export const MOTION_TRANSITIONS: Record<string, Transition> = {
 
 // --- Reusable Framer Motion Variants Contracts ---
 
-/** Modal Dialog Backdrop Fade */
-export const BACKDROP_VARIANTS: Variants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, transition: { duration: 0.12, ease: 'easeOut' as const } },
-};
-
-/** Standard Modal Window Variant (Asymmetric Scale & Y) */
-export const MODAL_VARIANTS: Variants = {
-  initial: { opacity: 0, scale: 0.96, y: 8 },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: MODAL_ASYMMETRIC_TRANSITION.enter,
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.96,
-    y: 8,
-    transition: MODAL_ASYMMETRIC_TRANSITION.exit,
-  },
-};
-
 /** Slide-Over Inspector Drawer Variant (Right Slide) */
 export const DRAWER_RIGHT_VARIANTS: Variants = {
   initial: { x: '100%', opacity: 0.5 },
@@ -114,25 +90,5 @@ export const DRAWER_RIGHT_VARIANTS: Variants = {
     x: '100%',
     opacity: 0,
     transition: DRAWER_SLIDE_TRANSITION.exit,
-  },
-};
-
-/** 20ms Cascade Stagger Container & Child Variants */
-export const STAGGER_CONTAINER_VARIANTS: Variants = {
-  initial: {},
-  animate: {
-    transition: {
-      staggerChildren: 0.02,
-      delayChildren: 0.01,
-    },
-  },
-};
-
-export const STAGGER_ITEM_VARIANTS: Variants = {
-  initial: { opacity: 0, y: 4 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: TACTICAL_SPRING,
   },
 };

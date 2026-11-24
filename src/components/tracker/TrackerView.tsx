@@ -15,7 +15,8 @@ import {
   Upload,
   Download,
   ClipboardPaste,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import { useCtfStore, FilterState, HtbTargetStatus, type SortOption } from '../../store/useCtfStore';
 import { useOnboardingStore } from '../../onboarding/useOnboardingStore';
@@ -28,7 +29,6 @@ import { createMachineFilter, getActiveTrackIds } from '../../utils/machineFilte
 import { createTrackProgressLookup } from '../../utils/trackProgress';
 import { getOrderedActiveTrack, resolveSortMode, sortMachines } from '../../utils/trackerSort';
 import { AVAILABILITY_LABELS } from '../../utils/availabilityFilter';
-import { KanbanBoard } from './KanbanBoard';
 import { TrackPicker } from './TrackPicker';
 import { parseTrackParam } from '../../utils/trackUrl';
 const loadTableView = () => import('./TableView');
@@ -42,11 +42,10 @@ export const warmTrackerViewsInDev = (): Promise<unknown> => {
     .then(() => loadGridView())
     .catch(() => undefined));
 };
-export const preloadTrackerView = (mode: string) => {
-  if (mode === 'table') void loadTableView();
-  else if (mode === 'grid') void loadGridView();
-  else if (mode === 'graph') void loadGraphView();
-};
+const loadKanbanBoard = () => import('./KanbanBoard');
+const KanbanBoard = React.lazy(() => loadKanbanBoard().then((m) => ({ default: m.KanbanBoard })));
+// The default view is the board: start fetching its chunk (dnd-kit included) as soon as this module loads.
+void loadKanbanBoard();
 const TableView = React.lazy(() => loadTableView().then((m) => ({ default: m.TableView })));
 const GridView = React.lazy(() => loadGridView().then((m) => ({ default: m.GridView })));
 const GraphView = React.lazy(() => loadGraphView().then((m) => ({ default: m.GraphView })));
@@ -83,7 +82,7 @@ const VIEW_BTN_OFF = 'text-tertiary hover:text-primary';
 const MOBILE_VIEWS = [
   { mode: 'kanban', label: 'Kanban', Icon: Kanban },
   { mode: 'table', label: 'Table', Icon: Table },
-  { mode: 'grid', label: 'Grid', Icon: LayoutGrid },
+  { mode: 'grid', label: 'Cards', Icon: LayoutGrid },
   { mode: 'graph', label: 'Graph', Icon: Radio },
 ] as const;
 
@@ -115,6 +114,7 @@ export const TrackerView: React.FC = () => {
     loadCatalog,
     isCatalogLoaded,
     setFilterDrawerOpen,
+    setNewMachineModalOpen,
     addCustomMachine,
     updateMachine,
     focusMode,
@@ -132,6 +132,7 @@ export const TrackerView: React.FC = () => {
       loadCatalog: s.loadCatalog,
       isCatalogLoaded: s.isCatalogLoaded,
       setFilterDrawerOpen: s.setFilterDrawerOpen,
+      setNewMachineModalOpen: s.setNewMachineModalOpen,
       addCustomMachine: s.addCustomMachine,
       updateMachine: s.updateMachine,
       focusMode: s.focusMode,
@@ -161,7 +162,9 @@ export const TrackerView: React.FC = () => {
     }, 220);
     return () => clearTimeout(t);
   }, [importClosing]);
-  const wantsImportPanel = importClosing || (!importDismissed && (importRequested || (!hasSolved && !importSkipped)));
+  // While the welcome card is up it already offers the import, so the banner waits behind it (one prompt, not two).
+  const welcomeOpen = useOnboardingStore((s) => s.tourActive && s.stepIndex === 0);
+  const wantsImportPanel = importClosing || (!importDismissed && (importRequested || (!hasSolved && !importSkipped && !welcomeOpen)));
   const showImportPanel = storageReady && wantsImportPanel;
   const slotClass = importRequested || importNonce > 0 ? IMPORT_SLOT : IMPORT_SLOT_BANNER;
   // Storage can stay unavailable (private browsing): give the placeholder a bounded wait, then drop it.
@@ -685,7 +688,7 @@ export const TrackerView: React.FC = () => {
                 activeFilterCount > 0 ? 'border-accent text-accent' : ''
               }`}
               title="Open filters"
-              aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
+              aria-label={activeFilterCount > 0 ? `Filters ${activeFilterCount} active` : 'Filters'}
             >
               <SlidersHorizontal className={`w-4 h-4 ${filterDrawerLoading ? 'animate-pulse' : ''}`} />
               <span>Filters</span>
@@ -744,7 +747,7 @@ export const TrackerView: React.FC = () => {
         {/* DESKTOP (>= md): search, status, then filters / sort / count / view */}
         <div className="hidden md:flex flex-wrap items-center gap-2">
           {/* Search */}
-          <div className="relative h-8 w-44 2xl:w-60 flex-shrink-0 group">
+          <div className="relative h-8 w-52 2xl:w-64 flex-shrink-0 group">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-tertiary group-focus-within:text-accent transition-colors pointer-events-none" />
             <input
               type="text"
@@ -759,14 +762,14 @@ export const TrackerView: React.FC = () => {
                   (e.target as HTMLInputElement).blur();
                 }
               }}
-              placeholder="Search targets, IP, CVE"
+              placeholder="Search targets, IP"
               className="w-full h-8 pl-8 pr-9 bg-surface-card border border-subtle rounded-lg text-xs font-sans text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
             />
             {filters.searchQuery ? (
               <button
                 type="button"
                 onClick={() => setFilters({ searchQuery: '' })}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded text-tertiary hover:text-primary cursor-pointer transition-colors"
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-tertiary hover:text-primary cursor-pointer transition-colors"
                 title="Clear search (Esc)"
                 aria-label="Clear search"
               >
@@ -827,7 +830,7 @@ export const TrackerView: React.FC = () => {
                 activeFilterCount > 0 ? 'border-accent text-accent' : ''
               }`}
               title="Open filters"
-              aria-label={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filters'}
+              aria-label={activeFilterCount > 0 ? `Filters ${activeFilterCount} active` : 'Filters'}
             >
               <SlidersHorizontal className={`w-3.5 h-3.5 ${filterDrawerLoading ? 'animate-pulse' : ''}`} />
               <span>Filters</span>
@@ -877,10 +880,25 @@ export const TrackerView: React.FC = () => {
               onClick={handleExportCsv}
               className={`${TOOLBAR_BTN} h-8 px-2.5`}
               title={`Export ${hiddenByFilters ? 'filtered ' : ''}machines to CSV`}
-              aria-label={`Export ${hiddenByFilters ? 'filtered ' : ''}machines to CSV`}
+              aria-label={hiddenByFilters ? 'Export CSV (filtered machines)' : 'Export CSV'}
             >
               <Download className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="hidden 2xl:inline">Export CSV</span>
+            </button>
+
+            {/* Add custom target */}
+            <button
+              type="button"
+              onClick={() => {
+                setNewMachineModalOpen(true);
+                if (soundEnabled) playCyberSound('click');
+              }}
+              className="inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-xs font-medium whitespace-nowrap transition-interactive active:scale-[0.97] cursor-pointer"
+              title="Add target"
+              aria-label="Add target"
+            >
+              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="hidden 2xl:inline">Add target</span>
             </button>
 
             {/* The sidebar owns the desktop view switch; focus mode hides the sidebar, so the toolbar carries one then. */}
@@ -1009,27 +1027,29 @@ export const TrackerView: React.FC = () => {
           />
         </div>
       ) : filteredMachines.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-12 px-4 text-center rounded-2xl border border-dashed border-strong">
-          <p className="text-sm text-secondary font-sans max-w-md">
-            {filters.searchQuery
+        <EmptyState
+          title={
+            filters.searchQuery
               ? `No machines match "${filters.searchQuery}" with the current filters.`
-              : 'No machines match the current filters.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
+              : 'No machines match the current filters.'
+          }
+          action={{
+            label: 'Reset filters',
+            icon: RotateCcw,
+            onClick: () => {
               resetFilters();
               if (soundEnabled) playCyberSound('toggle');
-            }}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-sm font-medium text-on-accent bg-accent hover:bg-accent-hover transition-colors active:scale-[0.97] cursor-pointer [@media(pointer:coarse)]:h-11"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset filters</span>
-          </button>
-        </div>
+            },
+          }}
+          className="rounded-2xl border border-dashed border-strong"
+        />
       ) : (
         <div data-tour="tracker-board">
-          {viewMode === 'kanban' && <KanbanBoard filteredMachines={filteredMachines} />}
+          {viewMode === 'kanban' && (
+            <React.Suspense fallback={<ViewSkeleton />}>
+              <KanbanBoard filteredMachines={filteredMachines} />
+            </React.Suspense>
+          )}
           {viewMode === 'table' && (
             <React.Suspense fallback={<ViewSkeleton />}>
               <TableView filteredMachines={filteredMachines} />

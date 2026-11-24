@@ -24,6 +24,7 @@ import {
   Trophy} from 'lucide-react';
 import { getAvatarSvgDataUri } from '../../data/avatarPresets';
 import { evaluateOperatorGamification } from '../../utils/gamificationEngine';
+import { ImportLimitError, assertJsonFileWithinLimit } from '../../utils/importLimits';
 
 export const UserMenu: React.FC = () => {
   const { 
@@ -145,6 +146,12 @@ export const UserMenu: React.FC = () => {
     input.onchange = (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
+      try {
+        assertJsonFileWithinLimit(file);
+      } catch (err) {
+        if (err instanceof ImportLimitError) toast.error(err.message, 'File too large to import');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = async (event) => {
         const text = event.target?.result as string;

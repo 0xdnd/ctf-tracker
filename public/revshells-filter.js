@@ -115,11 +115,12 @@
     langWrap.appendChild(select);
     controls.appendChild(langWrap);
 
+    var reset = el('button', { type: 'button', class: 'btn btn-secondary btn-sm tf-reset' }, 'Reset');
+    controls.appendChild(reset);
+
     var meta = el('div', { class: 'rs-meta' });
     var count = el('p', { class: 'tf-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, countText(total, total));
     meta.appendChild(count);
-    var reset = el('button', { type: 'button', class: 'btn btn-secondary btn-sm tf-reset' }, 'Reset');
-    meta.appendChild(reset);
     bar.appendChild(meta);
     var empty = el('div', { class: 'tf-empty', hidden: '' });
     empty.appendChild(el('p', null, 'No shells match your search and language.'));

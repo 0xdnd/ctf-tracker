@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { EASE_OUT } from '../../utils/motion';
 import { ChevronDown, Check, Search, X } from 'lucide-react';
 import { playCyberSound } from '../../utils/helpers';
@@ -339,7 +339,7 @@ export function CyberSelect<T extends string = string>({
       {/* Dropdown Floating Popover */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
@@ -466,7 +466,7 @@ export function CyberSelect<T extends string = string>({
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -705,7 +705,7 @@ export function CyberMultiSelect<T extends string = string>({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: openUpward ? 4 : -4, scale: 0.98 }}
@@ -814,7 +814,7 @@ export function CyberMultiSelect<T extends string = string>({
                 })
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

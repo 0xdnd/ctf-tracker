@@ -6,7 +6,8 @@
  *   npm run lighthouse:a11y
  *
  * Zero egress: only http://localhost is requested. Chrome is resolved from CHROME_PATH,
- * a system Chrome, or Playwright's bundled Chromium. Theme + onboarding flag are seeded
+ * a system Chrome, or Playwright's bundled Chromium. Routes are path routes (the web app uses
+ * BrowserRouter; only the desktop build uses hashes). Theme + onboarding flags are seeded
  * into localStorage before Lighthouse navigates (storage reset is disabled).
  *
  * Env: LH_BASE_URL (default http://localhost:4173), LH_ROUTES (comma list of route names),
@@ -91,10 +92,12 @@ async function main() {
           // Seed storage on the app origin, then let Lighthouse navigate without resetting it.
           await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
           await page.evaluate((m) => {
+            // First-run tour flag (useFirstRunTour) and the guide/hint store (onboardingStorage).
             localStorage.setItem('zerobox_onboarding_completed', 'true');
+            localStorage.setItem('zerobox_onboarding_v1', JSON.stringify({ tourDone: true, dismissedHints: [], tipsOff: true }));
             localStorage.setItem('zerobox-theme-mode', m);
           }, mode);
-          const url = `${BASE}/#${route}`;
+          const url = `${BASE}${route}`;
           const result = await lighthouse(url, {
             output: 'json',
             logLevel: 'error',

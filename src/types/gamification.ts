@@ -1,4 +1,4 @@
-export type OperatorRankTier = 1 | 2 | 3 | 4 | 5 | 6;
+type OperatorRankTier = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface OperatorRank {
   tier: OperatorRankTier;
@@ -14,7 +14,7 @@ export interface OperatorRank {
 
 export type TrophyCategory = 'combat' | 'recon' | 'ad' | 'exam' | 'lore' | 'mastery';
 
-export type TrophyRarity = 'common' | 'rare' | 'epic' | 'legendary';
+type TrophyRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
 export interface TrophyDefinition {
   id: string;
@@ -36,7 +36,7 @@ export interface EvaluatedTrophy {
   targetCount: number;
 }
 
-export interface OperatorStatsSummary {
+interface OperatorStatsSummary {
   totalMachines: number;
   rootedMachines: number;
   footholdMachines: number;

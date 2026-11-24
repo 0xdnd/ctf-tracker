@@ -25,11 +25,11 @@ describe('first visit calm', () => {
   it('card IP pill is quiet only for a placeholder while nothing is set', () => {
     useCtfStore.setState(vars({}));
     const quiet = render(<CardIpBadge machineId="a" initialIp="10.10.x.x" />);
-    expect(quiet.container.firstElementChild?.className).toContain('opacity-60');
+    expect(quiet.container.firstElementChild?.className).toContain('border-dashed');
     const real = render(<CardIpBadge machineId="b" initialIp="10.10.11.5" />);
-    expect(real.container.firstElementChild?.className).not.toContain('opacity-60');
+    expect(real.container.firstElementChild?.className).not.toContain('border-dashed');
     useCtfStore.setState(vars({ lhost: '10.10.14.7' }));
     const after = render(<CardIpBadge machineId="c" initialIp="10.10.x.x" />);
-    expect(after.container.firstElementChild?.className).not.toContain('opacity-60');
+    expect(after.container.firstElementChild?.className).not.toContain('border-dashed');
   });
 });

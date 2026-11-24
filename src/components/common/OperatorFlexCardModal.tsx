@@ -345,13 +345,13 @@ export const OperatorFlexCardModal: React.FC = () => {
   };
 
   const handleShareLinkedIn = () => {
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://ctftracker.com/`, '_blank');
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=https://ctftracker.com/`, '_blank', 'noopener,noreferrer');
     if (soundEnabled) playCyberSound('click');
   };
 
   const handleShareTwitter = () => {
     const text = encodeURIComponent('Tracking my offensive security labs and CTF solves on ZeroBox by @0xdnd! Check out the open platform:');
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://ctftracker.com/`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=https://ctftracker.com/`, '_blank', 'noopener,noreferrer');
     if (soundEnabled) playCyberSound('click');
   };
 

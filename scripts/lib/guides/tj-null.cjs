@@ -37,32 +37,34 @@ function build({ model, esc }) {
   const totalPgMatched = pgPlayMatched.length + pgPracticeMatched.length;
   const totalPgListed = SOURCE.names.pgPlay.length + SOURCE.names.pgPractice.length;
 
-  const pgTable = (arr, label) => {
+  const pgTable = (arr) => {
     const rows = arr
       .map((e) => {
         const cat = PG_BY_NORM.get(normAlnum(e.name));
         const os = (cat && cat.os) || e.os || 'Linux';
         const diff = (cat && cat.difficulty) || e.difficulty || '—';
+        const diffAttr = diff === '—' ? '' : diff;
+        const tagsAttr = (cat && cat.tags ? cat.tags : []).join('|');
         const action = cat
           ? `<a href="/tracker/?target=${encodeURIComponent(cat.id)}">Open in tracker</a>`
           : `<a href="/tracker/?addCustom=${encodeURIComponent(e.name)}&amp;os=${encodeURIComponent(os)}&amp;cert=OSCP">Add to my tracker</a>`;
-        return `<tr data-machine-id="${esc(cat ? cat.id : '')}"><td>${esc(e.name)}</td><td>${esc(os)}</td><td>${esc(diff)}</td><td>${action}</td></tr>`;
+        return `<tr data-machine-id="${esc(cat ? cat.id : '')}" data-name="${esc(e.name)}" data-os="${esc(os)}" data-difficulty="${esc(diffAttr)}" data-platform="PG" data-tags="${esc(tagsAttr)}"><td>${esc(e.name)}</td><td>${esc(os)}</td><td>${esc(diff)}</td><td>${action}</td></tr>`;
       })
       .join('');
-    return `<table><thead><tr><th>Machine (${esc(label)})</th><th>OS</th><th>Difficulty</th><th>ZeroBox tracker</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th><th>Tracker</th></tr></thead><tbody>${rows}</tbody></table>`;
   };
 
   const rowsA = onList
-    .map((m) => `<tr data-machine-id="${esc(m.id)}"><td>${link(m)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td>${isTagged(m) ? 'Yes' : 'No'}</td></tr>`)
+    .map((m) => `<tr data-machine-id="${esc(m.id)}" data-name="${esc(m.name)}" data-os="${esc(m.os)}" data-difficulty="${esc(m.difficulty)}" data-platform="${esc(m.platform)}" data-tags="${esc((m.tags || []).join('|'))}"><td>${link(m)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td><td>${isTagged(m) ? 'Yes' : 'No'}</td></tr>`)
     .join('');
   const rowsB = others
-    .map((m) => `<tr data-machine-id="${esc(m.id)}"><td>${link(m)}</td><td>${esc(m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`)
+    .map((m) => `<tr data-machine-id="${esc(m.id)}" data-name="${esc(m.name)}" data-os="${esc(m.os)}" data-difficulty="${esc(m.difficulty)}" data-platform="${esc(m.platform)}" data-tags="${esc((m.tags || []).join('|'))}"><td>${link(m)}</td><td>${esc(m.platform)}</td><td>${esc(m.os)}</td><td>${esc(m.difficulty)}</td></tr>`)
     .join('');
 
   const faq = [
     [
       'Who made the TJ Null list?',
-      'It is maintained by TJ Null (TJnull) and published through NetSec Focus as a Google Sheet. ZeroBox did not create it and does not republish it; this page links to the original and shows how it overlaps with the ZeroBox catalogue.',
+      'It is maintained by TJ Null (TJnull) and published through NetSec Focus as a Google Sheet. ZeroBox did not create it and does not republish it; this page links to the original and shows how it overlaps with the ZeroBox catalog.',
     ],
     [
       'Is the list only Hack The Box?',
@@ -70,11 +72,11 @@ function build({ model, esc }) {
     ],
     [
       'Are the Proving Grounds boxes in the ZeroBox tracker?',
-      `Yes. ${totalPgMatched} of the ${totalPgListed} Proving Grounds Play and Practice machines on the sheet are built into the ZeroBox Proving Grounds catalogue (${pgPlayMatched.length} of ${SOURCE.names.pgPlay.length} on Play and all ${pgPracticeMatched.length} on Practice). Any remaining community Play box can be added in one click as a custom target.`,
+      `Yes. ${totalPgMatched} of the ${totalPgListed} Proving Grounds Play and Practice machines on the sheet are built into the ZeroBox Proving Grounds catalog (${pgPlayMatched.length} of ${SOURCE.names.pgPlay.length} on Play and all ${pgPracticeMatched.length} on Practice). Any remaining community Play box can be added in one click as a custom target.`,
     ],
     [
-      'How many Hack The Box machines from the TJ Null list are in the ZeroBox catalogue?',
-      `${onList.length} Hack The Box machines from the list are in the catalogue, and ${taggedOnList} of them carry the ZeroBox OSCP tag. The last column of the table shows the tag, not whether a box is on the list.`,
+      'How many Hack The Box machines from the TJ Null list are in the ZeroBox catalog?',
+      `${onList.length} Hack The Box machines from the list are in the catalog, and ${taggedOnList} of them carry the ZeroBox OSCP tag. The last column of the table shows the tag, not whether a box is on the list.`,
     ],
     [
       'In what order should I work through the boxes?',
@@ -84,7 +86,8 @@ function build({ model, esc }) {
 
   const body = `<h2>What the TJ Null list is</h2>
 <p>TJ Null, writing on NetSec Focus, put together lists of practice machines that resemble what the OSCP exam rewards: a clear enumeration path, public exploits that need small edits, and classic privilege escalation. The original post, <a href="${GUIDE}" rel="noopener">The Journey to Try Harder</a>, links the spreadsheet, and the sheet itself is at the <a href="${SHEET}" rel="noopener">NetSec Focus Trophy Room</a>. It has lists for Proving Grounds, Hack The Box and Vulnhub. The current Hack The Box tab is headed "OSCPv3 OSCP-like machines", and the list changes, so use the sheet as the source of truth.</p>
-<p>This page lists machine names only, with credit to the sheet (checked ${SOURCE.asOf}), not its notes or layout. It shows which Hack The Box and Proving Grounds machines are in the ZeroBox catalogue so you can track them, using the Hack The Box names as mirrored on <a href="${MIRROR}" rel="noopener">0xdf's cheat sheet</a>.</p>
+<blockquote><p>&ldquo;Keep in mind that the boxes that you assess on these platforms should be used as a way to get started, to build your practical skills, or brush up on any weak points that you may have in your pentesting methodology.&rdquo;</p><p class="quote-cite">&mdash; <cite><a href="${GUIDE}" rel="noopener">TJnull, The Journey to Try Harder (NetSec Focus)</a> (2021-05-06)</cite></p></blockquote>
+<p>This page lists machine names only, with credit to the sheet (checked ${SOURCE.asOf}), not its notes or layout. It shows which Hack The Box and Proving Grounds machines are in the ZeroBox catalog so you can track them, using the Hack The Box names as mirrored on <a href="${MIRROR}" rel="noopener">0xdf's cheat sheet</a>.</p>
 <h2>How to work through it</h2>
 <ul>
 <li>Spend the first 45 minutes of every box on enumeration alone. Write down every port, every version and every odd page before you try an exploit.</li>
@@ -93,18 +96,18 @@ function build({ model, esc }) {
 <li>Do not binge Active Directory boxes first. Mix them in, because the exam gives that set the most points.</li>
 <li>Re-solve a few boxes from scratch later, with a timer.</li>
 </ul>
-<h2>On the list, in the ZeroBox catalogue</h2>
-<p>${onList.length} Hack The Box machines from the list are in the catalogue, and ${taggedOnList} of them carry the ZeroBox OSCP tag. Others carry tags from other tracks or none, so the last column shows the tag, not whether a box is on TJ Null's list. Machines with a ZeroBox writeup link to an attack path page; the rest link to the official room.</p>
-<table><thead><tr><th>Machine (Hack The Box)</th><th>OS</th><th>Difficulty</th><th>ZeroBox OSCP tag</th></tr></thead><tbody>${rowsA}</tbody></table>
-<h2>Other machines the catalogue tags OSCP</h2>
-<p>These ${others.length} carry the ZeroBox OSCP tag but are not on the Hack The Box tab above, mostly TryHackMe rooms. They are useful practice, but they are not TJ Null's picks. For the same machines grouped by difficulty, see <a href="/oscp-like-machines/">OSCP-like machines</a>.</p>
-<table><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>${rowsB}</tbody></table>
+<h2>On the list, in the ZeroBox catalog</h2>
+<p class="sec-note">${onList.length} Hack The Box machines from the list are in the catalog, and ${taggedOnList} of them carry the ZeroBox OSCP tag. Others carry tags from other tracks or none, so the last column shows the tag, not whether a box is on TJ Null's list. Machines with a ZeroBox writeup link to an attack path page; the rest link to the official room.</p>
+<table class="list"><thead><tr><th>Machine</th><th>OS</th><th>Difficulty</th><th>OSCP tag</th></tr></thead><tbody>${rowsA}</tbody></table>
+<h2>Other machines the catalog tags OSCP</h2>
+<p class="sec-note">These ${others.length} carry the ZeroBox OSCP tag but are not on the Hack The Box tab above, mostly TryHackMe rooms. They are useful practice, but they are not TJ Null's picks. For the same machines grouped by difficulty, see <a href="/oscp-like-machines/">OSCP-like machines</a>.</p>
+<table class="list"><thead><tr><th>Machine</th><th>Platform</th><th>OS</th><th>Difficulty</th></tr></thead><tbody>${rowsB}</tbody></table>
 <h2>Proving Grounds Play</h2>
-<p>The ${SOURCE.names.pgPlay.length} machines on the Proving Grounds Play tab (${SOURCE.asOf}). Play is free to use with an OffSec account. ${pgPlayMatched.length} of these ${SOURCE.names.pgPlay.length} machines are in the ZeroBox Proving Grounds catalogue with difficulty metadata; the remaining ${SOURCE.names.pgPlay.length - pgPlayMatched.length} community boxes have a one-click "Add to my tracker" link that creates a custom target in your local workspace.</p>
-${pgTable(SOURCE.names.pgPlay, 'Proving Grounds Play')}
+<p class="sec-note">The ${SOURCE.names.pgPlay.length} machines on the Proving Grounds Play tab (${SOURCE.asOf}). Play is free to use with an OffSec account. ${pgPlayMatched.length} of these ${SOURCE.names.pgPlay.length} machines are in the ZeroBox Proving Grounds catalog with difficulty metadata; the remaining ${SOURCE.names.pgPlay.length - pgPlayMatched.length} community boxes have a one-click "Add to my tracker" link that creates a custom target in your local workspace.</p>
+${pgTable(SOURCE.names.pgPlay)}
 <h2>Proving Grounds Practice</h2>
-<p>The ${SOURCE.names.pgPractice.length} machines on the Proving Grounds Practice tab (${SOURCE.asOf}). Practice requires a paid OffSec subscription. All ${pgPracticeMatched.length} machines are built into the ZeroBox Proving Grounds catalogue and tagged OSCP, so you can filter by the TJ Null track or open any box directly on your board.</p>
-${pgTable(SOURCE.names.pgPractice, 'Proving Grounds Practice')}
+<p class="sec-note">The ${SOURCE.names.pgPractice.length} machines on the Proving Grounds Practice tab (${SOURCE.asOf}). Practice requires a paid OffSec subscription. All ${pgPracticeMatched.length} machines are built into the ZeroBox Proving Grounds catalog and tagged OSCP, so you can filter by the TJ Null track or open any box directly on your board.</p>
+${pgTable(SOURCE.names.pgPractice)}
 <h2>A suggested order</h2>
 <ol>
 <li>Easy Linux for the loop of scan, web enumeration, foothold and sudo or SUID escalation: ${esc(names(easyLinux, 5))}.</li>
@@ -112,7 +115,8 @@ ${pgTable(SOURCE.names.pgPractice, 'Proving Grounds Practice')}
 <li>Medium Windows and domain boxes to build Active Directory habits: ${esc(names(medWin, 5))}.</li>
 <li>Hard boxes last, once the first three feel routine: ${esc(names(hard, 3))}.</li>
 </ol>
-<p>Then run a timed rehearsal in the <a href="/oscp-exam-simulator/">exam simulator</a> and check your pacing against the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget</a> guide. Keep notes in the shape of the <a href="/oscp-report-template/">OSCP report template</a> from the first box, so the write-up is already structured when the exam ends. To drill one skill at a time, the <a href="/techniques/active-directory/">Active Directory</a> hub groups the domain boxes.</p>`;
+<p>Then run a timed rehearsal in the <a href="/oscp-exam-simulator/">exam simulator</a>, score your flags in the <a href="/oscp-points-calculator/">OSCP points calculator</a>, and check your pacing against the <a href="/oscp-exam-scoring-and-time-budget/">OSCP scoring and time budget</a> guide. Keep notes in the shape of the <a href="/oscp-report-template/">OSCP report template</a> from the first box so the write-up is already structured when the exam ends.</p>
+<p>Also weighing Hack The Box's exam or drilling domain skills? Compare <a href="/oscp-vs-cpts/">OSCP vs CPTS</a>, browse <a href="/cpts-like-machines/">CPTS-like machines</a> and <a href="/active-directory-machines/">Active Directory machines</a>, or use the <a href="/techniques/active-directory/">Active Directory</a> hub.</p>`;
 
   return {
     path: PATH,
@@ -120,17 +124,16 @@ ${pgTable(SOURCE.names.pgPractice, 'Proving Grounds Practice')}
     title: `TJ Null OSCP List (${SOURCE.asOf.slice(0, 4)}): HTB & Proving Grounds Boxes`,
     description: `TJ Null OSCP list checked ${SOURCE.asOf}: ${V3_HTB.length} Hack The Box and ${totalPgListed} Proving Grounds machines in ZeroBox, a study order, and a free offline tracker.`,
     h1: 'TJ Null OSCP list: the boxes you can track',
-    lead: `The TJ Null list is a community-maintained spreadsheet of OSCP-like practice machines across Hack The Box and OffSec Proving Grounds. This page credits the original, maps the ${onList.length} Hack The Box and ${totalPgMatched} Proving Grounds machines built into the ZeroBox catalogue, lets you add any remaining box in one click, and gives a suggested study order.`,
+    lead: `The TJ Null list is a community-maintained spreadsheet of OSCP-like practice machines on Hack The Box and OffSec Proving Grounds. This page credits the original, maps the ${onList.length} Hack The Box and ${totalPgMatched} Proving Grounds machines built into the ZeroBox catalog and suggests a study order.`,
     body,
-    topCta: { body: 'Open the TJ Null OSCP track in ZeroBox, free.', href: '/tracker/?track=tjnull-oscp', label: 'Open TJ Null track' },
     cta: {
       title: 'Track every box in one place.',
       body: 'Filter by the TJ Null OSCP track, log your notes and flags, and watch your time per box. Offline, no account.',
       href: '/tracker/?track=tjnull-oscp',
-      label: 'Open tracker',
+      label: 'Open the tracker',
     },
     faq,
-    related: ['/oscp-like-machines/', '/oscp-exam-scoring-and-time-budget/', '/machines/', '/methodology-guide/', '/htb-progress-tracker/'],
+    related: ['/oscp-like-machines/', '/oscp-exam-scoring-and-time-budget/', '/oscp-points-calculator/', '/machines/', '/htb-progress-tracker/'],
     sources: [
       [GUIDE, 'NetSec Focus: The Journey to Try Harder, by TJnull', 'published 2021-05-06'],
       [SHEET, 'NetSec Focus Trophy Room (TJ Null sheet)'],

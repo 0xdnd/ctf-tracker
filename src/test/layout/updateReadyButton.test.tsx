@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { UpdateReadyButton } from '../../components/layout/UpdateReadyButton';
-import { useConfirmStore } from '../../store/useConfirmStore';
+import { useUpdateUiStore } from '../../store/useUpdateUiStore';
 
 const state = vi.hoisted(() => ({
   value: { isDesktop: true, status: 'downloaded', latestVersion: '9.9.9', quitAndInstall: vi.fn() } as Record<string, unknown>,
@@ -14,44 +14,48 @@ const setState = (over: Record<string, unknown>) => {
 
 describe('UpdateReadyButton', () => {
   beforeEach(() => {
-    useConfirmStore.setState({ pending: null });
+    useUpdateUiStore.setState({
+      updateAvailableOpen: false,
+      webUpdateWaiting: false,
+      webReloadAction: null,
+    });
     setState({});
   });
 
-  it('is hidden on web', () => {
+  it('is hidden on web when no service worker update is waiting', () => {
     setState({ isDesktop: false });
     const { container } = render(<UpdateReadyButton />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('is hidden unless the update is downloaded', () => {
+  it('is hidden on desktop unless the update is downloaded', () => {
     setState({ status: 'downloading' });
     const { container } = render(<UpdateReadyButton />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows the version in its accessible name', () => {
+  it('shows the version in its accessible name on desktop and opens the Update Available modal on click', () => {
     render(<UpdateReadyButton />);
-    expect(
-      screen.getByRole('button', { name: 'Update ready: version 9.9.9. Click to update and restart' }),
-    ).toBeTruthy();
+    const btn = screen.getByRole('button', {
+      name: 'Update ready: version 9.9.9. Click to update and restart',
+    });
+    expect(btn).toBeTruthy();
+
+    fireEvent.click(btn);
+    expect(useUpdateUiStore.getState().updateAvailableOpen).toBe(true);
   });
 
-  it('installs after confirmation', async () => {
-    render(<UpdateReadyButton />);
-    fireEvent.click(screen.getByRole('button'));
-    await waitFor(() => expect(useConfirmStore.getState().pending).not.toBeNull());
-    useConfirmStore.getState().settle(true);
-    await waitFor(() => expect(state.value.quitAndInstall).toHaveBeenCalledTimes(1));
-  });
+  it('renders on web when a service worker update is waiting and opens the Update Available modal', () => {
+    setState({ isDesktop: false, status: 'idle', latestVersion: null });
+    useUpdateUiStore.getState().setWebUpdateReady(vi.fn(), false);
 
-  it('does not install when cancelled', async () => {
     render(<UpdateReadyButton />);
-    fireEvent.click(screen.getByRole('button'));
-    await waitFor(() => expect(useConfirmStore.getState().pending).not.toBeNull());
-    useConfirmStore.getState().settle(false);
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(state.value.quitAndInstall).not.toHaveBeenCalled();
+    const btn = screen.getByRole('button', {
+      name: 'Update ready: a new version of ZeroBox is available. Click to reload and update',
+    });
+    expect(btn).toBeTruthy();
+
+    fireEvent.click(btn);
+    expect(useUpdateUiStore.getState().updateAvailableOpen).toBe(true);
   });
 });

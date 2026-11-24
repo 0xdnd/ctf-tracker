@@ -1,6 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Star, Trash2, BookOpen, Check, Copy } from 'lucide-react';
+import { m } from 'framer-motion';
+import { Star, Trash2, BookOpen, Check, Copy, Search } from 'lucide-react';
+import { EmptyState } from '../../common/EmptyState';
 import type { CheatsheetCommand, GlobalVariables } from '../../../types';
 import { interpolateCommand } from '../../../utils/helpers';
 import { useNotesWorkspaceStore } from '../../../store/useNotesWorkspaceStore';
@@ -33,16 +34,14 @@ export const SnippetList: React.FC<SnippetListProps> = ({
   return (
     <div className="space-y-3">
       {filteredCommands.length === 0 ? (
-        <div className="p-8 text-center rounded-xl border border-dashed border-subtle bg-surface-card/50 text-muted text-xs">
-          No command snippets matching this query.
-        </div>
+        <EmptyState compact icon={Search} title="No snippets match" description="Try a different search." className="rounded-xl border border-dashed border-subtle" />
       ) : (
         filteredCommands.slice(0, visibleCommandCount).map((cmd, idx) => {
           const interpolated = interpolateCommand(cmd.commandTemplate, effectiveVars);
           const isCopied = copiedId === cmd.id;
 
           return (
-            <motion.div
+            <m.div
               key={cmd.id}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -72,10 +71,10 @@ export const SnippetList: React.FC<SnippetListProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <motion.button aria-label="Star snippet"
+                  <m.button aria-label="Star snippet"
                     whileTap={{ scale: 0.9 }}
                     onClick={() => toggleStarCommand(cmd.id)}
-                    className="p-1 max-md:p-2 rounded text-muted hover:text-callout-warn-fg transition-colors"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-muted hover:text-callout-warn-fg transition-colors max-md:h-9 max-md:w-9"
                     title="Bookmark / Star Snippet"
                   >
                     <Star
@@ -83,28 +82,28 @@ export const SnippetList: React.FC<SnippetListProps> = ({
                         cmd.isStarred ? 'fill-current text-callout-warn-fg' : ''
                       }`}
                     />
-                  </motion.button>
+                  </m.button>
 
                   {cmd.isCustom && (
-                    <motion.button
+                    <m.button
                       whileTap={{ scale: 0.9 }}
                       onClick={async () => {
                         if (await confirmAction({ title: 'Delete this custom snippet?', body: 'This custom command will be permanently removed.', confirmLabel: 'Delete snippet', tone: 'danger' })) {
                           deleteCustomCommand(cmd.id);
                         }
                       }}
-                      className="p-1 max-md:p-2 rounded text-muted hover:text-callout-danger-fg transition-colors"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded text-muted hover:text-callout-danger-fg transition-colors max-md:h-9 max-md:w-9"
                       title="Delete Snippet"
                       aria-label="Delete snippet"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </motion.button>
+                    </m.button>
                   )}
 
                   <button
                     type="button"
                     onClick={() => useNotesWorkspaceStore.getState().openCheat(cmd.id)}
-                    className="p-1 max-md:p-2 rounded text-muted hover:text-primary transition-colors"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-muted hover:text-primary transition-colors max-md:h-9 max-md:w-9"
                     title="Open in Notes"
                     aria-label={`Open ${cmd.title} in Notes`}
                   >
@@ -113,7 +112,7 @@ export const SnippetList: React.FC<SnippetListProps> = ({
 
                   <button
                     onClick={() => handleCopy(interpolated, cmd.id)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
+                    className={`flex min-h-7 items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold max-md:min-h-9 transition-[transform,box-shadow,background-color,border-color,color] active:scale-[0.98] ${
                       isCopied
                         ? 'bg-callout-success-bg text-callout-success-fg border border-callout-success-border'
                         : 'bg-surface-sunken border border-subtle text-muted hover:text-primary hover:border-strong'
@@ -136,7 +135,7 @@ export const SnippetList: React.FC<SnippetListProps> = ({
 
               {/* Rendered Command Code Box */}
               <div className="relative">
-                <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-all">
+                <pre className="p-3 rounded-lg bg-surface-inverse text-xs text-on-inverse overflow-x-auto whitespace-pre-wrap break-all font-mono tabular-nums select-text">
                   {interpolated.includes('\n') ? (
                     interpolated
                   ) : (
@@ -151,14 +150,14 @@ export const SnippetList: React.FC<SnippetListProps> = ({
                   {cmd.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[11px] px-1.5 py-0.5 rounded bg-surface-sunken border border-subtle text-secondary"
+                      className="inline-flex min-h-6 items-center text-[11px] px-1.5 rounded bg-surface-sunken border border-subtle text-secondary"
                     >
                       #{tag}
                     </span>
                   ))}
                 </div>
               )}
-            </motion.div>
+            </m.div>
           );
         })
       )}

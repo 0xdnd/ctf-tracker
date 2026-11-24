@@ -6,6 +6,7 @@ import { playCyberSound } from '../../utils/helpers';
 import { toast } from '../../store/useToastStore';
 import { useLocation } from 'react-router-dom';
 import { afterFirstPaint } from '../../utils/afterFirstPaint';
+import { ImportLimitError, assertJsonFileWithinLimit } from '../../utils/importLimits';
 
 // The open menu is only needed once the button is used, so it loads as its own chunk. The request starts after the
 // first paint has settled, so the menu is usually ready by the time the button is tapped.
@@ -66,6 +67,14 @@ export const SettingsDropdown: React.FC = () => {
   const handleJsonImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    try {
+      assertJsonFileWithinLimit(file);
+    } catch (err) {
+      if (err instanceof ImportLimitError) toast.error(err.message, 'File too large to import');
+      e.target.value = '';
+      setIsOpen(false);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;

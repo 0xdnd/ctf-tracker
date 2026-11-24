@@ -1,5 +1,4 @@
 // /oscp-exam-scoring-and-time-budget/
-const { ctaBox } = require('../layout.cjs');
 const PATH = '/oscp-exam-scoring-and-time-budget/';
 
 // Point values used in the combinations table. Arithmetic is computed here, never typed by hand.
@@ -54,7 +53,7 @@ function build({ esc }) {
     ],
     [
       'Does the ZeroBox simulator use the new scaled scoring?',
-      'No. The simulator counts raw points (Active Directory machines 10, 10 and 20, standalones 10 plus 10, no bonus points) against the fixed 70 point mark that applies to exams starting before 1 December 2026. The raw points that equal a scaled 400 vary by exam set and are not published, so use the simulator to practise pacing and evidence handling, not to predict a scaled result.',
+      'No. The simulator counts raw points (Active Directory machines 10, 10 and 20, standalones 10 plus 10, no bonus points) against the fixed 70 point mark that applies to exams starting before 1 December 2026. The raw points that equal a scaled 400 vary by exam set and are not published, so use the simulator to practice pacing and evidence handling, not to predict a scaled result.',
     ],
     [
       'How many points is each part of the OSCP exam worth?',
@@ -63,10 +62,14 @@ function build({ esc }) {
   ];
 
   const body = `<h2>How OSCP points work</h2>
-<p>The exam has four parts: one Active Directory set worth 40 points and three standalone machines worth 20 points each, for 100 in total. The Active Directory points are credited per machine, 10 for the first, 10 for the second and 20 for the third, so a partly compromised set still scores. Each standalone is split into 10 points for a local (low privilege) flag and 10 for the proof (root or SYSTEM) flag, and there are no bonus points. That is the structure described in ${externalLink('https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide', "OffSec's OSCP+ exam guide")}; confirm it on the live page, because OffSec edits it.</p>
+<p>The exam has four parts: one Active Directory set worth 40 points and three standalone machines worth 20 points each, for 100 in total. Active Directory points are credited per machine (10 for the first, 10 for the second and 20 for the third), so a partly compromised set still scores.</p>
+<p>Each standalone machine is split into 10 points for a local (low privilege) flag and 10 for the proof (root or SYSTEM) flag, with no bonus points. That is the structure described in ${externalLink('https://help.offsec.com/hc/en-us/articles/360040165632-OSCP-Exam-Guide', "OffSec's OSCP+ exam guide")}; confirm it on the live page, because OffSec edits it.</p>
 <h2>The 2026 scoring change</h2>
-<p>On 21 October 2026 OffSec published its ${externalLink('https://www.offsec.com/blog/oscp-grading-update/', 'OSCP+ scoring update')}. Exams starting before 1 December 2026 at 08:00 GMT keep the fixed rule: 70 out of 100 raw points to pass. For exams starting on or after that time, OffSec uses equated scaled scoring: per its ${externalLink('https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'scaled scoring FAQ')}, results are reported on a scale from 100 to 500 and you need 400 to pass. The raw points that equal 400 depend on your exam set and are not published.</p>
-<p>OffSec says the change affects how the final result is calculated, not the exam content, format, duration, grading requirements or proctoring, and that you do not need to change how you prepare. It also says not to treat 70 or any other raw total as a passing target, so attempt every objective, submit every flag and finish the report whatever your running count says. The ${'<a href="/oscp-points-calculator/">OSCP points calculator</a>'} applies the same rules to a flag combination.</p>
+<p>On 21 October 2026 OffSec published its ${externalLink('https://www.offsec.com/blog/oscp-grading-update/', 'OSCP+ scoring update')}. Exams starting before 1 December 2026 at 08:00 GMT keep the fixed rule: 70 out of 100 raw points to pass.</p>
+<p>For exams starting on or after 1 December 2026 at 08:00 GMT, OffSec uses equated scaled scoring: per its ${externalLink('https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'scaled scoring FAQ')}, results are reported on a scale from 100 to 500 and you need 400 to pass. The raw points that equal 400 depend on your exam set and are not published.</p>
+<blockquote><p>&ldquo;Beginning December 1, 2026, OffSec is introducing scaled scoring for OSCP+ exams. This changes how final exam results are calculated, but the skills and competency required to earn OSCP+ remain the same.&rdquo;</p><p class="quote-cite">&mdash; <cite>${externalLink('https://www.offsec.com/blog/oscp-grading-update/', 'OffSec, OSCP+ Scoring Update')} (2026-10-21)</cite></p></blockquote>
+<p>OffSec says the change affects how the final result is calculated, not the exam content, format, duration, grading requirements or proctoring. Do not treat 70 or any other raw total as a guaranteed passing line: attempt every objective, submit every flag and finish the report whatever your running count says.</p>
+<p>Use the <a href="/oscp-points-calculator/">OSCP points calculator</a> to check how your flags add up under both the 70/100 breakdown and the 100-500 scaled model.</p>
 <h2>OSCP+ expiry and renewal</h2>
 <p>OSCP+ expires three years after you earn it. Most OffSec certifications, including OSCP without the plus, do not expire. OffSec calls maintaining OSCP+ "purely optional", so renewing is your choice. There are three ways to keep the plus:</p>
 <ul>
@@ -78,16 +81,18 @@ function build({ esc }) {
 <h2>Which combinations reach 70 (old fixed rule)</h2>
 <p>This table uses the fixed 70 point line for exams starting before 1 December 2026 at 08:00 GMT. For later exams treat it as an effort guide only, since the raw points that equal a scaled 400 depend on your set.</p>
 <table><thead><tr><th>Combination</th><th>Points</th><th>Reaches 70?</th></tr></thead><tbody>${rows}</tbody></table>
-<p>The Active Directory set is the swing: with all 40 points you need only 30 more. Without any of it, three perfect standalones stop at 60, but because the set is credited per machine, the first Active Directory machine alone takes them to 70.</p>
+<p>The Active Directory set is the swing: with all 40 points you need only 30 more. Without any of it, three perfect standalones stop at 60, though a single Active Directory foothold (10 points) takes them to 70.</p>
 <h2>An hour-by-hour plan for the 23 hour 45 minute exam</h2>
 <table><thead><tr><th>Hours</th><th>Focus</th><th>Checkpoint</th></tr></thead><tbody>${plan}</tbody></table>
 <p>The plan front-loads the biggest block of points and keeps the last hours free. Adjust the order if recon shows a quick win, but keep the breaks.</p>
 <h2>The 90 minute rabbit hole cap</h2>
 <p>Set a hard rule before you start: 90 minutes on one box with no new flag and no new lead means you move. Write down where you stopped and the next idea, then switch. When you come back, re-enumerate from the top before trying anything exotic.</p>
 <h2>The report deadline</h2>
-<p>Per ${externalLink('https://help.offsec.com/hc/en-us/articles/360046787731-OSCP-Reporting-Requirements', "OffSec's reporting requirements")}, the report is due 24 hours after the exam ends, delivered as a PDF inside a .7z archive. Confirm the file naming and size rules on the live page. Do not plan to write from scratch: keep a running log during the exam and finish the report skeleton in the buffer hours. See the ${'<a href="/oscp-report-template/">OSCP report template</a>'} for a structure you can paste.</p>
-<h2>Practise the pacing in ZeroBox</h2>
-<p>The ZeroBox exam simulator runs a timed OSCP session with the same four-part layout. It shows live pacing against the 23 hour 45 minute exam clock, a burndown chart of points remaining against time, break countdowns, and a rabbit-hole warning when one box has had 90 minutes without a flag. Rehearse on boxes from the <a href="/tj-null-list/">TJ Null list</a> or the <a href="/oscp-like-machines/">OSCP-like machine catalogue</a>, then read what the burndown chart says about where your time went.</p>
+<p>Per ${externalLink('https://help.offsec.com/hc/en-us/articles/360046787731-OSCP-Reporting-Requirements', "OffSec's reporting requirements")}, the report is due 24 hours after the exam ends, delivered as a PDF inside a .7z archive. Confirm the file naming and size rules on the live page.</p>
+<p>Do not plan to write from scratch: keep a running log during the exam and finish the report skeleton in the buffer hours. See the <a href="/oscp-report-template/">OSCP report template</a> for a structure you can paste.</p>
+<h2>Practice the pacing in ZeroBox</h2>
+<p>The ZeroBox exam simulator runs a timed OSCP session with the same four-part layout. It tracks live pacing against the 23 hour 45 minute clock, a burndown chart, break countdowns and a 90-minute rabbit-hole warning.</p>
+<p>Rehearse on boxes from the <a href="/tj-null-list/">TJ Null list</a> or the <a href="/oscp-like-machines/">OSCP-like machine catalog</a>, then check where your time went.</p>
 <h2>Next steps</h2>
 <ul>
 <li><a href="/oscp-points-calculator/">OSCP points calculator</a>: tick your flags and see your total.</li>
@@ -97,8 +102,7 @@ function build({ esc }) {
 <li><a href="/techniques/active-directory/">Active Directory techniques</a>: practice machines and key commands for the AD set.</li>
 <li><a href="/cpts-exam-guide/">HTB CPTS exam guide</a>: the 10 day alternative, with its own flag and report requirements.</li>
 <li><a href="/oscp-vs-cpts/">OSCP vs CPTS</a>: the two exams compared side by side.</li>
-</ul>
-${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban board, notes and checklists for every box, offline in your browser.', href: '/tracker/', label: 'Open tracker' })}`;
+</ul>`;
 
   function externalLink(href, label) {
     return `<a href="${esc(href)}" rel="noopener">${esc(label)}</a>`;
@@ -107,22 +111,23 @@ ${ctaBox({ title: 'Track your OSCP practice.', body: 'ZeroBox keeps a Kanban boa
   return {
     path: PATH,
     crumb: 'OSCP scoring and time budget',
-    title: 'OSCP Exam Scoring & 24h Time Budget (2026 Changes)',
+    title: 'OSCP Exam Scoring (100-500) & 24h Time Budget | 2026',
     description:
-      'OSCP+ scoring update: the points needed to pass, a 24h exam plan with a 90 minute rabbit-hole cap, and OSCP+ expiry and renewal.',
+      'Dec 1, 2026 OSCP+ scaled scoring update (100-500 scale, 400 to pass), 70/100 legacy rules, 24h exam time budget, 90m rabbit-hole cap and OSCP+ renewal.',
     h1: 'OSCP exam scoring and a 24 hour time budget',
-    lead: 'The OSCP exam is 100 points across one Active Directory set and three standalone machines, and for exams starting before 1 December 2026 at 08:00 GMT you need 70 to pass. Later exams use scaled scoring (100 to 500, 400 to pass), and the raw points that equal a pass depend on your exam set; this page covers both, plus an hour-by-hour plan you can rehearse.',
+    lead: 'Starting 1 December 2026 at 08:00 GMT, OffSec moves OSCP+ exams to equated scaled scoring (100 to 500, 400 to pass); earlier exams keep the fixed 70 of 100 raw-points mark across one Active Directory set and three standalones. This page covers both systems plus a 24-hour exam plan.',
     directAnswer: `<h2>How many points do you need to pass the OSCP?</h2>
-<p>You need 70 out of 100 points to pass the OSCP if your exam starts before 1 December 2026 at 08:00 GMT. The exam is worth 100 points: 40 for the Active Directory set (10, 10 and 20 per machine) and 20 for each of the three standalone machines. For exams starting on or after 1 December 2026 at 08:00 GMT, OffSec reports a scaled score from 100 to 500 with 400 to pass; the raw points that equal 400 vary by exam set and are not published.</p>${ctaBox({ body: 'Track your OSCP prep in ZeroBox, free.', href: '/tracker/', label: 'Open tracker' })}`,
+<p>For OSCP+ exams starting on or after 1 December 2026 at 08:00 GMT, OffSec reports an equated scaled score from 100 to 500 with 400 required to pass (raw points per set vary and are unpublished). Exams starting before that cutoff require 70 of 100 raw points across the 40-point Active Directory set (10, 10 and 20 per machine) and three 20-point standalones.</p>`,
     body,
     cta: {
       title: 'Rehearse the clock before the real one.',
       body: 'Run a timed mock exam with pacing, a burndown chart and a rabbit-hole warning, all offline in your browser.',
       href: '/exam/',
-      label: 'Start a mock exam',
+      label: 'Practice in the exam simulator',
+      secondary: { href: '/tracker/', label: 'Open the tracker' },
     },
     faq,
-    related: ['/oscp-exam-simulator/', '/tj-null-list/', '/oscp-like-machines/', '/oscp-report-template/', '/methodology-guide/'],
+    related: ['/oscp-points-calculator/', '/oscp-exam-simulator/', '/tj-null-list/', '/oscp-like-machines/', '/oscp-report-template/'],
     sources: [
       ['https://www.offsec.com/blog/oscp-grading-update/', 'OffSec: OSCP+ Scoring Update', 'published 2026-10-21'],
       ['https://help.offsec.com/hc/en-us/articles/54589877508884-OSCP-Equated-Scaled-Scoring-FAQ', 'OffSec Help Center: OSCP+ Equated Scaled Scoring FAQ'],
