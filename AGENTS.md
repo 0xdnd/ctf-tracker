@@ -16,3 +16,7 @@ Re-check AI citations (ChatGPT + Perplexity, signed in): 2026-11-21 and 2026-12-
 - **New features and pages ship behind `React.lazy`** (or a dynamic `import()`), never in the entry chunk. This is a policy: `scripts/check-bundle-size.mjs` checks sizes only, not whether code is lazy.
 - **Never raise the entry cap (`MAX_ENTRY_BYTES`) without the owner's OK.** Total-JS baseline bumps also need the owner's OK and a dated note in the script.
 - When splitting a large view, use static imports inside its lazy chunk. Extra lazy chunks add loader glue to the total budget.
+
+## Release & Desktop parity rules
+Owner decision, 2026-11-24.
+- **Never update the web app without updating the Tauri desktop app too.** Whenever app changes are shipped to `main`, bump the version in lockstep across `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`, update `CHANGELOG.md`, regenerate `public/release-manifest.json` via `npm run build`, verify `npm run build:tauri`, and (when pushing with owner OK) push the matching `v<version>` tag so `.github/workflows/release.yml` builds and publishes the signed desktop installers and `latest.json` auto-updater manifest.

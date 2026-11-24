@@ -1,13 +1,15 @@
 {
-  "version": "2.5.6",
-  "releasedAt": "2026-11-17",
+  "version": "2.6.0",
+  "releasedAt": "2026-11-24",
   "catalogAsOf": "2026-11-17",
   "activePoolCount": 20,
   "highlights": [
     "Target & AD credentials HUD (DOMAIN, DC IP, USER, PASS) in the Session popover with password reveal and Evidence Vault quick-fill.",
     "Update Ready & post-update What's New popups (Web + Desktop) highlighting short release notes and added, active, and retired catalog machines.",
     "Exam & Personal Pivot Attack Graph inside the Exam Simulator with custom internal hosts, linked credentials, and SVG / Obsidian Canvas export.",
-    "Fixed stuck target detail modal when closing or switching into Assign IP, and resolved accessibility and mobile layout regressions across all themes."
+    "Automatic archival of retired Hack The Box machines during weekly catalog sync so practice tracks never lose retired entries.",
+    "Partial text selection restored across reverse-shell payloads, command blocks, and code views (select-text instead of select-all).",
+    "Notes file explorer now expands cleanly with the resizable sidebar divider on /notes/ and in the docked Notes workspace."
   ],
   "machines": {
     "added": [],

@@ -13,14 +13,13 @@ permissions:
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      sitemap_sha: ${{ steps.sitemap.outputs.sha }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -48,24 +47,47 @@ jobs:
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v6
 
-      - name: Snapshot Live Sitemap for IndexNow Diff
+      - name: Snapshot Live Sitemap & Hash Built Sitemap
+        id: sitemap
         continue-on-error: true
-        run: curl -fsSL https://ctftracker.com/sitemap.xml -o live-sitemap.xml || true
+        run: |
+          mkdir -p indexnow-tmp
+          cp dist/sitemap.xml indexnow-tmp/sitemap.xml
+          curl -fsSL https://ctftracker.com/sitemap.xml -o indexnow-tmp/live-sitemap.xml || rm -f indexnow-tmp/live-sitemap.xml
+          echo "sha=$(sha256sum dist/sitemap.xml | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: './dist'
 
+      - name: Upload Sitemaps for IndexNow
+        if: success()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: indexnow-sitemaps
+          path: indexnow-tmp
+          retention-days: 1
+          if-no-files-found: ignore
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
 
       - name: Wait for Live Sitemap Propagation
-        if: success()
+        if: success() && needs.build.outputs.sitemap_sha != ''
         continue-on-error: true
+        env:
+          EXPECTED: ${{ needs.build.outputs.sitemap_sha }}
         run: |
-          EXPECTED=$(sha256sum dist/sitemap.xml | awk '{print $1}')
           for i in 1 2 3 4 5 6; do
             sleep 10
             LIVE=$(curl -fsSL https://ctftracker.com/sitemap.xml 2>/dev/null | sha256sum | awk '{print $1}')
@@ -76,7 +98,36 @@ jobs:
           done
           echo "Proceeding to IndexNow after 60s propagation wait."
 
+      - name: Checkout IndexNow Script
+        if: success()
+        continue-on-error: true
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            scripts/submit-indexnow.cjs
+            src/seo/site.json
+
+      - name: Download Sitemaps for IndexNow
+        if: success()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: indexnow-sitemaps
+          path: indexnow-tmp
+
       - name: Notify IndexNow
         if: success()
         continue-on-error: true
-        run: node scripts/submit-indexnow.cjs --prev live-sitemap.xml
+        run: |
+          if [ ! -f indexnow-tmp/sitemap.xml ]; then
+            echo "No built sitemap artifact found; skipping IndexNow."
+            exit 0
+          fi
+          mkdir -p dist
+          cp indexnow-tmp/sitemap.xml dist/sitemap.xml
+          if [ -s indexnow-tmp/live-sitemap.xml ]; then
+            node scripts/submit-indexnow.cjs --prev indexnow-tmp/live-sitemap.xml
+          else
+            node scripts/submit-indexnow.cjs
+          fi
