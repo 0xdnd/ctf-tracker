@@ -64,7 +64,7 @@ jobs:
       - name: Upload Sitemaps for IndexNow
         if: success()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: indexnow-sitemaps
           path: indexnow-tmp
@@ -111,7 +111,7 @@ jobs:
       - name: Download Sitemaps for IndexNow
         if: success()
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: indexnow-sitemaps
           path: indexnow-tmp
